@@ -55,6 +55,14 @@ function _decode_jwt(token) {
   return _decodeJwt(token);
 }
 
+function _signInOriginIssue() {
+  var protocol = String(window.location && window.location.protocol || "");
+  if (protocol === "file:") {
+    return "Google sign-in is blocked when this site is opened from file://. Open it from https:// or localhost on a mobile browser.";
+  }
+  return "";
+}
+
 function pageHome() {
   function featureRail(opts) {
     var classes = "section reveal-up home-section " + (opts.theme || "home-section-light");
@@ -1400,6 +1408,8 @@ function renderLogin(errMsg) {
   document.getElementById("mobile-staff").classList.add("hidden");
   var cfg = _checkSupabaseConfig();
   var cfgMsg = cfg.ok ? "" : ("Supabase not configured: " + cfg.message + " Update SUPABASE_URL and SUPABASE_ANON_KEY in index.html.");
+  var originMsg = _signInOriginIssue();
+  var loginAlert = errMsg || cfgMsg || originMsg;
   var loginHint = '<div class="auth-points">' +
     '<div class="auth-point">Private access for school accounts</div>' +
     '<div class="auth-point">Course, blog, reference, and career lab tools</div>' +
@@ -1424,16 +1434,17 @@ function renderLogin(errMsg) {
     '<div class="auth-card-title">Sign in</div>' +
     '<div class="auth-card-subtitle">Use your @hyd.silveroaks.co.in Google account.</div>' +
     '</div></div>' +
-    ((errMsg || cfgMsg) ? '<div class="alert alert-danger">⚠️ <span>'+esc(errMsg || cfgMsg)+'</span></div>' : '<div class="alert alert-info">🔐 <span>Secure access for the school community.</span></div>') +
+    (loginAlert ? '<div class="alert alert-danger">⚠️ <span>'+esc(loginAlert)+'</span></div>' : '<div class="alert alert-info">🔐 <span>Secure access for the school community.</span></div>') +
     '<div id="g_signin_btn" class="auth-google"></div>' +
     '<p class="auth-note">If you are not on a verified school account, access will be blocked.</p>' +
     '</section>' +
     '</div></div>';
 
-  if (window.google && google.accounts && google.accounts.id) {
+  if (!originMsg && window.google && google.accounts && google.accounts.id) {
+    var btnWidth = Math.max(280, Math.min(400, (window.innerWidth || 400) - 56));
     google.accounts.id.renderButton(
       document.getElementById("g_signin_btn"),
-      { theme: "outline", size: "large", width: 400 }
+      { theme: "outline", size: "large", width: btnWidth }
     );
   }
 }
