@@ -63,6 +63,10 @@ function _signInOriginIssue() {
   return "";
 }
 
+function _isAllowedEmail(email) {
+  return /@hyd\.silveroaks\.co\.in$/i.test(String(email || "").trim());
+}
+
 function pageHome() {
   function featureRail(opts) {
     var classes = "section reveal-up home-section " + (opts.theme || "home-section-light");
