@@ -233,7 +233,7 @@ a:not(.btn):not(.page-btn):not(.tag-pill):not(.tab):not(.tab-button):not([role="
 .page-header h1,.staff-hero h1{color:#fff;margin-bottom:12px;font-weight:800;font-size:clamp(1.8rem,4vw,3rem)}
 .page-header p,.staff-hero p{color:rgba(255,255,255,.9);margin:0;max-width:700px;font-size:1.05rem}
 
-.staff-shell{max-width:1400px;margin:0 auto}
+.staff-shell{max-width:1400px;margin:0 auto;padding:0 24px}
 .staff-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:32px;position:relative;z-index:2}
 .kpi-card,.library-card,.stat-card,.card,.panel,.loader-box,.staff-users{background:#fff;border:1px solid #E6E8ED;border-radius:10px;box-shadow:var(--shadow);transition:box-shadow var(--t),border-color var(--t),background-color var(--t)}
 .kpi-card:hover,.library-card:hover,.stat-card:hover,.card:hover,.panel:hover,.loader-box:hover,.staff-users:hover{box-shadow:var(--shadow-hover);border-color:#C72D49}
@@ -241,16 +241,16 @@ a:not(.btn):not(.page-btn):not(.tag-pill):not(.tab):not(.tab-button):not([role="
 .kpi-value{font-size:2.2rem;font-weight:800;color:var(--primary);line-height:1}
 .kpi-label{font-size:.875rem;color:var(--muted);margin-top:8px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 .kpi-meta{font-size:.875rem;color:var(--muted);margin-top:8px;font-weight:500}
-.library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;max-width:1200px;margin:0 auto}
+.library-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;max-width:none;margin:0 0 28px}
 .library-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:24px;background:#fff;border-bottom:1px solid #e0e0e0}
 .library-title{margin:0;font-size:1.05rem;font-weight:700;color:#1a1a1a}
 .library-sub{margin-top:4px;color:var(--muted);font-size:.9rem;font-weight:400}
-.library-list{padding:24px;max-height:420px;overflow-y:auto}
-.library-item{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 0;border-bottom:1px solid #eee}
+.library-list{padding:24px;max-height:460px;overflow-y:auto;min-height:300px}
+.library-item{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:16px 0;border-bottom:1px solid #eee}
 .library-item:last-child{border-bottom:none}
 .library-item-title{font-weight:700;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.95rem}
 .library-item-meta{font-size:.875rem;color:var(--muted);font-weight:500}
-.library-actions{display:flex;gap:6px;flex-shrink:0;align-items:center}
+.library-actions{display:flex;gap:8px;flex-shrink:0;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .status-chip{padding:6px 10px;border-radius:6px;font-size:.875rem;font-weight:800;color:#fff;white-space:nowrap;text-transform:uppercase;letter-spacing:.03em}
 .status-chip.is-published{background:var(--success)}
 .status-chip.is-draft{background:var(--muted)}
@@ -514,19 +514,30 @@ body{
 .section{padding:78px 0}
 .nav-close{display:none}
 .site-header{
-  background:linear-gradient(95deg,#85081f 0%,#b50f2d 52%,#d21f43 100%);
-  box-shadow:0 10px 26px rgba(103,11,30,.35);
+  background:#fff;
+  box-shadow:0 8px 24px rgba(15,23,42,.08);
+  border-bottom:1px solid #e2e8f0;
   backdrop-filter:blur(8px);
 }
+.site-header::before{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  height:4px;
+  background:linear-gradient(90deg,#8f0a22,#d21f43);
+}
 .nav-inner{max-width:1480px}
-.nav-brand{letter-spacing:.04em}
+.nav-brand{letter-spacing:.04em;color:#111827}
 .nav-brand img{
   border-radius:12px;
-  background:rgba(255,255,255,.14);
+  background:#f8e2e8;
   padding:4px;
 }
 .nav-links{gap:16px}
 .nav-links a{
+  color:#334155;
   font-size:.86rem;
   letter-spacing:.11em;
   padding:0 8px;
@@ -534,23 +545,26 @@ body{
 }
 .nav-links a.active,
 .nav-links a:hover{
-  background:rgba(255,255,255,.14);
+  color:var(--primary-dark);
+  background:#f8ebee;
   border-radius:10px;
   border-bottom:0;
 }
 .nav-avatar{
-  background:rgba(255,255,255,.2);
-  color:#fff;
+  background:#fce7ee;
+  color:var(--primary);
 }
+.nav-user,.nav-account-name{color:#111827}
+.nav-account-role{color:#64748b}
 .nav-account-logout{
-  border-color:rgba(255,255,255,.35);
-  color:#fff;
-  background:rgba(255,255,255,.12);
+  border-color:#d1d9e6;
+  color:#0f172a;
+  background:#fff;
 }
 .nav-account-logout:hover{
-  background:rgba(255,255,255,.22);
-  border-color:rgba(255,255,255,.55);
-  color:#fff;
+  background:#f8fafc;
+  border-color:#bfc9d8;
+  color:#0f172a;
 }
 
 .hero{
@@ -618,6 +632,92 @@ body{
   color:var(--ink-soft);
 }
 
+.catalog-shell{
+  display:grid;
+  grid-template-columns:260px minmax(0,1fr);
+  gap:28px;
+  align-items:start;
+}
+.catalog-side{
+  background:#fff;
+  border:1px solid #dde4ee;
+  border-radius:14px;
+  padding:18px;
+  box-shadow:0 10px 24px rgba(15,23,42,.06);
+  position:sticky;
+  top:104px;
+}
+.catalog-side h4{
+  margin:0 0 8px;
+  font-size:1.12rem;
+}
+.catalog-side p{
+  margin:0 0 14px;
+  font-size:.9rem;
+}
+.catalog-main{
+  min-width:0;
+}
+.catalog-tools{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:14px;
+}
+.catalog-tools .search-bar{
+  flex:1 1 320px;
+  max-width:none;
+}
+.catalog-tools .form-control{
+  min-width:150px;
+}
+.catalog-count{
+  color:var(--muted);
+  font-size:.9rem;
+  margin-bottom:16px;
+}
+.catalog-grid{
+  margin-top:0;
+}
+
+.resource-card{
+  border:1px solid #dbe3ee !important;
+  border-radius:14px !important;
+  overflow:hidden;
+  box-shadow:0 12px 28px rgba(15,23,42,.07) !important;
+}
+.resource-card .card-thumb,
+.resource-card .card-thumb-placeholder{
+  aspect-ratio:4/5;
+}
+.resource-card .card-body{
+  padding:18px;
+}
+.resource-tags{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.resource-card .card-title{
+  font-family:var(--font-h);
+  font-size:1.28rem;
+  margin-bottom:8px;
+}
+.resource-card .card-desc{
+  color:#5b6575;
+}
+.resource-card-footer{
+  margin-top:12px;
+  border-top:1px solid #e5ebf3;
+  padding-top:12px;
+}
+.resource-card .btn{
+  min-height:40px;
+  padding:8px 16px;
+  font-size:.85rem;
+}
+
 .home-section{
   border-top:1px solid #ecf0f5;
 }
@@ -672,9 +772,17 @@ body{
 }
 
 .mobile-dock{display:none}
+#nav-staff a{color:#334155 !important}
+#nav-staff a:hover,#nav-staff a.active{
+  color:var(--primary-dark) !important;
+  background:#f8ebee !important;
+  border-bottom:0 !important;
+}
 
 @media(max-width:1024px){
   .pathway-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .catalog-shell{grid-template-columns:1fr}
+  .catalog-side{position:static}
 }
 
 @media(max-width:768px){
@@ -1283,7 +1391,7 @@ function verifyAndStart(token) {
       _idToken = token;
       hideLoader();
       showChrome();
-      route("home");
+      route(_bootPageFromLocation());
       prewarmData();
     } catch (err) {
       hideLoader();
@@ -1425,6 +1533,35 @@ var _pending  = {};
 function _cacheGet(k){ var e = _cache[k]; return (e && Date.now() - e.ts < CACHE_TTL) ? e.data : null; }
 function _cacheSet(k, d){ _cache[k] = { ts: Date.now(), data: d }; }
 function _cacheInvalidate(){ _cache = {}; }
+
+function _bootPageFromLocation() {
+  var allowed = {
+    "home": "home",
+    "courses": "courses",
+    "blog": "blog",
+    "blogs": "blog",
+    "references": "references",
+    "career-lab": "career-lab",
+    "careerlab": "career-lab",
+    "staff": "staff"
+  };
+  try {
+    var params = new URLSearchParams(window.location.search || "");
+    var qp = String(params.get("page") || "").toLowerCase().trim();
+    if (allowed[qp]) return allowed[qp];
+  } catch (e) {}
+  var file = String((window.location.pathname || "").split("/").pop() || "").toLowerCase();
+  var map = {
+    "index.html": "home",
+    "courses.html": "courses",
+    "blogs.html": "blog",
+    "staff.html": "staff",
+    "references.html": "references",
+    "refrences.html": "references",
+    "careerlab.html": "career-lab"
+  };
+  return map[file] || "home";
+}
 
 function _buildQuery(params) {
   return Object.keys(params).map(function(k) {
@@ -1763,7 +1900,7 @@ function toast(msg, type) {
 
 
 function esc(s) {
-  return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 function fmtDate(d) {
   var dt = new Date(d);
@@ -1991,19 +2128,19 @@ function courseCard(c) {
   } else {
     thumb = '<div class="card-thumb-placeholder" style="background:linear-gradient(135deg,#1e3a5f,#2d6a9f)">🎓</div>';
   }
-  return '<div class="card"'+(canOpen?' style="cursor:pointer" onclick="route(\'course\',{id:\''+esc(c.ID)+'\'})"':'')+'>' + thumb +
+  return '<div class="card resource-card"'+(canOpen?' style="cursor:pointer" onclick="route(\'course\',{id:\''+esc(c.ID)+'\'})"':'')+'>' + thumb +
     '<div class="card-body">' +
-    '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px">' +
+    '<div class="resource-tags">' +
     '<span class="badge badge-primary">'+esc(c.Category||"General")+'</span>' +
     (c.Grade ? '<span class="badge" style="background:#e0f2fe;color:#075985">'+esc(c.Grade)+'</span>' : "") +
-    (c.YouTubeURL ? '<span class="badge" style="background:rgba(232,25,44,.15);color:#fca5a5">🎬 Video</span>' : "") +
-    (c.PDFLink    ? '<span class="badge badge-success">📄 PDF</span>' : "") +
+    (c.YouTubeURL ? '<span class="badge" style="background:#fef2f2;color:#b91c1c">Video</span>' : "") +
+    (c.PDFLink    ? '<span class="badge badge-success">PDF</span>' : "") +
     '</div>' +
     '<h3 class="card-title">'+esc(c.Title)+'</h3>' +
     '<p class="card-desc">'+esc((c.Description||"").slice(0,110))+((c.Description||"").length>110?"…":"")+'</p>' +
-    '<div class="card-footer">' +
+    '<div class="card-footer resource-card-footer">' +
     '<span class="card-meta">👨‍🏫 '+esc(c.Instructor||"Staff")+'</span>' +
-    '<button class="btn btn-primary btn-sm"'+(canOpen?' onclick="event.stopPropagation();route(\'course\',{id:\''+esc(c.ID)+'\'})"':' disabled')+'>'+(canOpen?'Open →':'Unavailable')+'</button>' +
+    '<button class="btn btn-primary btn-sm"'+(canOpen?' onclick="event.stopPropagation();route(\'course\',{id:\''+esc(c.ID)+'\'})"':' disabled')+'>'+(canOpen?'View':'Unavailable')+'</button>' +
     '</div></div></div>';
 }
 
@@ -2023,18 +2160,18 @@ function referenceCard(r) {
   } else {
     thumb = '<div class="card-thumb-placeholder" style="background:linear-gradient(135deg,#2d6a4f,#52b788)">📎</div>';
   }
-  return '<div class="card"'+(canOpen?' style="cursor:pointer" onclick="route(\'reference\',{id:\''+esc(r.ID)+'\'})"':'')+'>'+thumb+
+  return '<div class="card resource-card"'+(canOpen?' style="cursor:pointer" onclick="route(\'reference\',{id:\''+esc(r.ID)+'\'})"':'')+'>'+thumb+
     '<div class="card-body">'+
-    '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px">'+
+    '<div class="resource-tags">'+
     '<span class="badge badge-primary">'+esc(r.Category||"General")+'</span>'+
-    (r.YouTubeURL ? '<span class="badge" style="background:rgba(232,25,44,.15);color:#fca5a5">🎬 Video</span>' : "")+
-    (r.PDFLink    ? '<span class="badge badge-success">📄 PDF</span>' : "")+
+    (r.YouTubeURL ? '<span class="badge" style="background:#fef2f2;color:#b91c1c">Video</span>' : "")+
+    (r.PDFLink    ? '<span class="badge badge-success">PDF</span>' : "")+
     '</div>'+
     '<h3 class="card-title">'+esc(r.Title)+'</h3>'+
     '<p class="card-desc">'+esc((r.Description||"").slice(0,110))+((r.Description||"").length>110?"…":"")+'</p>'+
-    '<div class="card-footer">'+
+    '<div class="card-footer resource-card-footer">'+
     '<span class="card-meta">✍️ '+esc(r.Author||"Staff")+'</span>'+
-    '<button class="btn btn-primary btn-sm"'+(canOpen?' onclick="event.stopPropagation();route(\'reference\',{id:\''+esc(r.ID)+'\'})"':' disabled')+'>'+(canOpen?'Open →':'Unavailable')+'</button>'+
+    '<button class="btn btn-primary btn-sm"'+(canOpen?' onclick="event.stopPropagation();route(\'reference\',{id:\''+esc(r.ID)+'\'})"':' disabled')+'>'+(canOpen?'View':'Unavailable')+'</button>'+
     '</div></div></div>';
 }
 
@@ -2054,19 +2191,19 @@ function careerLabCard(l) {
   } else {
     thumb = '<div class="card-thumb-placeholder" style="background:linear-gradient(135deg,#0f766e,#14b8a6)">🧠</div>';
   }
-  return '<div class="card"'+(canOpen?' style="cursor:pointer" onclick="route(\'career-lab-item\',{id:\''+esc(l.ID)+'\'})"':'')+'>'+thumb+
+  return '<div class="card resource-card"'+(canOpen?' style="cursor:pointer" onclick="route(\'career-lab-item\',{id:\''+esc(l.ID)+'\'})"':'')+'>'+thumb+
     '<div class="card-body">'+
-    '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px">'+
+    '<div class="resource-tags">'+
     '<span class="badge badge-primary">'+esc(l.Category||"Research")+'</span>'+
     (l.Student ? '<span class="badge" style="background:#e0f2fe;color:#075985">'+esc(l.Student)+'</span>' : '')+
-    (l.YouTubeURL ? '<span class="badge" style="background:rgba(232,25,44,.15);color:#fca5a5">🎬 Video</span>' : '')+
-    (l.PDFLink ? '<span class="badge badge-success">📄 PDF</span>' : '')+
+    (l.YouTubeURL ? '<span class="badge" style="background:#fef2f2;color:#b91c1c">Video</span>' : '')+
+    (l.PDFLink ? '<span class="badge badge-success">PDF</span>' : '')+
     '</div>'+
     '<h3 class="card-title">'+esc(l.Title)+'</h3>'+
     '<p class="card-desc">'+esc((l.Description||"").slice(0,110))+((l.Description||"").length>110?"…":"")+'</p>'+
-    '<div class="card-footer">'+
+    '<div class="card-footer resource-card-footer">'+
     '<span class="card-meta">👤 '+esc(l.Mentor||"Staff")+'</span>'+
-    '<button class="btn btn-primary btn-sm"'+(canOpen?' onclick="event.stopPropagation();route(\'career-lab-item\',{id:\''+esc(l.ID)+'\'})"':' disabled')+'>'+(canOpen?'Open →':'Unavailable')+'</button>'+
+    '<button class="btn btn-primary btn-sm"'+(canOpen?' onclick="event.stopPropagation();route(\'career-lab-item\',{id:\''+esc(l.ID)+'\'})"':' disabled')+'>'+(canOpen?'View':'Unavailable')+'</button>'+
     '</div></div></div>';
 }
 
@@ -2088,17 +2225,17 @@ function postCard(p) {
     thumb = '<div class="card-thumb-placeholder" style="background:linear-gradient(135deg,#553c9a,#805ad5)">✍️</div>';
   }
   var tags = p.Tags ? p.Tags.split(",").map(function(t){ t=t.trim(); return t?'<a class="tag-pill" style="font-size:.7rem" href="#" onclick="event.preventDefault();setBlogTag(\''+esc(t)+'\')">'+esc(t)+'</a>':""}).join("") : "";
-  return '<div class="card"'+(canOpen?' style="cursor:pointer" onclick="route(\'post\',{id:\''+esc(p.ID)+'\'})"':'')+'>'+thumb+
+  return '<div class="card resource-card"'+(canOpen?' style="cursor:pointer" onclick="route(\'post\',{id:\''+esc(p.ID)+'\'})"':'')+'>'+thumb+
     '<div class="card-body">'+
     '<h3 class="card-title">'+esc(p.Title)+'</h3>'+
     '<p class="card-desc">'+esc(excerpt)+(excerpt.length>=115?"…":"")+'</p>'+
-    '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">'+
-    (p.PDFLink ? '<span class="badge badge-success">📄 PDF</span>' : '')+
+    '<div class="resource-tags">'+
+    (p.PDFLink ? '<span class="badge badge-success">PDF</span>' : '')+
     '</div>'+
     (tags?'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">'+tags+'</div>':'')+
-    '<div class="card-footer">'+
+    '<div class="card-footer resource-card-footer">'+
     '<span class="card-meta">📅 '+esc(fmtDate(p.CreatedDate))+'</span>'+
-    '<button class="btn btn-primary btn-sm"'+(canOpen?' onclick="event.stopPropagation();route(\'post\',{id:\''+esc(p.ID)+'\'})"':' disabled')+'>'+(canOpen?'Read →':'Unavailable')+'</button>'+
+    '<button class="btn btn-primary btn-sm"'+(canOpen?' onclick="event.stopPropagation();route(\'post\',{id:\''+esc(p.ID)+'\'})"':' disabled')+'>'+(canOpen?'Read':'Unavailable')+'</button>'+
     '</div></div></div>';
 }
 
@@ -2315,28 +2452,29 @@ function pageCourses(opts) {
   var GRADE_LABELS = ["Class 7","Class 8","Class 9","Class 10","Class 11","Class 12"];
 
   document.getElementById("app").innerHTML =
-    '<div class="page-header"><div class="container"><h1>📚 Courses</h1><p>All published learning resources.</p></div></div>' +
-    '<section class="section"><div class="container">' +
-    
-    '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">' +
-    '<button class="btn '+ (_cState.grade===''?'btn-primary':'btn-ghost') +'" style="padding:5px 14px;font-size:.85rem" onclick="setGradeFilter(\'\')">All Classes</button>' +
+    '<div class="page-header"><div class="container"><h1>Courses</h1><p>Browse all published learning modules with structured filters.</p></div></div>' +
+    '<section class="section"><div class="container catalog-shell">' +
+    '<aside class="catalog-side">' +
+    '<h4>Browse By</h4><p>Choose a class level and category.</p>' +
+    '<div class="catalog-tools" style="margin-bottom:8px">' +
+    '<button class="tag-pill '+ (_cState.grade===''?'active':'') +'" onclick="setGradeFilter(\'\')">All Classes</button>' +
     GRADE_LABELS.map(function(g){
-      return '<button class="btn '+ (_cState.grade===g?'btn-primary':'btn-ghost') +'" style="padding:5px 14px;font-size:.85rem" onclick="setGradeFilter(\''+g+'\')">' + g + '</button>';
+      return '<button class="tag-pill '+ (_cState.grade===g?'active':'') +'" onclick="setGradeFilter(\''+g+'\')">' + g + '</button>';
     }).join("") +
     '</div>' +
-    '<div class="flex-between mb-3">' +
-    '<div class="search-bar" style="max-width:none;flex:1;min-width:220px">' +
-    '<div class="ac-wrap"><input id="c-srch" type="text" placeholder="Search courses…" value="'+esc(_cState.q)+'" autocomplete="off">' +
-    '<div class="ac-drop" id="c-ac"></div></div>' +
-    '<button class="btn btn-primary" onclick="courseSearch()">Search</button>' +
-    (_cState.q||_cState.category||_cState.grade ? '<button class="btn btn-ghost" onclick="clearCourseFilter()">Clear</button>' : "") +
+    '<label class="form-label" style="margin-top:12px">Category</label>' +
+    '<select id="c-cat" class="form-control" onchange="courseSearch()"><option value="">All Categories</option></select>' +
+    (_cState.q||_cState.category||_cState.grade ? '<button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="clearCourseFilter()">Reset Filters</button>' : "") +
+    '</aside>' +
+    '<div class="catalog-main">' +
+    '<div class="catalog-tools">' +
+    '<div class="search-bar"><div class="ac-wrap"><input id="c-srch" type="text" placeholder="Search courses…" value="'+esc(_cState.q)+'" autocomplete="off"><div class="ac-drop" id="c-ac"></div></div>' +
+    '<button class="btn btn-primary" onclick="courseSearch()">Search</button></div>' +
     '</div>' +
-    '<select id="c-cat" class="form-control" style="width:auto;min-width:150px" onchange="courseSearch()"><option value="">All Categories</option></select>' +
-    '</div>' +
-    '<p id="c-count" style="color:var(--muted);font-size:.85rem;margin-bottom:18px"></p>' +
-    '<div class="grid-3" id="c-grid"><div class="spinner"></div></div>' +
+    '<p id="c-count" class="catalog-count"></p>' +
+    '<div class="grid-3 catalog-grid" id="c-grid"><div class="spinner"></div></div>' +
     '<div class="pagination" id="c-pages"></div>' +
-    '</div></section>';
+    '</div></div></section>';
 
   initAC("c-srch", "c-ac");
 
@@ -2345,7 +2483,11 @@ function pageCourses(opts) {
     var grid = document.getElementById("c-grid");
     var cnt  = document.getElementById("c-count");
     var end  = Math.min(_cState.offset + PAGE_SIZE, result.total);
-    if (cnt) cnt.textContent = "Showing "+(_cState.offset+1)+"–"+end+" of "+result.total+" courses"+(_cState.q?' matching "'+_cState.q+'"':"")+(_cState.category?" in "+_cState.category:"")+(_cState.grade?" · "+_cState.grade:"");
+    if (cnt) {
+      cnt.textContent = result.total
+        ? "Showing "+(_cState.offset+1)+"–"+end+" of "+result.total+" courses"+(_cState.q?' matching "'+_cState.q+'"':"")+(_cState.category?" in "+_cState.category:"")+(_cState.grade?" · "+_cState.grade:"")
+        : "No courses found for the selected filters.";
+    }
 
     if (grid) grid.innerHTML = (result.rows && result.rows.length)
       ? result.rows.map(courseCard).join("")
@@ -2434,19 +2576,22 @@ function pageBlog(opts) {
   if (opts) { _bState.q = opts.q||""; _bState.tag = opts.tag||""; _bState.offset = opts.offset||0; }
 
   document.getElementById("app").innerHTML =
-    '<div class="page-header"><div class="container"><h1>✍️ Blog</h1><p>Insights, tips and career resources from the team.</p></div></div>' +
-    '<section class="section"><div class="container">' +
-    '<div class="search-bar mb-3" style="max-width:480px">' +
-    '<div class="ac-wrap"><input id="b-srch" type="text" placeholder="Search posts…" value="'+esc(_bState.q)+'" autocomplete="off">' +
-    '<div class="ac-drop" id="b-ac"></div></div>' +
-    '<button class="btn btn-primary" onclick="blogSearch()">Search</button>' +
-    (_bState.q||_bState.tag ? '<button class="btn btn-ghost" onclick="clearBlogFilter()">Clear</button>' : "") +
+    '<div class="page-header"><div class="container"><h1>Blog</h1><p>Editorial updates, student guidance notes, and counselor insights.</p></div></div>' +
+    '<section class="section"><div class="container catalog-shell">' +
+    '<aside class="catalog-side">' +
+    '<h4>Browse By</h4><p>Filter posts by tag topic.</p>' +
+    '<div id="b-tags" class="catalog-tools"></div>' +
+    (_bState.q||_bState.tag ? '<button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="clearBlogFilter()">Reset Filters</button>' : "") +
+    '</aside>' +
+    '<div class="catalog-main">' +
+    '<div class="catalog-tools">' +
+    '<div class="search-bar"><div class="ac-wrap"><input id="b-srch" type="text" placeholder="Search posts…" value="'+esc(_bState.q)+'" autocomplete="off"><div class="ac-drop" id="b-ac"></div></div>' +
+    '<button class="btn btn-primary" onclick="blogSearch()">Search</button></div>' +
     '</div>' +
-    '<div class="filter-bar" id="b-tags"></div>' +
-    '<p id="b-count" style="color:var(--muted);font-size:.85rem;margin-bottom:18px"></p>' +
-    '<div class="grid-3" id="b-grid"><div class="spinner"></div></div>' +
+    '<p id="b-count" class="catalog-count"></p>' +
+    '<div class="grid-3 catalog-grid" id="b-grid"><div class="spinner"></div></div>' +
     '<div class="pagination" id="b-pages"></div>' +
-    '</div></section>';
+    '</div></div></section>';
 
   initAC("b-srch", "b-ac");
 
@@ -2454,7 +2599,9 @@ function pageBlog(opts) {
 
     var grid = document.getElementById("b-grid");
     var cnt  = document.getElementById("b-count");
-    if (cnt) cnt.textContent = result.total + " post"+(result.total!==1?"s":"")+(_bState.q?' matching "'+_bState.q+'"':"")+(_bState.tag?" tagged #"+_bState.tag:"");
+    if (cnt) cnt.textContent = result.total
+      ? result.total + " post"+(result.total!==1?"s":"")+(_bState.q?' matching "'+_bState.q+'"':"")+(_bState.tag?" tagged #"+_bState.tag:"")
+      : "No blog posts found for the selected filters.";
 
     if (grid) grid.innerHTML = (result.rows && result.rows.length)
       ? result.rows.map(postCard).join("")
@@ -2464,8 +2611,7 @@ function pageBlog(opts) {
     apiAsync("home", {}).then(function(meta) {
       var bar = document.getElementById("b-tags");
       if (bar && meta.allTags && meta.allTags.length) {
-        bar.innerHTML = '<span style="font-size:.82rem;color:var(--muted)">Filter:</span>' +
-          '<a class="tag-pill'+(!_bState.tag?" active":"")+'" href="#" onclick="event.preventDefault();setBlogTag(\'\')">All</a>' +
+        bar.innerHTML = '<a class="tag-pill'+(!_bState.tag?" active":"")+'" href="#" onclick="event.preventDefault();setBlogTag(\'\')">All</a>' +
           meta.allTags.map(function(t) {
             return '<a class="tag-pill'+(_bState.tag===t?" active":"")+'" href="#" onclick="event.preventDefault();setBlogTag(\''+esc(t)+'\')">'+esc(t)+'</a>';
           }).join("");
@@ -2523,21 +2669,23 @@ function pageReferences(opts) {
   if (opts) { _rState.q = opts.q||""; _rState.category = opts.category||""; _rState.offset = opts.offset||0; }
 
   document.getElementById("app").innerHTML =
-    '<div class="page-header"><div class="container"><h1>📎 References</h1><p>Supplementary materials and reference resources.</p></div></div>' +
-    '<section class="section"><div class="container">' +
-    '<div class="flex-between mb-3">' +
-    '<div class="search-bar" style="max-width:none;flex:1;min-width:220px">' +
-    '<div class="ac-wrap"><input id="r-srch" type="text" placeholder="Search references…" value="'+esc(_rState.q)+'" autocomplete="off">' +
-    '<div class="ac-drop" id="r-ac"></div></div>' +
-    '<button class="btn btn-primary" onclick="refSearch()">Search</button>' +
-    (_rState.q||_rState.category ? '<button class="btn btn-ghost" onclick="clearRefFilter()">Clear</button>' : "") +
+    '<div class="page-header"><div class="container"><h1>References</h1><p>Trusted resources, documents, and supporting study material.</p></div></div>' +
+    '<section class="section"><div class="container catalog-shell">' +
+    '<aside class="catalog-side">' +
+    '<h4>Browse By</h4><p>Filter references by category.</p>' +
+    '<label class="form-label">Category</label>' +
+    '<select id="r-cat" class="form-control" onchange="refSearch()"><option value="">All Categories</option></select>' +
+    (_rState.q||_rState.category ? '<button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="clearRefFilter()">Reset Filters</button>' : "") +
+    '</aside>' +
+    '<div class="catalog-main">' +
+    '<div class="catalog-tools">' +
+    '<div class="search-bar"><div class="ac-wrap"><input id="r-srch" type="text" placeholder="Search references…" value="'+esc(_rState.q)+'" autocomplete="off"><div class="ac-drop" id="r-ac"></div></div>' +
+    '<button class="btn btn-primary" onclick="refSearch()">Search</button></div>' +
     '</div>' +
-    '<select id="r-cat" class="form-control" style="width:auto;min-width:150px" onchange="refSearch()"><option value="">All Categories</option></select>' +
-    '</div>' +
-    '<p id="r-count" style="color:var(--muted);font-size:.85rem;margin-bottom:18px"></p>' +
-    '<div class="grid-3" id="r-grid"><div class="spinner"></div></div>' +
+    '<p id="r-count" class="catalog-count"></p>' +
+    '<div class="grid-3 catalog-grid" id="r-grid"><div class="spinner"></div></div>' +
     '<div class="pagination" id="r-pages"></div>' +
-    '</div></section>';
+    '</div></div></section>';
 
   initAC("r-srch", "r-ac");
 
@@ -2546,7 +2694,11 @@ function pageReferences(opts) {
     var grid = document.getElementById("r-grid");
     var cnt  = document.getElementById("r-count");
     var end  = Math.min(_rState.offset + PAGE_SIZE, result.total);
-    if (cnt) cnt.textContent = "Showing "+(_rState.offset+1)+"–"+end+" of "+result.total+" references"+(_rState.q?' matching "'+_rState.q+'"':"")+(_rState.category?" in "+_rState.category:"");
+    if (cnt) {
+      cnt.textContent = result.total
+        ? "Showing "+(_rState.offset+1)+"–"+end+" of "+result.total+" references"+(_rState.q?' matching "'+_rState.q+'"':"")+(_rState.category?" in "+_rState.category:"")
+        : "No references found for the selected filters.";
+    }
 
     if (grid) grid.innerHTML = (result.rows && result.rows.length)
       ? result.rows.map(referenceCard).join("")
@@ -2629,21 +2781,23 @@ function pageCareerLabs(opts) {
   if (opts) { _lState.q = opts.q||""; _lState.category = opts.category||""; _lState.student = opts.student||""; _lState.offset = opts.offset||0; }
 
   document.getElementById("app").innerHTML =
-    '<div class="page-header"><div class="container"><h1>🧠 Career Laboratory</h1><p>Student research, guidance notes, video briefings, and downloadable attachments.</p></div></div>' +
-    '<section class="section"><div class="container">' +
-    '<div class="flex-between mb-3">' +
-    '<div class="search-bar" style="max-width:none;flex:1;min-width:220px">' +
-    '<div class="ac-wrap"><input id="l-srch" type="text" placeholder="Search career labs…" value="'+esc(_lState.q)+'" autocomplete="off">' +
-    '<div class="ac-drop" id="l-ac"></div></div>' +
-    '<button class="btn btn-primary" onclick="labSearch()">Search</button>' +
-    (_lState.q||_lState.category||_lState.student ? '<button class="btn btn-ghost" onclick="clearLabFilter()">Clear</button>' : '') +
+    '<div class="page-header"><div class="container"><h1>Career Laboratory</h1><p>Student research projects, mentor notes, video explainers, and downloadable reports.</p></div></div>' +
+    '<section class="section"><div class="container catalog-shell">' +
+    '<aside class="catalog-side">' +
+    '<h4>Browse By</h4><p>Filter career labs by category.</p>' +
+    '<label class="form-label">Category</label>' +
+    '<select id="l-cat" class="form-control" onchange="labSearch()"><option value="">All Categories</option></select>' +
+    (_lState.q||_lState.category||_lState.student ? '<button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="clearLabFilter()">Reset Filters</button>' : '') +
+    '</aside>' +
+    '<div class="catalog-main">' +
+    '<div class="catalog-tools">' +
+    '<div class="search-bar"><div class="ac-wrap"><input id="l-srch" type="text" placeholder="Search career labs…" value="'+esc(_lState.q)+'" autocomplete="off"><div class="ac-drop" id="l-ac"></div></div>' +
+    '<button class="btn btn-primary" onclick="labSearch()">Search</button></div>' +
     '</div>' +
-    '<select id="l-cat" class="form-control" style="width:auto;min-width:150px" onchange="labSearch()"><option value="">All Categories</option></select>' +
-    '</div>' +
-    '<p id="l-count" style="color:var(--muted);font-size:.85rem;margin-bottom:18px"></p>' +
-    '<div class="grid-3" id="l-grid"><div class="spinner"></div></div>' +
+    '<p id="l-count" class="catalog-count"></p>' +
+    '<div class="grid-3 catalog-grid" id="l-grid"><div class="spinner"></div></div>' +
     '<div class="pagination" id="l-pages"></div>' +
-    '</div></section>';
+    '</div></div></section>';
 
   initAC("l-srch", "l-ac");
 
@@ -2652,7 +2806,11 @@ function pageCareerLabs(opts) {
     var grid = document.getElementById("l-grid");
     var cnt  = document.getElementById("l-count");
     var end  = Math.min(_lState.offset + PAGE_SIZE, result.total);
-    if (cnt) cnt.textContent = "Showing "+(_lState.offset+1)+"–"+end+" of "+result.total+" career labs"+(_lState.q?' matching "'+_lState.q+'"':"")+(_lState.category?" in "+_lState.category:"")+(_lState.student?" for "+_lState.student:"");
+    if (cnt) {
+      cnt.textContent = result.total
+        ? "Showing "+(_lState.offset+1)+"–"+end+" of "+result.total+" career labs"+(_lState.q?' matching "'+_lState.q+'"':"")+(_lState.category?" in "+_lState.category:"")+(_lState.student?" for "+_lState.student:"")
+        : "No career labs found for the selected filters.";
+    }
 
     if (grid) grid.innerHTML = (result.rows && result.rows.length)
       ? result.rows.map(careerLabCard).join("")
@@ -2766,8 +2924,12 @@ function pageStaff() {
       {num:s.totalCareerLabs, label:"Career Labs", published:s.publishedCareerLabs},
       {num:s.activeUsers, label:"Active Users", published:"—"}
     ].map(function(x) {
-      return '<div class="kpi-card"><div class="kpi-value">' + esc(x.num) + '</div><div class="kpi-label">' + esc(x.label) + '</div>' +
-        (x.published && x.published !== "—" ? '<div class="kpi-meta">' + esc(x.published) + ' published</div>' : '') +
+      var num = x.num == null ? 0 : x.num;
+      var publishedMeta = (x.published !== "—" && x.published != null)
+        ? '<div class="kpi-meta">' + esc(x.published) + ' published</div>'
+        : '';
+      return '<div class="kpi-card"><div class="kpi-value">' + esc(num) + '</div><div class="kpi-label">' + esc(x.label) + '</div>' +
+        publishedMeta +
         '</div>';
     }).join("");
 
@@ -2845,8 +3007,7 @@ function pageStaff() {
         '</article>';
     }).join("");
 
-    var usersCard = '<div class="staff-users">' +
-      '<div class="staff-users-head"><h3 class="library-title">👥 User Management</h3><div class="staff-users-note">Change roles for editors and students without leaving the portal. Admins keep full access.</div></div>';
+    var usersCard = '<div class="staff-users-head"><h3 class="library-title">👥 User Management</h3><div class="staff-users-note">Change roles for editors and students without leaving the portal. Admins keep full access.</div></div>';
 
     if (users && users.length) {
       var roles = ["Student","Editor","Admin"];
@@ -2864,8 +3025,6 @@ function pageStaff() {
     } else {
       usersCard += '<div class="staff-users-body"><div class="empty-inline">No users yet</div></div>';
     }
-    usersCard += '</div>';
-
     document.getElementById("staff-library").innerHTML = libraryHtml;
     document.getElementById("users-table-wrap").innerHTML = usersCard;
   }).catch(defaultErr);
