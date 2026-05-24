@@ -535,7 +535,32 @@ function signOut() {
 var _page  = "home";
 var _state = {};
 
+function _pageFile(page) {
+  var map = {
+    "home": "index.html",
+    "courses": "courses.html",
+    "blog": "blogs.html",
+    "references": "references.html",
+    "career-lab": "careerlab.html",
+    "staff": "staff.html"
+  };
+  return map[page] || "index.html";
+}
+
+function _currentFileName() {
+  return String((window.location.pathname || "").split("/").pop() || "index.html").toLowerCase();
+}
+
 function route(page, params) {
+  var isTopLevel = page === "home" || page === "courses" || page === "blog" || page === "references" || page === "career-lab" || page === "staff";
+  if (isTopLevel && (!params || !Object.keys(params).length)) {
+    var targetFile = _pageFile(page);
+    if (_currentFileName() !== targetFile.toLowerCase()) {
+      window.location.href = targetFile;
+      return;
+    }
+  }
+
   _page  = page;
   _state = params || {};
   setActiveNav(page);
