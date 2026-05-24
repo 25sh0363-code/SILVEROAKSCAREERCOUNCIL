@@ -477,6 +477,8 @@ function _filterCareerLabs(rows, opts) {
 document.getElementById("footer-year").textContent = new Date().getFullYear();
 
 window.onGoogleLibraryLoad = function() {
+  if (window.__gsiInitialized) return;
+  window.__gsiInitialized = true;
   google.accounts.id.initialize({
     client_id:   CLIENT_ID,
     callback:    handleCredential,
