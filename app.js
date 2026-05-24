@@ -1344,22 +1344,35 @@ function renderLogin(errMsg) {
   document.getElementById("mobile-staff").classList.add("hidden");
   var cfg = _checkSupabaseConfig();
   var cfgMsg = cfg.ok ? "" : ("Supabase not configured: " + cfg.message + " Update SUPABASE_URL and SUPABASE_ANON_KEY in index.html.");
+  var loginHint = '<div class="auth-points">' +
+    '<div class="auth-point">Private access for school accounts</div>' +
+    '<div class="auth-point">Course, blog, reference, and career lab tools</div>' +
+    '<div class="auth-point">Fast search with accessible navigation</div>' +
+    '</div>';
   document.getElementById("app").innerHTML =
-    '<div style="background:linear-gradient(135deg,#a01c2e 0%,#c73546 50%,#8b1621 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden">' +
-    '<div style="position:absolute;inset:0;background:url(\'data:image/svg+xml,%3Csvg width=%27100%27 height=%27100%27 viewBox=%270 0 100 100%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2745%27 fill=%27none%27 stroke=%27rgba(255,255,255,0.03)%27 stroke-width=%271%27/%3E%3C/svg%3E) repeat;pointer-events:none;opacity:.5"></div>' +
-    '<div style="width:100%;max-width:480px;position:relative;z-index:2">' +
-    '<div style="text-align:center;margin-bottom:32px">' +
-    '<div style="font-size:4rem;margin-bottom:12px">🎓</div>' +
-    '<h1 style="color:#fff;font-size:2.2rem;margin:0;font-weight:800;letter-spacing:-.02em">'+APP_NAME+'</h1>' +
-    '<p style="color:rgba(255,255,255,.7);font-size:.95rem;margin-top:8px;font-weight:500">Silver Oaks Hyderabad — Internal Platform</p>' +
-    '</div>' +
-    '<div style="background:#fff;border-radius:16px;padding:40px;box-shadow:0 25px 60px rgba(0,0,0,.25);border:1px solid rgba(232,227,222,.7)">' +
-    '<h2 style="text-align:center;margin-bottom:8px;color:#1a1a1a;font-size:1.4rem;font-weight:700">Welcome Back</h2>' +
-    '<p style="text-align:center;color:#5a5a5a;font-size:.95rem;margin-bottom:24px;font-weight:500">Only <strong style="color:#1a1a1a;font-weight:700">@hyd.silveroaks.co.in</strong> accounts are allowed.</p>' +
-    (errMsg || cfgMsg ? '<div class="alert alert-danger" style="justify-content:flex-start">⚠️ <span>'+esc(errMsg || cfgMsg)+'</span></div>' : '<div class="alert alert-info" style="justify-content:flex-start">🔐 <span>Click below to sign in with your school account</span></div>') +
-    '<div id="g_signin_btn" style="display:flex;justify-content:center;margin-top:24px;margin-bottom:16px"></div>' +
-    '<p style="text-align:center;font-size:.8rem;color:#5a5a5a;margin:0;font-weight:600">Secure. Private. For Silver Oaks Staff & Students.</p>' +
-    '</div></div></div>';
+    '<div class="auth-shell">' +
+    '<div class="auth-orb auth-orb-a"></div>' +
+    '<div class="auth-orb auth-orb-b"></div>' +
+    '<div class="auth-grid">' +
+    '<section class="auth-panel">' +
+    '<div class="auth-kicker">Silver Oaks Career Council</div>' +
+    '<h1>' + esc(APP_NAME) + '</h1>' +
+    '<p class="auth-lead">A focused workspace for students and staff to discover courses, read guidance, review references, and publish career lab work.</p>' +
+    loginHint +
+    '<div class="auth-meta">Internal access only. Use your verified school account.</div>' +
+    '</section>' +
+    '<section class="auth-card">' +
+    '<div class="auth-card-head">' +
+    '<div class="auth-mark">SO</div>' +
+    '<div>' +
+    '<div class="auth-card-title">Sign in</div>' +
+    '<div class="auth-card-subtitle">Use your @hyd.silveroaks.co.in Google account.</div>' +
+    '</div></div>' +
+    ((errMsg || cfgMsg) ? '<div class="alert alert-danger">⚠️ <span>'+esc(errMsg || cfgMsg)+'</span></div>' : '<div class="alert alert-info">🔐 <span>Secure access for the school community.</span></div>') +
+    '<div id="g_signin_btn" class="auth-google"></div>' +
+    '<p class="auth-note">If you are not on a verified school account, access will be blocked.</p>' +
+    '</section>' +
+    '</div></div>';
 
   if (window.google && google.accounts && google.accounts.id) {
     google.accounts.id.renderButton(
