@@ -35,111 +35,147 @@ function _checkSupabaseConfig() {
   }
   return { ok: true };
 }
-
-function _db() {
-  return _initSupabase();
-}
-
-function _decodeJwt(token) {
-  try {
-    var payload = token.split('.')[1] || "";
-    while (payload.length % 4) payload += "=";
-    payload = payload.replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(atob(payload));
-  } catch (e) {
-    return null;
+function pageHome() {
+  function featureRail(opts) {
+    var classes = "section reveal-up home-section " + (opts.theme || "home-section-light");
+    var btnClass = opts.theme === "home-section-dark" ? "btn home-dark-btn" : "btn btn-ghost";
+    return (
+      '<section class="section ' + classes + '"><div class="container">' +
+      '<div class="home-section-head">' +
+      '<div><p class="home-overline">' + opts.kicker + '</p><h2 class="home-section-title">' + opts.title + '</h2><p class="home-section-sub">' + opts.desc + '</p></div>' +
+      '<button class="' + btnClass + '" onclick="route(\'' + opts.route + '\')">' + opts.cta + '</button></div>' +
+      '<div class="spotlight-wrap ' + (opts.theme === "home-section-dark" ? "" : "spotlight-light") + '">' +
+      '<button class="spotlight-nav" aria-label="Previous" onclick="moveSpotlight(\'' + opts.trackId + '\',-1)">‹</button>' +
+      '<div class="spotlight-track" id="' + opts.trackId + '"><div class="spinner"></div></div>' +
+      '<button class="spotlight-nav" aria-label="Next" onclick="moveSpotlight(\'' + opts.trackId + '\',1)">›</button>' +
+      '</div></div></section>'
+    );
   }
-}
 
-function _nowIso() {
-  return new Date().toISOString();
-}
+  function statPill(label, value, desc, linkPage) {
+    return '<article class="home-stat-pill">' +
+      '<div class="home-stat-value">' + esc(value) + '</div>' +
+      '<div class="home-stat-label">' + esc(label) + '</div>' +
+      '<p>' + esc(desc) + '</p>' +
+      (linkPage ? '<button class="btn btn-ghost btn-sm" onclick="route(\'' + linkPage + '\')">Open</button>' : '') +
+      '</article>';
+  }
 
-function _uuid() {
-  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-  return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
+  var chips = ["Courses", "Career Labs", "References", "Videos", "Mentor Insights"]
+    .map(function(label){ return '<span class="hero-chip">' + label + '</span>'; })
+    .join("");
 
-function _isAllowedEmail(email) {
-  return String(email || "").toLowerCase().endsWith("@hyd.silveroaks.co.in");
-}
+  var quickActions = [
+    { title: "Explore courses", desc: "Browse by class level and category.", page: "courses" },
+    { title: "Read guidance", desc: "Open blog posts and counselor notes.", page: "blog" },
+    { title: "Open references", desc: "Find study material and supporting docs.", page: "references" },
+    { title: "View career labs", desc: "See student research and project work.", page: "career-lab" }
+  ].map(function(item) {
+    return '<button class="quick-action" onclick="route(\'' + item.page + '\')">' +
+      '<span class="quick-action-title">' + esc(item.title) + '</span>' +
+      '<span class="quick-action-desc">' + esc(item.desc) + '</span>' +
+      '</button>';
+  }).join("");
 
-function _toCourse(row) {
-  return {
-    ID: row.id,
-    Title: row.title,
-    Description: row.description,
-    Instructor: row.instructor,
-    Category: row.category,
-    Grade: row.grade,
-    ThumbnailURL: row.thumbnail_url,
-    YouTubeURL: row.youtube_url,
-    PDFLink: row.pdf_link,
-    Content: row.content,
-    Status: row.status,
-    CreatedDate: row.created_date,
-    UpdatedDate: row.updated_date,
-  };
-}
+  var spotlightStats = [
+    { label: "Learning tracks", value: "4", desc: "Courses, blog, references, and career lab content kept in one flow.", linkPage: "courses" },
+    { label: "Fast discovery", value: "Search", desc: "One search bar surfaces every resource type in seconds.", linkPage: "search" },
+    { label: "Student work", value: "Labs", desc: "Research, mentor notes, and portfolio-ready submissions.", linkPage: "career-lab" }
+  ].map(function(item) { return statPill(item.label, item.value, item.desc, item.linkPage); }).join("");
 
-function _toPost(row) {
-  return {
-    ID: row.id,
-    Title: row.title,
-    Content: row.content,
-    FeaturedImageURL: row.featured_image_url,
-    PDFLink: row.pdf_link,
-    AuthorEmail: row.author_email,
-    Tags: row.tags,
-    Status: row.status,
-    CreatedDate: row.created_date,
-    UpdatedDate: row.updated_date,
-  };
-}
+  var pathways = [
+    {
+      title: "Career Discovery",
+      desc: "Find strengths, interests, and future pathways using curated guides and mentor tasks.",
+      route: "references",
+      image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1000&q=80"
+    },
+    {
+      title: "Skill Building",
+      desc: "Use focused micro-courses and challenge-based learning to build practical confidence.",
+      route: "courses",
+      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=80"
+    },
+    {
+      title: "Portfolio Readiness",
+      desc: "Document projects, reflections, and research in the Career Lab for future applications.",
+      route: "career-lab",
+      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1000&q=80"
+    }
+  ];
 
-function _toReference(row) {
-  return {
-    ID: row.id,
-    Title: row.title,
-    Description: row.description,
-    Author: row.author,
-    Category: row.category,
-    ThumbnailURL: row.thumbnail_url,
-    YouTubeURL: row.youtube_url,
-    PDFLink: row.pdf_link,
-    Content: row.content,
-    Status: row.status,
-    CreatedDate: row.created_date,
-    UpdatedDate: row.updated_date,
-  };
-}
+  var pathwayHtml = pathways.map(function(item) {
+    return '<article class="pathway-card">' +
+      '<img src="' + item.image + '" alt="' + esc(item.title) + '" loading="lazy" referrerpolicy="no-referrer">' +
+      '<div class="pathway-body"><h3>' + esc(item.title) + '</h3><p>' + esc(item.desc) + '</p>' +
+      '<button class="btn btn-sm" onclick="route(\'' + item.route + '\')">Explore</button></div></article>';
+  }).join("");
 
-function _toCareerLab(row) {
-  return {
-    ID: row.id,
-    Title: row.title,
-    Student: row.student,
-    Description: row.description,
-    Mentor: row.mentor,
-    Category: row.category,
-    ThumbnailURL: row.thumbnail_url,
-    YouTubeURL: row.youtube_url,
-    PDFLink: row.pdf_link,
-    Content: row.content,
-    Status: row.status,
-    CreatedDate: row.created_date,
-    UpdatedDate: row.updated_date,
-  };
-}
+  document.getElementById("app").innerHTML =
+    '<section class="hero"><div class="container hero-shell"><div class="hero-grid">' +
+    '<div class="hero-content">' +
+    '<div class="hero-kicker">Silver Oaks Career Council</div>' +
+    '<h1>Designed for Direction.<br>Built for Student Futures.</h1>' +
+    '<p class="hero-tagline">A refined workspace for discovery, planning, and execution.</p>' +
+    '<p>Access trusted resources, skill-based courses, expert reflections, and real student work through one focused platform.</p>' +
+    '<div class="hero-cta">' +
+    '<div class="search-bar home-search">' +
+    '<div class="ac-wrap"><input id="h-srch" type="text" placeholder="Search courses, blog posts, references..." autocomplete="off"><div class="ac-drop" id="h-ac"></div></div>' +
+    '<button class="btn btn-accent btn-lg" onclick="doHomeSearch()">Search</button>' +
+    '</div>' +
+    '<div class="hero-chip-row">' + chips + '</div>' +
+    '</div>' +
+    '</div>' +
+    '<div class="hero-side-panel">' +
+    '<div class="hero-side-card">' +
+    '<p class="home-overline">At a glance</p>' +
+    '<h2 class="hero-side-title">Everything in one calm, focused interface</h2>' +
+    '<p class="hero-side-copy">Built for quick scanning, easy navigation, and low-friction access across every resource type.</p>' +
+    '<div class="hero-side-actions">' + quickActions + '</div>' +
+    '</div>' +
+    '</div>' +
+    '</div>' +
+    '<div class="hero-stats">' + spotlightStats + '</div>' +
+    '</div></section>' +
+    '<section class="section reveal-up home-pathways"><div class="container">' +
+    '<div class="home-section-head home-section-head-split"><div><p class="home-overline">Guided Journey</p><h2 class="home-section-title">Three focused tracks for student growth</h2>' +
+    '<p class="home-section-sub">Everything is structured so students can discover, build, and present with clarity.</p></div><a class="btn btn-ghost" href="#" onclick="event.preventDefault();route(\'search\')">Browse everything</a></div>' +
+    '<div class="pathway-grid">' + pathwayHtml + '</div></div></section>' +
+    featureRail({ kicker: "Curated Learning", title: "Featured Courses", desc: "Handpicked modules for real school outcomes.", cta: "View All Courses →", route: "courses", trackId: "home-courses", theme: "home-section-alt" }) +
+    featureRail({ kicker: "Writing & Thought", title: "Latest from Blog", desc: "Career awareness, academic insights, and guidance notes.", cta: "View All Posts →", route: "blog", trackId: "home-posts", theme: "home-section-light" }) +
+    featureRail({ kicker: "Reference Library", title: "Featured References", desc: "Reliable documents and practical materials for decision making.", cta: "View All References →", route: "references", trackId: "home-refs", theme: "home-section-alt" }) +
+    featureRail({ kicker: "Student Work", title: "Career Laboratory", desc: "Research-backed student submissions and mentor-supported progress.", cta: "View All Labs →", route: "career-lab", trackId: "home-labs", theme: "home-section-dark" });
 
-function _toUser(row) {
-  return {
-    Name: row.name,
-    Email: row.email,
-    Role: row.role,
-    Status: row.status,
-    CreatedDate: row.created_date,
-  };
+  initAC("h-srch", "h-ac");
+  initRevealMotion(document.getElementById("app"));
+  var hSrch = document.getElementById("h-srch");
+  if (hSrch) hSrch.addEventListener("keydown", function(e) { if (e.key === "Enter") doHomeSearch(); });
+
+  api("home", {}, function(data) {
+    var cEl = document.getElementById("home-courses");
+    if (cEl) cEl.innerHTML = (data.featuredCourses && data.featuredCourses.length)
+      ? data.featuredCourses.map(courseCard).join("")
+      : '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📭</div><p>No courses yet.</p></div>';
+    initSpotlight("home-courses");
+
+    var pEl = document.getElementById("home-posts");
+    if (pEl) pEl.innerHTML = (data.featuredPosts && data.featuredPosts.length)
+      ? data.featuredPosts.map(postCard).join("")
+      : '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📭</div><p>No posts yet.</p></div>';
+    initSpotlight("home-posts");
+
+    var rEl = document.getElementById("home-refs");
+    if (rEl) rEl.innerHTML = (data.featuredReferences && data.featuredReferences.length)
+      ? data.featuredReferences.map(referenceCard).join("")
+      : '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📭</div><p>No references yet.</p></div>';
+    initSpotlight("home-refs");
+
+    var lEl = document.getElementById("home-labs");
+    if (lEl) lEl.innerHTML = (data.featuredCareerLabs && data.featuredCareerLabs.length)
+      ? data.featuredCareerLabs.map(careerLabCard).join("")
+      : '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📭</div><p>No career labs yet.</p></div>';
+    initSpotlight("home-labs");
+  });
 }
 
 function _courseRowToDb(payload, existing) {
@@ -1401,8 +1437,7 @@ function pageHome() {
   function featureRail(opts) {
     var classes = "section reveal-up home-section " + (opts.theme || "home-section-light");
     var btnClass = opts.theme === "home-section-dark" ? "btn home-dark-btn" : "btn btn-ghost";
-    return (
-      '<section class="' + classes + '"><div class="container">' +
+    return '<section class="section ' + classes + '"><div class="container">' +
       '<div class="home-section-head">' +
       '<div><p class="home-overline">' + opts.kicker + '</p><h2 class="home-section-title">' + opts.title + '</h2><p class="home-section-sub">' + opts.desc + '</p></div>' +
       '<button class="' + btnClass + '" onclick="route(\'' + opts.route + '\')">' + opts.cta + '</button></div>' +
@@ -1410,8 +1445,7 @@ function pageHome() {
       '<button class="spotlight-nav" aria-label="Previous" onclick="moveSpotlight(\'' + opts.trackId + '\',-1)">‹</button>' +
       '<div class="spotlight-track" id="' + opts.trackId + '"><div class="spinner"></div></div>' +
       '<button class="spotlight-nav" aria-label="Next" onclick="moveSpotlight(\'' + opts.trackId + '\',1)">›</button>' +
-      '</div></div></section>'
-    );
+      '</div></div></section>';
   }
 
   var chips = ["Courses", "Career Labs", "References", "Videos", "Mentor Insights"]
@@ -2158,6 +2192,22 @@ function _editCourse(id) {
     var c = courses.find(function(x){ return x.ID === id; });
     route("staff-course-form", { course: c || null });
   });
+}
+
+function pageSectionShell(pageTitle, intro, asideTitle, asideText, contentHtml) {
+  document.getElementById("app").innerHTML =
+    '<section class="page-hero section"><div class="container page-shell">' +
+    '<div class="page-shell-main">' +
+    '<p class="home-overline">' + esc(pageTitle) + '</p>' +
+    '<h1>' + esc(pageTitle) + '</h1>' +
+    '<p class="page-shell-intro">' + esc(intro) + '</p>' +
+    '</div>' +
+    '<aside class="page-shell-aside">' +
+    '<div class="page-shell-aside-title">' + esc(asideTitle) + '</div>' +
+    '<p>' + esc(asideText) + '</p>' +
+    '</aside>' +
+    '</div></section>' +
+    contentHtml;
 }
 function _editPost(id) {
   api("allPosts", {}, function(posts) {
