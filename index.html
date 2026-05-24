@@ -367,23 +367,23 @@ a:not(.btn):not(.page-btn):not(.tag-pill):not(.tab):not(.tab-button):not([role="
   .nav-brand{font-size:18px}
   .nav-brand img{height:36px}
   .site-header{padding:12px 16px;min-height:auto}
-  .nav-collapse{display:flex;position:fixed;inset:0;width:100vw;height:100vh;max-width:none;background:#fff;padding:72px 20px 20px;border-radius:0;box-shadow:none;flex-direction:column;z-index:1000;overflow-y:auto;overflow-x:hidden;border-left:none;transform:translateX(100%);transition:transform var(--t);box-sizing:border-box;pointer-events:none}
+  .nav-collapse{display:flex;position:fixed;inset:0;width:100vw;height:100vh;max-width:none;background:linear-gradient(120deg,var(--primary) 0%,var(--accent) 60%);color:#fff;padding:72px 20px 20px;border-radius:0;box-shadow:none;flex-direction:column;z-index:1000;overflow-y:auto;overflow-x:hidden;border-left:none;transform:translateX(100%);transition:transform var(--t);box-sizing:border-box;pointer-events:none}
   .nav-collapse.open{transform:translateX(0)}
   .nav-collapse.open{pointer-events:auto}
-  .nav-close{position:absolute;top:16px;right:16px;width:44px;height:44px;min-width:44px;min-height:44px;background:#fff;border:1px solid rgba(17,24,39,.1);font-size:20px;padding:0;cursor:pointer;border-radius:10px;color:var(--text);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-  .nav-close:hover{background:#F8FAFC;color:var(--primary);transform:none;box-shadow:none}
+  .nav-close{position:absolute;top:16px;right:16px;width:44px;height:44px;min-width:44px;min-height:44px;background:transparent;border:1px solid rgba(255,255,255,0.08);font-size:20px;padding:0;cursor:pointer;border-radius:10px;color:#fff;display:inline-flex;align-items:center;justify-content:center}
+  .nav-close:hover{background:rgba(255,255,255,0.06);color:#fff;transform:none}
   .nav-links{flex-direction:column;width:100%;padding:0;gap:16px;overflow-y:auto;max-height:none}
   .nav-links li{flex:1 1 100%;width:100%}
-  .nav-links a{width:100%;border-radius:0;background:transparent;border:none;border-bottom:1px solid rgba(17,24,39,.08);justify-content:flex-start;padding:0;color:var(--text);font-size:1rem;font-weight:700;gap:10px;min-height:44px}
-  .nav-links a.active{background:transparent;border-bottom-color:var(--primary);color:var(--primary)}
-  .nav-links a:hover{background:transparent;color:var(--primary)}
-  .nav-collapse .nav-user{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding-top:16px;border-top:1px solid rgba(17,24,39,.08);margin-top:auto;flex-wrap:wrap}
-  .nav-account{padding:0;gap:8px;max-width:none;flex:1 1 auto;background:transparent;border:none;min-width:0;overflow:hidden;color:var(--text);min-height:44px}
+  .nav-links a{width:100%;border-radius:0;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.06);justify-content:flex-start;padding:0;color:#fff;font-size:1rem;font-weight:700;gap:10px;min-height:44px}
+  .nav-links a.active{background:transparent;border-bottom-color:rgba(255,255,255,0.12);color:#fff}
+  .nav-links a:hover{background:transparent;color:#fff}
+  .nav-collapse .nav-user{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);margin-top:auto;flex-wrap:wrap}
+  .nav-account{padding:0;gap:8px;max-width:none;flex:1 1 auto;background:transparent;border:none;min-width:0;overflow:hidden;color:#fff;min-height:44px}
   .nav-account-meta{display:flex;min-width:0;overflow:hidden}
   .nav-account-name{max-width:none;font-size:.95rem}
   .nav-account-role{font-size:.875rem}
   .nav-account-email{display:block;max-width:150px;font-size:.875rem}
-  .nav-account-logout{height:48px;padding:0 12px;font-size:.82rem;flex:0 0 auto;background:#fff;color:var(--primary);margin-left:0;width:100%;justify-content:center;border-color:var(--primary)}
+  .nav-account-logout{height:48px;padding:0 12px;font-size:.82rem;flex:0 0 auto;background:rgba(255,255,255,0.12);color:#fff;margin-left:0;width:100%;justify-content:center;border-color:rgba(255,255,255,0.12)}
   .hero{padding:48px 16px;min-height:auto;gap:0}
   .hero-content{align-items:flex-start}
   .hero h1{font-size:clamp(2.25rem,5vw,2.5rem);max-width:700px}
