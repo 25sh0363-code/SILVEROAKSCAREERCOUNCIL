@@ -493,6 +493,260 @@ a:not(.btn):not(.page-btn):not(.tag-pill):not(.tab):not(.tab-button):not([role="
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
 
+/* ===== Total Redesign System (Keeps Features Intact) ===== */
+:root{
+  --surface:#FFFFFF;
+  --surface-alt:#F4F7FB;
+  --ink:#0f172a;
+  --ink-soft:#475569;
+  --line:#d9e1eb;
+  --danger-soft:#fdebed;
+}
+
+body{
+  background:
+    radial-gradient(circle at 15% -20%, rgba(184,15,46,.1), rgba(184,15,46,0) 36%),
+    radial-gradient(circle at 100% 0%, rgba(214,26,60,.09), rgba(214,26,60,0) 35%),
+    #f2f5fa;
+  color:var(--ink);
+}
+
+.section{padding:78px 0}
+.nav-close{display:none}
+.site-header{
+  background:linear-gradient(95deg,#85081f 0%,#b50f2d 52%,#d21f43 100%);
+  box-shadow:0 10px 26px rgba(103,11,30,.35);
+  backdrop-filter:blur(8px);
+}
+.nav-inner{max-width:1480px}
+.nav-brand{letter-spacing:.04em}
+.nav-brand img{
+  border-radius:12px;
+  background:rgba(255,255,255,.14);
+  padding:4px;
+}
+.nav-links{gap:16px}
+.nav-links a{
+  font-size:.86rem;
+  letter-spacing:.11em;
+  padding:0 8px;
+  border-bottom:0;
+}
+.nav-links a.active,
+.nav-links a:hover{
+  background:rgba(255,255,255,.14);
+  border-radius:10px;
+  border-bottom:0;
+}
+.nav-avatar{
+  background:rgba(255,255,255,.2);
+  color:#fff;
+}
+.nav-account-logout{
+  border-color:rgba(255,255,255,.35);
+  color:#fff;
+  background:rgba(255,255,255,.12);
+}
+.nav-account-logout:hover{
+  background:rgba(255,255,255,.22);
+  border-color:rgba(255,255,255,.55);
+  color:#fff;
+}
+
+.hero{
+  min-height:68vh;
+  padding:98px 24px 84px;
+  background:
+    linear-gradient(120deg, rgba(7,10,25,.6), rgba(7,10,25,.24)),
+    url("https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=2000&q=80") center/cover no-repeat;
+}
+.hero::before{inset:auto -4% -28% auto}
+.hero::after{inset:-34% auto auto -9%}
+.hero h1{max-width:900px}
+.hero-tagline{font-size:clamp(1.08rem,1.4vw,1.24rem)}
+.hero-chip{
+  background:rgba(10,13,33,.36);
+  border-color:rgba(255,255,255,.35);
+}
+.hero-kicker{
+  background:rgba(5,8,22,.34);
+  border-color:rgba(255,255,255,.4);
+}
+
+.home-overline{
+  margin:0 0 10px;
+  text-transform:uppercase;
+  letter-spacing:.13em;
+  font-size:.78rem;
+  color:var(--primary);
+  font-weight:800;
+}
+.home-pathways{
+  background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);
+}
+.pathway-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:22px;
+}
+.pathway-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 16px 34px rgba(15,23,42,.09);
+  display:flex;
+  flex-direction:column;
+}
+.pathway-card img{
+  width:100%;
+  aspect-ratio:16/10;
+  object-fit:cover;
+}
+.pathway-body{
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.pathway-body h3{
+  margin:0;
+  font-size:1.28rem;
+}
+.pathway-body p{
+  margin:0;
+  color:var(--ink-soft);
+}
+
+.home-section{
+  border-top:1px solid #ecf0f5;
+}
+.home-section-head{
+  margin-bottom:28px;
+}
+.home-section-dark{
+  background:
+    radial-gradient(circle at right top, rgba(255,255,255,.16), rgba(255,255,255,0) 40%),
+    linear-gradient(130deg,#7D081D 0%,#B80F2E 52%,#D61A3C 100%);
+}
+
+.spotlight-item .card,
+.kpi-card,.library-card,.stat-card,.card,.panel,.loader-box,.staff-users{
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:0 14px 32px rgba(15,23,42,.08);
+}
+.spotlight-item .card .card-body{padding:20px}
+
+.page-header,.staff-hero{
+  padding:82px 24px 70px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(255,255,255,.24), rgba(255,255,255,0) 38%),
+    linear-gradient(100deg,#85081f 0%,#b50f2d 54%,#d21f43 100%);
+}
+
+.site-footer{
+  background:linear-gradient(100deg,#7c0a1e 0%,#ab122f 64%,#c81f42 100%);
+}
+.site-footer .container{
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr;
+  gap:26px;
+  border-top:1px solid rgba(255,255,255,.24);
+}
+.site-footer .container::before,
+.site-footer .container::after,
+.site-footer p::before,
+.site-footer p::after{
+  content:none !important;
+}
+.site-footer p{
+  font-size:.95rem;
+  color:#fff;
+}
+.site-footer p:first-child,
+.site-footer p:nth-child(2),
+.site-footer p:nth-child(3){
+  font-size:.95rem;
+  color:#fff;
+}
+
+.mobile-dock{display:none}
+
+@media(max-width:1024px){
+  .pathway-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:768px){
+  main{padding-bottom:90px}
+  .site-footer{padding-bottom:104px}
+  .nav-close{display:inline-flex}
+  .site-header{
+    padding:10px 14px;
+    border-bottom:1px solid rgba(255,255,255,.22);
+  }
+  .nav-brand{
+    font-size:1.1rem;
+    max-width:70vw;
+  }
+  .nav-brand img{height:34px}
+  .hero{
+    min-height:auto;
+    padding:72px 16px 58px;
+  }
+  .hero h1{font-size:clamp(2rem,8vw,2.35rem)}
+  .hero-chips{gap:8px}
+  .pathway-grid{grid-template-columns:1fr}
+  .home-section-head{margin-bottom:22px}
+
+  .mobile-dock{
+    position:fixed;
+    left:10px;
+    right:10px;
+    bottom:10px;
+    height:72px;
+    padding:8px 10px;
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:1fr;
+    gap:8px;
+    background:rgba(7,12,26,.88);
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:20px;
+    backdrop-filter:blur(12px);
+    z-index:1200;
+    box-shadow:0 18px 36px rgba(2,6,23,.34);
+  }
+  .dock-item{
+    border:0;
+    background:transparent;
+    color:rgba(255,255,255,.86);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    border-radius:12px;
+    font:inherit;
+    cursor:pointer;
+    transition:background-color var(--t),color var(--t);
+  }
+  .dock-item.active{
+    background:rgba(255,255,255,.16);
+    color:#fff;
+  }
+  .dock-icon{
+    font-size:1.06rem;
+    line-height:1;
+  }
+  .dock-label{
+    font-size:.67rem;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -519,7 +773,7 @@ a:not(.btn):not(.page-btn):not(.tag-pill):not(.tab):not(.tab-button):not([role="
         <li><a href="javascript:void(0)" onclick="route('blog');return false;" data-page="blog" title="Blog"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 3H21V10H3V3Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 14H15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 18H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Blog</span></a></li>
         <li><a href="javascript:void(0)" onclick="route('references');return false;" data-page="references" title="References"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 4H5C4.44772 4 4 4.44772 4 5V19C4 19.5523 4.44772 20 5 20H19C19.5523 20 20 19.5523 20 19V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 9H15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 13H13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>References</span></a></li>
         <li><a href="javascript:void(0)" onclick="route('career-lab');return false;" data-page="career-lab" title="Career Lab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 20C4 16.6863 7.58172 14 12 14C16.4183 14 20 16.6863 20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Lab</span></a></li>
-        <li id="nav-staff" class="hidden"><a href="javascript:void(0)" onclick="route('staff');return false;" data-page="staff" title="Staff" style="color:var(--gold)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 11C13.6569 11 15 9.65685 15 8C15 6.34315 13.6569 5 12 5C10.3431 5 9 6.34315 9 8C9 9.65685 10.3431 11 12 11Z" stroke="currentColor" stroke-width="1.8"/><path d="M3 20C3 16.6863 6.58172 14 12 14C17.4183 14 21 16.6863 21 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Staff</span></a></li>
+        <li id="nav-staff" class="hidden"><a href="javascript:void(0)" onclick="route('staff');return false;" data-page="staff" title="Staff"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 11C13.6569 11 15 9.65685 15 8C15 6.34315 13.6569 5 12 5C10.3431 5 9 6.34315 9 8C9 9.65685 10.3431 11 12 11Z" stroke="currentColor" stroke-width="1.8"/><path d="M3 20C3 16.6863 6.58172 14 12 14C17.4183 14 21 16.6863 21 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Staff</span></a></li>
       </ul>
       <div class="nav-user" id="nav-user"></div>
     </div>
@@ -540,6 +794,27 @@ a:not(.btn):not(.page-btn):not(.tag-pill):not(.tab):not(.tab-button):not([role="
     <p style="margin-top:6px;opacity:.6">© <span id="footer-year"></span> Silver Oaks Career Council</p>
   </div>
 </footer>
+
+<nav class="mobile-dock hidden" id="mobile-dock" aria-label="Primary">
+  <button class="dock-item" data-page="home" onclick="route('home')" aria-label="Home">
+    <span class="dock-icon">⌂</span><span class="dock-label">Home</span>
+  </button>
+  <button class="dock-item" data-page="courses" onclick="route('courses')" aria-label="Courses">
+    <span class="dock-icon">▦</span><span class="dock-label">Courses</span>
+  </button>
+  <button class="dock-item" data-page="blog" onclick="route('blog')" aria-label="Blog">
+    <span class="dock-icon">✎</span><span class="dock-label">Blog</span>
+  </button>
+  <button class="dock-item" data-page="references" onclick="route('references')" aria-label="References">
+    <span class="dock-icon">⌁</span><span class="dock-label">Refs</span>
+  </button>
+  <button class="dock-item" data-page="career-lab" onclick="route('career-lab')" aria-label="Lab">
+    <span class="dock-icon">◉</span><span class="dock-label">Lab</span>
+  </button>
+  <button class="dock-item hidden" id="mobile-staff" data-page="staff" onclick="route('staff')" aria-label="Staff">
+    <span class="dock-icon">◎</span><span class="dock-label">Staff</span>
+  </button>
+</nav>
 
 <script>
 
@@ -1034,6 +1309,7 @@ function prewarmData() {
 function showChrome() {
   document.getElementById("site-header").classList.remove("hidden");
   document.getElementById("site-footer").classList.remove("hidden");
+  document.getElementById("mobile-dock").classList.remove("hidden");
   var name = APP_USER.name || APP_USER.email || "User";
   var initials = String(name).trim().split(/\s+/).slice(0, 2).map(function(part) { return part ? part[0] : ""; }).join("").toUpperCase() || "U";
   document.getElementById("nav-user").innerHTML =
@@ -1048,8 +1324,12 @@ function showChrome() {
     '<button class="nav-account-logout" onclick="signOut()" aria-label="Log out">' +
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 17L15 12L10 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M13 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
     '<span>Log out</span></button>';
+  document.getElementById("mobile-staff").classList.add("hidden");
   if (APP_USER.isAdmin) {
     document.getElementById("nav-staff").classList.remove("hidden");
+    document.getElementById("mobile-staff").classList.remove("hidden");
+  } else {
+    document.getElementById("nav-staff").classList.add("hidden");
   }
 }
 
@@ -1062,7 +1342,9 @@ function signOut() {
   }
   document.getElementById("site-header").classList.add("hidden");
   document.getElementById("site-footer").classList.add("hidden");
+  document.getElementById("mobile-dock").classList.add("hidden");
   document.getElementById("nav-staff").classList.add("hidden");
+  document.getElementById("mobile-staff").classList.add("hidden");
   renderLogin(null);
   if (window.google && google.accounts && google.accounts.id) {
     google.accounts.id.prompt();
@@ -1119,6 +1401,9 @@ function setActiveNav(page) {
   if (page === "staff-course-form" || page === "staff-blog-form" || page === "staff-reference-form" || page === "staff-careerlab-form") navPage = "staff";
   document.querySelectorAll(".nav-links a").forEach(function(a) {
     a.classList.toggle("active", a.dataset.page === navPage);
+  });
+  document.querySelectorAll(".mobile-dock .dock-item").forEach(function(btn) {
+    btn.classList.toggle("active", btn.dataset.page === navPage);
   });
 }
 
@@ -1820,6 +2105,8 @@ function postCard(p) {
 function renderLogin(errMsg) {
   document.getElementById("site-header").classList.add("hidden");
   document.getElementById("site-footer").classList.add("hidden");
+  document.getElementById("mobile-dock").classList.add("hidden");
+  document.getElementById("mobile-staff").classList.add("hidden");
   var cfg = _checkSupabaseConfig();
   var cfgMsg = cfg.ok ? "" : ("Supabase not configured: " + cfg.message + " Update SUPABASE_URL and SUPABASE_ANON_KEY in index.html.");
   document.getElementById("app").innerHTML =
@@ -1863,13 +2150,13 @@ function render404() {
 }
 
 function pageHome() {
-  function homeSection(opts) {
+  function featureRail(opts) {
     var classes = "section reveal-up home-section " + (opts.theme || "home-section-light");
     var btnClass = opts.theme === "home-section-dark" ? "btn home-dark-btn" : "btn btn-ghost";
     return (
       '<section class="' + classes + '"><div class="container">' +
       '<div class="home-section-head">' +
-      '<div><h2 class="home-section-title">' + opts.title + '</h2><p class="home-section-sub">' + opts.desc + '</p></div>' +
+      '<div><p class="home-overline">' + opts.kicker + '</p><h2 class="home-section-title">' + opts.title + '</h2><p class="home-section-sub">' + opts.desc + '</p></div>' +
       '<button class="' + btnClass + '" onclick="route(\'' + opts.route + '\')">' + opts.cta + '</button></div>' +
       '<div class="spotlight-wrap ' + (opts.theme === "home-section-dark" ? "" : "spotlight-light") + '">' +
       '<button class="spotlight-nav" aria-label="Previous" onclick="moveSpotlight(\'' + opts.trackId + '\',-1)">‹</button>' +
@@ -1879,31 +2166,56 @@ function pageHome() {
     );
   }
 
-  var chips = ["Courses","Career Labs","PDFs","Videos"]
+  var chips = ["Courses", "Career Labs", "References", "Videos", "Mentor Insights"]
     .map(function(label){ return '<span class="hero-chip">' + label + '</span>'; })
     .join("");
 
-  var quickTiles = ["Courses","Career Labs","References","Blog","Videos","Resources"]
-    .map(function(label){ return '<div class="quick-tile"><div class="quick-tile-label">' + label + '</div></div>'; })
-    .join("");
+  var pathways = [
+    {
+      title: "Career Discovery",
+      desc: "Find strengths, interests, and future pathways using curated guides and mentor tasks.",
+      route: "references",
+      image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1000&q=80"
+    },
+    {
+      title: "Skill Building",
+      desc: "Use focused micro-courses and challenge-based learning to build practical confidence.",
+      route: "courses",
+      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=80"
+    },
+    {
+      title: "Portfolio Readiness",
+      desc: "Document projects, reflections, and research in the Career Lab for future applications.",
+      route: "career-lab",
+      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1000&q=80"
+    }
+  ];
+
+  var pathwayHtml = pathways.map(function(item) {
+    return '<article class="pathway-card">' +
+      '<img src="' + item.image + '" alt="' + esc(item.title) + '" loading="lazy" referrerpolicy="no-referrer">' +
+      '<div class="pathway-body"><h3>' + esc(item.title) + '</h3><p>' + esc(item.desc) + '</p>' +
+      '<button class="btn btn-sm" onclick="route(\'' + item.route + '\')">Explore</button></div></article>';
+  }).join("");
 
   document.getElementById("app").innerHTML =
     '<section class="hero"><div class="hero-content">' +
-    '<div class="hero-kicker">Internal Silver Oaks Portal</div>' +
-    '<h1>Career Laboratory<br>Resource Website</h1>' +
-    '<p class="hero-tagline">Character and Competence</p>' +
-    '<p>Your comprehensive hub for courses, insights, references, and student research. All in one place, fast and secure.</p>' +
+    '<div class="hero-kicker">Silver Oaks Career Council</div>' +
+    '<h1>Designed for Direction.<br>Built for Student Futures.</h1>' +
+    '<p class="hero-tagline">One professional workspace for discovery, planning, and execution.</p>' +
+    '<p>Access trusted resources, skill-based courses, expert reflections, and real student work through one focused platform.</p>' +
     '<div class="hero-cta"><div class="search-bar home-search">' +
     '<div class="ac-wrap"><input id="h-srch" type="text" placeholder="Search courses, blog posts, references..." autocomplete="off"><div class="ac-drop" id="h-ac"></div></div>' +
     '<button class="btn btn-accent btn-lg" onclick="doHomeSearch()">Search</button>' +
     '</div></div><div class="hero-chips">' + chips + '</div></div></section>' +
-    homeSection({ title: "Featured Courses", desc: "Popular courses curated for you", cta: "View All Courses →", route: "courses", trackId: "home-courses", theme: "home-section-alt" }) +
-    homeSection({ title: "Latest from Blog", desc: "Insights and updates", cta: "View All Posts →", route: "blog", trackId: "home-posts", theme: "home-section-light" }) +
-    homeSection({ title: "Featured References", desc: "Essential materials and resources", cta: "View All References →", route: "references", trackId: "home-refs", theme: "home-section-alt" }) +
-    homeSection({ title: "Career Laboratory", desc: "Student research and insights", cta: "View All Labs →", route: "career-lab", trackId: "home-labs", theme: "home-section-dark" }) +
-    '<section class="section reveal-up home-quick-wrap"><div class="container"><h2 class="home-quick-title">Everything you need, in one place</h2>' +
-    '<p class="home-quick-sub">From courses to career research, we have curated resources to help you succeed.</p>' +
-    '<div class="home-quick-grid">' + quickTiles + '</div></div></section>';
+    '<section class="section reveal-up home-pathways"><div class="container">' +
+    '<div class="home-section-head"><div><p class="home-overline">Guided Journey</p><h2 class="home-section-title">Three focused tracks for student growth</h2>' +
+    '<p class="home-section-sub">Everything is structured so students can discover, build, and present with clarity.</p></div></div>' +
+    '<div class="pathway-grid">' + pathwayHtml + '</div></div></section>' +
+    featureRail({ kicker: "Curated Learning", title: "Featured Courses", desc: "Handpicked modules for real school outcomes.", cta: "View All Courses →", route: "courses", trackId: "home-courses", theme: "home-section-alt" }) +
+    featureRail({ kicker: "Writing & Thought", title: "Latest from Blog", desc: "Career awareness, academic insights, and guidance notes.", cta: "View All Posts →", route: "blog", trackId: "home-posts", theme: "home-section-light" }) +
+    featureRail({ kicker: "Reference Library", title: "Featured References", desc: "Reliable documents and practical materials for decision making.", cta: "View All References →", route: "references", trackId: "home-refs", theme: "home-section-alt" }) +
+    featureRail({ kicker: "Student Work", title: "Career Laboratory", desc: "Research-backed student submissions and mentor-supported progress.", cta: "View All Labs →", route: "career-lab", trackId: "home-labs", theme: "home-section-dark" });
 
   initAC("h-srch", "h-ac");
   initRevealMotion(document.getElementById("app"));
@@ -2506,7 +2818,7 @@ function pageStaff() {
       }
     ];
 
-    var libraryHtml = '<div class="library-grid">' + libraries.map(function(lib) {
+    var libraryHtml = libraries.map(function(lib) {
       var count = lib.items.length;
       var published = lib.items.filter(function(i) { return lib.getStatus(i) === "Published"; }).length;
       var itemsHtml = lib.items.length ? lib.items.map(function(item) {
