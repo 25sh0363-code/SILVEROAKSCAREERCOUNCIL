@@ -35,6 +35,26 @@ function _checkSupabaseConfig() {
   }
   return { ok: true };
 }
+
+function _decodeJwt(token) {
+  try {
+    var parts = String(token || "").split(".");
+    if (parts.length < 2) return null;
+    var payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    while (payload.length % 4) payload += "=";
+    var json = atob(payload).split("").map(function(ch) {
+      return "%" + ("00" + ch.charCodeAt(0).toString(16)).slice(-2);
+    }).join("");
+    return JSON.parse(decodeURIComponent(json));
+  } catch (err) {
+    return null;
+  }
+}
+
+function _decode_jwt(token) {
+  return _decodeJwt(token);
+}
+
 function pageHome() {
   function featureRail(opts) {
     var classes = "section reveal-up home-section " + (opts.theme || "home-section-light");
