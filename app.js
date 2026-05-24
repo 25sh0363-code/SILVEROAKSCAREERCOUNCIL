@@ -293,6 +293,18 @@ function _userRowToDb(user) {
   };
 }
 
+function _toUser(row) {
+  if (!row) return null;
+  return {
+    ID: row.id || row.email || null,
+    Name: row.name || row.Name || (row.email ? String(row.email).split("@")[0] : ""),
+    Email: row.email || row.Email || "",
+    Role: row.role || row.Role || "Student",
+    Status: row.status || row.Status || "Active",
+    CreatedDate: row.created_date || row.createdDate || null,
+  };
+}
+
 function _normalizeStatus(row) {
   return String(row && row.status || "");
 }
