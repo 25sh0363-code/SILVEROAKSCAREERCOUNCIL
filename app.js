@@ -26,6 +26,10 @@ function _initSupabase() {
   return SUPABASE;
 }
 
+function _db() {
+  return _initSupabase();
+}
+
 function _checkSupabaseConfig() {
   if (!SUPABASE_URL || SUPABASE_URL.indexOf("PUT_YOUR_SUPABASE_URL_HERE") !== -1) {
     return { ok: false, message: "Missing SUPABASE_URL." };
@@ -1416,38 +1420,20 @@ function renderLogin(errMsg) {
   var cfgMsg = cfg.ok ? "" : ("Supabase not configured: " + cfg.message + " Update SUPABASE_URL and SUPABASE_ANON_KEY in index.html.");
   var originMsg = _signInOriginIssue();
   var loginAlert = errMsg || cfgMsg || originMsg;
-  var loginHint = '<div class="auth-points">' +
-    '<div class="auth-point">Private access for school accounts</div>' +
-    '<div class="auth-point">Course, blog, reference, and career lab tools</div>' +
-    '<div class="auth-point">Fast search with accessible navigation</div>' +
-    '</div>';
   document.getElementById("app").innerHTML =
     '<div class="auth-shell">' +
-    '<div class="auth-orb auth-orb-a"></div>' +
-    '<div class="auth-orb auth-orb-b"></div>' +
-    '<div class="auth-grid">' +
-    '<section class="auth-panel">' +
-    '<div class="auth-kicker">Silver Oaks Career Council</div>' +
-    '<h1>' + esc(APP_NAME) + '</h1>' +
-    '<p class="auth-lead">A focused workspace for students and staff to discover courses, read guidance, review references, and publish career lab work.</p>' +
-    loginHint +
-    '<div class="auth-meta">Internal access only. Use your verified school account.</div>' +
-    '</section>' +
-    '<section class="auth-card">' +
-    '<div class="auth-card-head">' +
+    '<section class="auth-card auth-login-card">' +
     '<div class="auth-mark">SO</div>' +
-    '<div>' +
     '<div class="auth-card-title">Sign in</div>' +
-    '<div class="auth-card-subtitle">Use your @hyd.silveroaks.co.in Google account.</div>' +
-    '</div></div>' +
+    '<p class="auth-card-subtitle">Use your @hyd.silveroaks.co.in Google account.</p>' +
     (loginAlert ? '<div class="alert alert-danger">⚠️ <span>'+esc(loginAlert)+'</span></div>' : '<div class="alert alert-info">🔐 <span>Secure access for the school community.</span></div>') +
     '<div id="g_signin_btn" class="auth-google"></div>' +
     '<p class="auth-note">If you are not on a verified school account, access will be blocked.</p>' +
     '</section>' +
-    '</div></div>';
+    '</div>';
 
   if (!originMsg && window.google && google.accounts && google.accounts.id) {
-    var btnWidth = Math.max(280, Math.min(400, (window.innerWidth || 400) - 56));
+    var btnWidth = Math.max(260, Math.min(360, (window.innerWidth || 360) - 48));
     google.accounts.id.renderButton(
       document.getElementById("g_signin_btn"),
       { theme: "outline", size: "large", width: btnWidth }

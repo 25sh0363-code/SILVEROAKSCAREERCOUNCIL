@@ -1099,6 +1099,33 @@ main{position:relative;z-index:1}
   line-height:1.7;
 }
 
+.auth-shell{
+  padding:24px 16px;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(139,16,38,.12), rgba(139,16,38,0) 28%),
+    radial-gradient(circle at 90% 15%, rgba(203,32,66,.08), rgba(203,32,66,0) 26%),
+    linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);
+}
+.auth-login-card{
+  width:min(100%,520px);
+  margin:0 auto;
+  padding:32px 28px;
+  text-align:center;
+}
+.auth-login-card .auth-mark{
+  margin:0 auto 16px;
+}
+.auth-login-card .alert{
+  text-align:left;
+}
+.auth-login-card .auth-google{
+  margin-top:22px;
+}
+.auth-login-card .auth-note{
+  max-width:36ch;
+  margin:0 auto;
+}
+
 .site-footer{
   background:linear-gradient(100deg,#6f0f1f 0%,#8b1026 64%,#a81939 100%);
   padding:48px 24px 24px;
