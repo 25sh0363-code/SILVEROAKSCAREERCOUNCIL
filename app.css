@@ -774,7 +774,8 @@ body{
 @media(max-width:768px){
   main{padding-bottom:90px}
   .site-footer{padding-bottom:104px}
-  .hamburger{display:flex !important;margin-left:auto;order:3;width:44px;height:44px;min-width:44px;min-height:44px;background:var(--primary);border-color:var(--primary)}
+  /* Keep hamburger hidden on mobile — using bottom dock only */
+  .hamburger{display:none !important}
   .nav-close{display:block !important}
   .nav-collapse{
     display:flex !important;
@@ -818,6 +819,9 @@ body{
   }
   .nav-brand img{height:34px}
   .hero{
+
+  /* Ensure bottom mobile dock is visible on small screens */
+  .mobile-dock{display:grid !important}
     min-height:auto;
     padding:72px 16px 58px;
   }
