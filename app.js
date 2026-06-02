@@ -2110,12 +2110,12 @@ function pageStaff() {
       usersCard += '<div class="staff-users-body"><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead><tbody>' +
         users.map(function(u) {
           var isSelf = u.Email === APP_USER.email;
-          var sel = '<select class="form-control" style="padding:5px 8px;font-size:.82rem;width:auto;border-radius:8px" id="role-'+esc(u.Email)+'">'+
+             var sel = '<select class="form-control" style="padding:5px 8px;font-size:1rem;width:auto;border-radius:8px" id="role-'+esc(u.Email)+'">'+
             roles.map(function(r){ return '<option value="'+r+'"'+(u.Role===r?' selected':'')+'>'+r+'</option>'; }).join("") +
             '</select>';
           var deleteBtn = isSelf ? '' : '<button class="btn btn-danger btn-sm" onclick="_deleteUser(\''+esc(u.Email)+'\')">Delete</button>';
           return '<tr><td style="font-weight:500">'+esc(u.Name||"—")+'</td><td style="font-size:.82rem;color:var(--muted)">'+esc(u.Email)+'</td><td>'+sel+'</td>'+
-                 '<td><div class="actions"><button class="btn btn-primary btn-sm" style="font-size:.75rem" onclick="_updateRole(\''+esc(u.Email)+'\')">Save</button>'+deleteBtn+'</div></td></tr>';
+               '<td><div class="actions"><button class="btn btn-primary btn-sm" style="font-size:1rem" onclick="_updateRole(\''+esc(u.Email)+'\')">Save</button>'+deleteBtn+'</div></td></tr>';
         }).join("") +
         '</tbody></table></div></div>';
     } else {

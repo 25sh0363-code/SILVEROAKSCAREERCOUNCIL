@@ -367,23 +367,29 @@ a:not(.btn):not(.page-btn):not(.tag-pill):not(.tab):not(.tab-button):not([role="
   .nav-brand{font-size:18px}
   .nav-brand img{height:36px}
   .site-header{padding:12px 16px;min-height:auto}
-  .nav-collapse{display:flex;position:fixed;inset:0;width:100vw;height:100vh;max-width:none;background:rgba(255,255,255,.98);color:var(--text);padding:72px 20px 24px;border-radius:0;box-shadow:0 18px 40px rgba(15,23,42,.18);flex-direction:column;z-index:1000;overflow-y:auto;overflow-x:hidden;border-left:1px solid rgba(148,163,184,.24);transform:translateX(100%);transition:transform var(--t);box-sizing:border-box;pointer-events:none;backdrop-filter:blur(10px)}
+  .nav-collapse{display:flex;position:fixed;inset:0;width:100vw;height:100vh;max-width:none;background:rgba(255,255,255,.98);color:var(--text);padding:68px 16px 18px;border-radius:0;box-shadow:0 18px 40px rgba(15,23,42,.18);flex-direction:column;z-index:1000;overflow-y:auto;overflow-x:hidden;border-left:1px solid rgba(148,163,184,.24);transform:translateX(100%);transition:transform var(--t);box-sizing:border-box;pointer-events:none;backdrop-filter:blur(10px)}
   .nav-collapse.open{transform:translateX(0)}
   .nav-collapse.open{pointer-events:auto}
   .nav-close{position:absolute;top:16px;right:16px;width:44px;height:44px;min-width:44px;min-height:44px;background:#fff;border:1px solid rgba(15,23,42,.12);font-size:20px;padding:0;cursor:pointer;border-radius:12px;color:var(--text);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(15,23,42,.08)}
   .nav-close:hover{background:#f8fafc;color:var(--primary);transform:none}
-  .nav-links{flex-direction:column;width:100%;padding:0;gap:12px;overflow-y:auto;max-height:none}
+  .nav-links{flex-direction:column;width:100%;padding:0;gap:8px;overflow-y:auto;max-height:none;margin:0}
   .nav-links li{flex:1 1 100%;width:100%}
-  .nav-links a{width:100%;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;justify-content:flex-start;padding:0 14px;color:var(--text);font-size:1rem;font-weight:700;gap:10px;min-height:48px;letter-spacing:.04em;text-transform:none}
+  .nav-links a{width:100%;border-radius:12px;background:#fff;border:1px solid #e5eaf1;justify-content:flex-start;padding:0 12px;color:var(--text);font-size:1rem;font-weight:700;gap:10px;min-height:44px;letter-spacing:.02em;text-transform:none}
   .nav-links a.active{background:var(--primary-soft);border-color:rgba(184,15,46,.24);color:var(--primary-dark)}
   .nav-links a:hover{background:#fff5f7;color:var(--primary-dark);border-color:rgba(184,15,46,.18)}
-  .nav-collapse .nav-user{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;padding-top:16px;border-top:1px solid #e5e7eb;margin-top:auto;flex-wrap:wrap}
-  .nav-account{padding:0;gap:8px;max-width:none;flex:1 1 auto;background:transparent;border:none;min-width:0;overflow:hidden;color:var(--text);min-height:44px}
+  .nav-collapse .nav-user{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;padding-top:14px;border-top:1px solid #e5e7eb;margin-top:12px;flex-wrap:wrap}
+  .nav-account{padding:0;gap:8px;max-width:none;flex:1 1 auto;background:transparent;border:none;min-width:0;overflow:hidden;color:var(--text);min-height:40px}
   .nav-account-meta{display:flex;min-width:0;overflow:hidden}
   .nav-account-name{max-width:none;font-size:.95rem}
   .nav-account-role{font-size:.875rem}
   .nav-account-email{display:block;max-width:150px;font-size:.875rem}
-  .nav-account-logout{height:48px;padding:0 12px;font-size:.82rem;flex:0 0 auto;background:#fff;color:var(--primary);margin-left:0;width:100%;justify-content:center;border-color:rgba(184,15,46,.24)}
+  .nav-account-logout{height:44px;padding:0 12px;font-size:1rem;flex:0 0 auto;background:#fff;color:var(--primary);margin-left:0;width:100%;justify-content:center;border-color:rgba(184,15,46,.24)}
+  .staff-users select.form-control,
+  .staff-users .btn-sm,
+  .staff-users .btn-ghost,
+  .staff-users .btn-danger,
+  .staff-users .btn-primary.btn-sm{font-size:1rem !important}
+  .staff-users select.form-control{min-height:44px}
   .hero{padding:48px 16px;min-height:auto;gap:0}
   .hero-content{align-items:flex-start}
   .hero h1{font-size:clamp(2.25rem,5vw,2.5rem);max-width:700px}
@@ -728,6 +734,41 @@ body{
   background:
     radial-gradient(circle at right top, rgba(255,255,255,.16), rgba(255,255,255,0) 40%),
     linear-gradient(130deg,#7D081D 0%,#B80F2E 52%,#D61A3C 100%);
+}
+.home-section-dark .resource-card{
+  background:rgba(255,255,255,.08);
+  border-color:rgba(255,255,255,.14) !important;
+  box-shadow:none !important;
+}
+.home-section-dark .resource-card .card-title,
+.home-section-dark .resource-card .card-desc,
+.home-section-dark .resource-card .card-meta{
+  color:#fff;
+}
+.home-section-dark .resource-card .card-desc,
+.home-section-dark .resource-card .card-meta{
+  color:rgba(255,255,255,.8);
+}
+.home-section-dark .resource-card .card-footer{
+  border-top-color:rgba(255,255,255,.14);
+}
+.home-section-dark .resource-card .badge{
+  background:rgba(255,255,255,.14);
+  color:#fff;
+}
+.home-section-dark .resource-card .badge-success{
+  background:rgba(16,185,129,.18);
+  color:#d1fae5;
+}
+.home-section-dark .resource-card .btn{
+  background:#fff;
+  color:var(--primary);
+  border-color:#fff;
+}
+.home-section-dark .resource-card .btn:hover{
+  background:#fff5f5;
+  border-color:#fff5f5;
+  color:var(--primary-dark);
 }
 
 .spotlight-item .card,
@@ -2936,12 +2977,12 @@ function pageStaff() {
       usersCard += '<div class="staff-users-body"><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead><tbody>' +
         users.map(function(u) {
           var isSelf = u.Email === APP_USER.email;
-          var sel = '<select class="form-control" style="padding:5px 8px;font-size:.82rem;width:auto;border-radius:8px" id="role-'+esc(u.Email)+'">'+
+             var sel = '<select class="form-control" style="padding:5px 8px;font-size:1rem;width:auto;border-radius:8px" id="role-'+esc(u.Email)+'">'+
             roles.map(function(r){ return '<option value="'+r+'"'+(u.Role===r?' selected':'')+'>'+r+'</option>'; }).join("") +
             '</select>';
           var deleteBtn = isSelf ? '' : '<button class="btn btn-danger btn-sm" onclick="_deleteUser(\''+esc(u.Email)+'\')">Delete</button>';
           return '<tr><td style="font-weight:500">'+esc(u.Name||"—")+'</td><td style="font-size:.82rem;color:var(--muted)">'+esc(u.Email)+'</td><td>'+sel+'</td>'+
-                 '<td><div class="actions"><button class="btn btn-primary btn-sm" style="font-size:.75rem" onclick="_updateRole(\''+esc(u.Email)+'\')">Save</button>'+deleteBtn+'</div></td></tr>';
+               '<td><div class="actions"><button class="btn btn-primary btn-sm" style="font-size:1rem" onclick="_updateRole(\''+esc(u.Email)+'\')">Save</button>'+deleteBtn+'</div></td></tr>';
         }).join("") +
         '</tbody></table></div></div>';
     } else {
