@@ -843,6 +843,18 @@ body{
   .hero h1{font-size:clamp(2rem,8vw,2.35rem)}
   .hero-chips{gap:8px}
   .pathway-grid{grid-template-columns:1fr}
+  .staff-shell{padding:0 16px}
+  .staff-hero{padding:48px 16px 42px}
+  .staff-kpis,
+  .library-grid,
+  .stat-grid{grid-template-columns:1fr !important}
+  .kpi-card,
+  .library-card,
+  .staff-users{min-width:0}
+  .library-head{gap:12px}
+  .library-head .btn{width:auto}
+  .library-list{min-height:0}
+  .library-actions .btn{width:auto}
   .home-section-head{margin-bottom:22px}
   .home-section-dark{
     background:linear-gradient(180deg,#fff5f7 0%,#fff 100%);
@@ -2359,7 +2371,7 @@ function pageHome() {
     featureRail({ kicker: "Curated Learning", title: "Featured Courses", desc: "Handpicked modules for real school outcomes.", cta: "View All Courses →", route: "courses", trackId: "home-courses", theme: "home-section-alt" }) +
     featureRail({ kicker: "Writing & Thought", title: "Latest from Blog", desc: "Career awareness, academic insights, and guidance notes.", cta: "View All Posts →", route: "blog", trackId: "home-posts", theme: "home-section-light" }) +
     featureRail({ kicker: "Reference Library", title: "Featured References", desc: "Reliable documents and practical materials for decision making.", cta: "View All References →", route: "references", trackId: "home-refs", theme: "home-section-alt" }) +
-    featureRail({ kicker: "Student Work", title: "Career Laboratory", desc: "Research-backed student submissions and mentor-supported progress.", cta: "View All Labs →", route: "career-lab", trackId: "home-labs", theme: "home-section-dark" });
+    featureRail({ kicker: "Student Work", title: "Career Laboratory", desc: "Research-backed student submissions and mentor-supported progress.", cta: "View All Labs →", route: "career-lab", trackId: "home-labs", theme: "home-section-alt" });
 
   initAC("h-srch", "h-ac");
   initRevealMotion(document.getElementById("app"));
