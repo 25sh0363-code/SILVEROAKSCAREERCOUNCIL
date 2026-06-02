@@ -493,9 +493,8 @@ function prewarmData() {
 }
 
 function showChrome() {
-  document.getElementById("site-header").classList.remove("hidden");
-  document.getElementById("site-footer").classList.remove("hidden");
-  document.getElementById("mobile-dock").classList.remove("hidden");
+  _setHidden("site-header", false);
+  _setHidden("site-footer", false);
   var name = APP_USER.name || APP_USER.email || "User";
   var initials = String(name).trim().split(/\s+/).slice(0, 2).map(function(part) { return part ? part[0] : ""; }).join("").toUpperCase() || "U";
   document.getElementById("nav-user").innerHTML =
@@ -510,12 +509,9 @@ function showChrome() {
     '<button class="nav-account-logout" onclick="signOut()" aria-label="Log out">' +
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 17L15 12L10 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M13 3H19C20.1046 3 21 3.89543 21 5V19C21 20.1046 20.1046 21 19 21H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' +
     '<span>Log out</span></button>';
-  document.getElementById("mobile-staff").classList.add("hidden");
+  _setHidden("nav-staff", true);
   if (APP_USER.isAdmin) {
-    document.getElementById("nav-staff").classList.remove("hidden");
-    document.getElementById("mobile-staff").classList.remove("hidden");
-  } else {
-    document.getElementById("nav-staff").classList.add("hidden");
+    _setHidden("nav-staff", false);
   }
 }
 
@@ -526,11 +522,9 @@ function signOut() {
   if (window.google && google.accounts && google.accounts.id) {
     google.accounts.id.disableAutoSelect();
   }
-  document.getElementById("site-header").classList.add("hidden");
-  document.getElementById("site-footer").classList.add("hidden");
-  document.getElementById("mobile-dock").classList.add("hidden");
-  document.getElementById("nav-staff").classList.add("hidden");
-  document.getElementById("mobile-staff").classList.add("hidden");
+  _setHidden("site-header", true);
+  _setHidden("site-footer", true);
+  _setHidden("nav-staff", true);
   renderLogin(null);
   if (window.google && google.accounts && google.accounts.id) {
     google.accounts.id.prompt();
@@ -612,9 +606,6 @@ function setActiveNav(page) {
   if (page === "staff-course-form" || page === "staff-blog-form" || page === "staff-reference-form" || page === "staff-careerlab-form") navPage = "staff";
   document.querySelectorAll(".nav-links a").forEach(function(a) {
     a.classList.toggle("active", a.dataset.page === navPage);
-  });
-  document.querySelectorAll(".mobile-dock .dock-item").forEach(function(btn) {
-    btn.classList.toggle("active", btn.dataset.page === navPage);
   });
 }
 
@@ -986,6 +977,10 @@ function defaultErr(e) {
 
 function showLoader() { document.getElementById("loader").classList.add("show"); }
 function hideLoader() { document.getElementById("loader").classList.remove("show"); }
+function _setHidden(id, hidden) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle("hidden", !!hidden);
+}
 function toggleNav()  { document.getElementById("nav-collapse").classList.toggle("open"); }
 
 function toast(msg, type) {
@@ -1342,10 +1337,9 @@ function postCard(p) {
 }
 
 function renderLogin(errMsg) {
-  document.getElementById("site-header").classList.add("hidden");
-  document.getElementById("site-footer").classList.add("hidden");
-  document.getElementById("mobile-dock").classList.add("hidden");
-  document.getElementById("mobile-staff").classList.add("hidden");
+  _setHidden("site-header", true);
+  _setHidden("site-footer", true);
+  _setHidden("nav-staff", true);
   var cfg = _checkSupabaseConfig();
   var cfgMsg = cfg.ok ? "" : ("Supabase not configured: " + cfg.message + " Update SUPABASE_URL and SUPABASE_ANON_KEY in index.html.");
   document.getElementById("app").innerHTML =
