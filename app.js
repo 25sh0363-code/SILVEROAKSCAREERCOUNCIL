@@ -61,7 +61,12 @@ function _uuid() {
 }
 
 function _isAllowedEmail(email) {
-  return String(email || "").toLowerCase().endsWith("@hyd.silveroaks.co.in");
+  var value = String(email || "").toLowerCase();
+  return (
+    value.endsWith("@hyd.silveroaks.co.in") ||
+    value.endsWith("@bt.silveroaks.co.in") ||
+    value.endsWith("@odl.silveroaks.co.in")
+  );
 }
 
 function _toCourse(row) {
@@ -445,7 +450,7 @@ function verifyAndStart(token) {
       if (!info) throw new Error("Invalid sign-in token. Please sign in again.");
       var email = String(info.email || "").toLowerCase();
       if (!info.email_verified) throw new Error("Google account email is not verified.");
-      if (!_isAllowedEmail(email)) throw new Error("Access denied: only @hyd.silveroaks.co.in accounts are allowed.");
+      if (!_isAllowedEmail(email)) throw new Error("Access denied: only @hyd.silveroaks.co.in, @bt.silveroaks.co.in, and @odl.silveroaks.co.in accounts are allowed.");
       if (CLIENT_ID && CLIENT_ID !== "PUT_YOUR_OAUTH_CLIENT_ID" && info.aud !== CLIENT_ID) {
         throw new Error("Invalid sign-in audience. Please sign in again.");
       }
