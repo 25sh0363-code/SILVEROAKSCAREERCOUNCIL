@@ -565,6 +565,8 @@ function route(page, params) {
   setActiveNav(page);
   window.scrollTo(0, 0);
   document.getElementById("nav-collapse").classList.remove("open");
+  var hamburger = document.querySelector(".hamburger");
+  if (hamburger) hamburger.classList.remove("is-open");
 
   switch (page) {
     case "home":    pageHome(_state);    break;
@@ -981,7 +983,16 @@ function _setHidden(id, hidden) {
   var el = document.getElementById(id);
   if (el) el.classList.toggle("hidden", !!hidden);
 }
-function toggleNav()  { document.getElementById("nav-collapse").classList.toggle("open"); }
+function toggleNav()  {
+  var nav = document.getElementById("nav-collapse");
+  var button = document.querySelector(".hamburger");
+  if (!nav) return;
+  var isOpen = nav.classList.toggle("open");
+  if (button) {
+    button.classList.toggle("is-open", isOpen);
+    button.setAttribute("aria-label", isOpen ? "Close menu" : "Menu");
+  }
+}
 
 function toast(msg, type) {
   var box = document.getElementById("toast-box");
@@ -1055,6 +1066,7 @@ function initAC(inputId, dropId) {
     if (navCollapse && hamburger && navCollapse.classList.contains("open")) {
       if (!navCollapse.contains(e.target) && !hamburger.contains(e.target)) {
         navCollapse.classList.remove("open");
+        hamburger.classList.remove("is-open");
       }
     }
   });
