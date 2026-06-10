@@ -42,16 +42,16 @@ export default function Header({
       {/* Red accent bar on top */}
       <div className="h-1 w-full bg-gradient-to-r from-[#8F0A22] via-[#B80F2E] to-[#EF4444]" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1536px] mx-auto px-4 sm:px-8 lg:px-12">
         <div className="flex items-center justify-between h-20 sm:h-22">
           
           {/* Logo Brand with elegant spacing */}
           <div className="flex items-center cursor-pointer group shrink-0" onClick={() => setCurrentPage('home')}>
-            <Logo className="h-11 sm:h-12 group-hover:scale-105 transition-all duration-300 shadow-sm rounded-xl" />
+            <Logo className="h-12 lg:h-13 group-hover:scale-105 transition-all duration-300 shadow-sm rounded-xl" />
           </div>
 
-          {/* Desktop Navigation Links - Perfectly spacious and beautiful, NOT cramped */}
-          <nav className="hidden md:flex items-center space-x-2 lg:space-x-4 ml-6 mr-auto">
+          {/* Desktop Navigation Links - Spacious and beautifully optimized */}
+          <nav className="hidden md:flex items-center space-x-3 lg:space-x-5 xl:space-x-7 ml-10 mr-auto">
             {navLinks.map((link) => {
               const LinkIcon = link.icon;
               const isActive = currentPage === link.id || (link.id !== 'home' && currentPage.startsWith(link.id));
@@ -59,7 +59,7 @@ export default function Header({
                 <button
                   key={link.id}
                   onClick={() => setCurrentPage(link.id)}
-                  className={`flex items-center gap-2 px-3 py-2.5 lg:px-4 rounded-xl text-xs lg:text-sm font-bold tracking-wider uppercase transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-3 py-2.5 lg:px-4.5 xl:px-5 rounded-xl text-xs lg:text-sm font-bold tracking-wider uppercase transition-all duration-200 ${
                     isActive
                       ? 'bg-rose-50 text-[#B80F2E] shadow-sm font-black'
                       : 'text-gray-600 hover:text-[#B80F2E] hover:bg-rose-50/50'
@@ -75,10 +75,10 @@ export default function Header({
             {user.isAdmin && (
               <button
                 onClick={() => setCurrentPage('staff')}
-                className={`flex items-center gap-2 px-3 py-2.5 lg:px-4 rounded-xl text-xs lg:text-sm font-bold tracking-wider transition-all duration-200 uppercase ${
+                className={`flex items-center gap-2 px-3 py-2.5 lg:px-4.5 xl:px-5 rounded-xl text-xs lg:text-sm font-bold tracking-wider transition-all duration-200 uppercase ${
                   currentPage === 'staff' || currentPage.startsWith('staff-')
-                    ? 'bg-rose-900 text-white shadow-md'
-                    : 'text-rose-800 border-2 border-rose-250 hover:bg-rose-50 hover:border-rose-300'
+                    ? 'bg-rose-900 text-white shadow-md font-black'
+                    : 'text-rose-850 hover:text-[#B80F2E] hover:bg-rose-50'
                 }`}
               >
                 <Settings2 className="w-4 h-4 shrink-0" />
@@ -91,11 +91,11 @@ export default function Header({
           <div className="hidden md:flex items-center gap-6 shrink-0">
             
             {/* Profile Avatar Meta */}
-            <div className="flex items-center gap-3 pr-4 border-r border-rose-100 max-w-56">
+            <div className="flex items-center gap-3 pr-4 border-r border-rose-100 max-w-sm">
               <div className="w-10 h-10 rounded-full bg-rose-100 text-[#B80F2E] font-extrabold text-sm uppercase flex items-center justify-center border-2 border-rose-200 shadow-sm shrink-0">
                 {getInitials(user.name)}
               </div>
-              <div className="flex flex-col text-left leading-tight max-w-40">
+              <div className="flex flex-col text-left leading-tight max-w-[280px]">
                 <span className="text-[#101827] font-black text-sm truncate" title={user.name}>{user.name}</span>
                 <span className="text-[10px] text-rose-700 font-extrabold uppercase tracking-widest mt-0.5">{user.role}</span>
               </div>

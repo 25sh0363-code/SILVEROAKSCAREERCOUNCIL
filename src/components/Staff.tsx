@@ -127,29 +127,16 @@ export default function Staff({ user }: StaffProps) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-left">
       
-      {/* 1. Header Hero Panel */}
-      <section className="bg-gradient-to-r from-gray-900 to-gray-950 text-white rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl mb-10 relative overflow-hidden">
-        
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_100%,rgba(184,15,46,0.12),transparent_40%)]" />
-
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 font-extrabold text-[10px] uppercase tracking-wider mb-3">
-            <Settings2 className="w-3 h-3 text-rose-500 animate-spin" />
-            <span>Resource Administrative Panel</span>
-          </div>
-          <h1 className="text-2xl sm:text-3.5xl font-black text-white tracking-tight font-serif">Workspace Library Dashboard</h1>
-          <p className="text-gray-400 text-xs sm:text-sm mt-1 max-w-xl">
-            Stream, edit, approve, or prune counseling assets. Update user roles or configure templates immediately.
-          </p>
+      {/* 1. Header Hero Panel - Clean, spacious light theme */}
+      <section className="mb-10 text-left border-b border-rose-100 pb-8">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-100/80 text-[#B80F2E] font-bold text-[10px] uppercase tracking-wider mb-4">
+          <Settings2 className="w-3.5 h-3.5 text-[#B80F2E] animate-spin" />
+          <span>Resource Administrative Panel</span>
         </div>
-
-        <button 
-          onClick={loadAll} 
-          className="px-5 py-2.5 bg-rose-900 hover:bg-[#B80F2E] border border-rose-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow transition-all shrink-0 self-start md:self-auto"
-        >
-          <RefreshCw className="w-4 h-4" />
-          <span>Refresh Database</span>
-        </button>
+        <h1 className="text-2.5xl sm:text-3.5xl font-black text-gray-900 tracking-tight">Workspace Library Dashboard</h1>
+        <p className="text-gray-500 text-xs sm:text-sm mt-2 max-w-2xl leading-relaxed">
+          Stream, edit, approve, or prune counseling assets. Update user roles or configure templates immediately.
+        </p>
       </section>
 
       {/* 2. KPI Indicator grids */}
