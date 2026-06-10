@@ -1,0 +1,6 @@
+{
+  "name": "Silver Oaks Career Council Archive",
+  "description": "Internal Resource Center providing high-school students, counselors, and faculty templates for CV preparation, college syllabi, peer research, and blog updates.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
