@@ -9,9 +9,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
 
-<style>
+<!-- Legacy inline styles disabled (media="not all"); design system now lives in app.css -->
+<style media="not all">
 
 :root{
   --primary:#B80F2E;--primary-dark:#8F0A22;--primary-press:#71071A;--primary-soft:#FDECEF;
@@ -1034,10 +1036,31 @@ body{
 </main>
 
 <footer class="site-footer hidden" id="site-footer">
-  <div class="container">
-    <p>🎓 <strong>Career Laboratory Resource Website</strong> &nbsp;|&nbsp; Internal — Silver Oaks &nbsp;|&nbsp; hyd, bt, and odl accounts only</p>
-    <p class="site-footer-motto">Character before Competence</p>
-    <p style="margin-top:6px;opacity:.6">© <span id="footer-year"></span> Silver Oaks Career Council</p>
+  <div class="container footer-grid">
+    <div class="footer-col">
+      <p class="footer-brand">Silver Oaks Career Council</p>
+      <p>Career learning, research, and resources for Silver Oaks students.</p>
+      <p class="site-footer-motto">Character before Competence</p>
+    </div>
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <ul>
+        <li><a href="javascript:void(0)" onclick="route('courses')">Courses</a></li>
+        <li><a href="javascript:void(0)" onclick="route('blog')">Blog</a></li>
+        <li><a href="javascript:void(0)" onclick="route('references')">References</a></li>
+        <li><a href="javascript:void(0)" onclick="route('career-lab')">Career Lab</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <ul>
+        <li>Email: info@silveroaksschool.edu</li>
+        <li>Internal platform — hyd, bt, and odl accounts only</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>© <span id="footer-year"></span> Silver Oaks Career Council. All rights reserved.</p>
   </div>
 </footer>
 
