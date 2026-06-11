@@ -15,7 +15,7 @@ interface ReferencesProps {
 }
 
 export default function References({ setSelectedId, setCurrentPage }: ReferencesProps) {
-  const layout = ((): CardLayoutPreset => 'bento-grid')();
+  const [layout, setLayout] = useState<CardLayoutPreset>('compact-list');
   const [refs, setRefs] = useState<ReferenceMaterial[]>([]);
   const [filtered, setFiltered] = useState<ReferenceMaterial[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +172,48 @@ export default function References({ setSelectedId, setCurrentPage }: References
                   <span>No reference material found</span>
                 )}
               </div>
+              
+              {/* Dynamic Design Selection Button Group */}
+              <div className="flex items-center gap-1 bg-rose-50/50 p-1 rounded-xl border border-rose-100">
+                <button
+                  onClick={() => setLayout('compact-list')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
+                    layout === 'compact-list'
+                      ? 'bg-rose-900 text-white shadow-sm'
+                      : 'text-gray-500 hover:text-rose-900 hover:bg-rose-100/30'
+                  }`}
+                  title="List View"
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span>List</span>
+                </button>
+                
+                <button
+                  onClick={() => setLayout('bento-grid')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
+                    layout === 'bento-grid'
+                      ? 'bg-rose-900 text-white shadow-sm'
+                      : 'text-gray-500 hover:text-rose-900 hover:bg-rose-100/30'
+                  }`}
+                  title="Bento Grid"
+                >
+                  <Grid className="w-3.5 h-3.5" />
+                  <span>Bento</span>
+                </button>
+                
+                <button
+                  onClick={() => setLayout('classic-card')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
+                    layout === 'classic-card'
+                      ? 'bg-rose-900 text-white shadow-sm'
+                      : 'text-gray-500 hover:text-rose-900 hover:bg-rose-100/30'
+                  }`}
+                  title="Classic Cards"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Cards</span>
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -212,26 +254,78 @@ export default function References({ setSelectedId, setCurrentPage }: References
                       <div
                         key={r.ID}
                         onClick={() => navigateToRef(r.ID)}
-                        className="bg-white border border-rose-100 hover:border-[#B80F2E] p-4 sm:p-5 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm hover:shadow-md cursor-pointer transition-all group"
+                        className="bg-white border border-[#dde4ee] hover:border-[#B80F2E] p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-sm hover:shadow-md cursor-pointer transition-all duration-350 group relative overflow-hidden"
                       >
-                        <div className="flex items-start gap-4 text-left">
-                          <div className="w-10 h-10 rounded-lg bg-rose-50 border border-rose-100 text-[#B80F2E] flex items-center justify-center font-bold text-sm shrink-0 sm:flex hidden">
-                            📎
-                          </div>
-                          <div>
-                            <div className="flex items-center flex-wrap gap-2">
-                              <span className="text-[10px] font-black uppercase text-[#B80F2E] tracking-wider">{r.Category}</span>
+                        {/* Elegant accent sidebar visible on item hover */}
+                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#B80F2E] scale-y-0 group-hover:scale-y-100 transition-transform duration-300" />
+                        
+                        <div className="flex items-center gap-4 text-left flex-1 min-w-0">
+                          {/* Sizable Thumbnail Preview with interactive scale-on-hover effect */}
+                          <div className="w-16 h-12 sm:w-20 sm:h-14 rounded-xl overflow-hidden bg-rose-50 border border-rose-100/70 shrink-0 flex items-center justify-center relative shadow-inner">
+                            {r.ThumbnailURL ? (
+                              <img 
+                                src={r.ThumbnailURL} 
+                                alt="" 
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <span className="text-xl">📎</span>
+                            )}
+                            
+                            {/* Overlay tag format stickers */}
+                            <div className="absolute bottom-1 right-1 flex gap-0.5">
+                              {r.PDFLink && (
+                                <span className="bg-emerald-600 text-white text-[8px] font-black px-1 py-0.5 rounded shadow">
+                                  PDF
+                                </span>
+                              )}
+                              {r.YouTubeURL && (
+                                <span className="bg-red-600 text-white text-[8px] font-black px-1 py-0.5 rounded shadow">
+                                  YT
+                                </span>
+                              )}
                             </div>
-                            <h3 className="font-bold text-gray-900 text-sm sm:text-base group-hover:text-[#B80F2E] transition-all font-serif mt-1">
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            {/* Metadata Badging Row */}
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="text-[9px] font-extrabold uppercase text-[#B80F2E] tracking-widest bg-rose-50/70 border border-rose-100/50 px-2 py-0.5 rounded-md">
+                                {r.Category}
+                              </span>
+                              {r.PDFLink && (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-gray-500 bg-gray-100/80 px-2 py-0.5 rounded-md">
+                                  <FileText className="w-2.5 h-2.5 text-rose-800" /> PDF Checklists
+                                </span>
+                              )}
+                              {r.YouTubeURL && (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-gray-500 bg-gray-100/80 px-2 py-0.5 rounded-md">
+                                  <Video className="w-2.5 h-2.5 text-rose-800" /> Watch Video
+                                </span>
+                              )}
+                            </div>
+                            
+                            <h3 className="font-extrabold text-gray-900 text-sm sm:text-base group-hover:text-[#B80F2E] transition-all font-serif truncate">
                               {r.Title}
                             </h3>
-                            <p className="text-gray-500 text-xs sm:text-sm line-clamp-1 mt-0.5 max-w-xl">{r.Description}</p>
+                            <p className="text-gray-500 text-xs sm:text-sm line-clamp-1 mt-0.5 pr-4 leading-relaxed">
+                              {r.Description}
+                            </p>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-t-0 border-rose-50 pt-2.5 sm:pt-0 shrink-0">
-                          <span className="text-xs font-semibold text-gray-500">✍️ {r.Author}</span>
-                          <button className="p-2 rounded-full bg-rose-50 text-[#B80F2E] group-hover:bg-[#B80F2E] group-hover:text-white transition-all">
-                            <ArrowRight className="w-4 h-4" />
+
+                        {/* Visual statistics or authors panel */}
+                        <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 border-[#f1f5f9] pt-3 md:pt-0 shrink-0">
+                          <div className="text-left md:text-right">
+                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Counselor Author</div>
+                            <span className="text-xs font-black text-gray-700 mt-0.5 block">
+                              {r.Author}
+                            </span>
+                          </div>
+                          
+                          <button className="h-9 w-9 rounded-full bg-rose-50 text-[#B80F2E] group-hover:bg-[#B80F2E] group-hover:text-white flex items-center justify-center transition-all duration-300 shadow-sm shrink-0">
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                           </button>
                         </div>
                       </div>
