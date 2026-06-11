@@ -15,7 +15,12 @@ interface CareerLabsProps {
 }
 
 export default function CareerLabs({ setSelectedId, setCurrentPage }: CareerLabsProps) {
-  const layout = ((): CardLayoutPreset => 'bento-grid')();
+  const [layout, setLayout] = useState<CardLayoutPreset>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return 'classic-card';
+    }
+    return 'bento-grid';
+  });
   const [labs, setLabs] = useState<CareerLab[]>([]);
   const [filtered, setFiltered] = useState<CareerLab[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +177,48 @@ export default function CareerLabs({ setSelectedId, setCurrentPage }: CareerLabs
                 ) : (
                   <span>No portfolios match this discipline category</span>
                 )}
+              </div>
+              
+              {/* Dynamic Design Selection Button Group */}
+              <div className="flex items-center gap-1 bg-rose-50/50 p-1 rounded-xl border border-rose-100">
+                <button
+                  onClick={() => setLayout('compact-list')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
+                    layout === 'compact-list'
+                      ? 'bg-rose-900 text-white shadow-sm'
+                      : 'text-gray-500 hover:text-rose-900 hover:bg-rose-100/30'
+                  }`}
+                  title="List View"
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span>List</span>
+                </button>
+                
+                <button
+                  onClick={() => setLayout('bento-grid')}
+                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
+                    layout === 'bento-grid'
+                      ? 'bg-rose-900 text-white shadow-sm'
+                      : 'text-gray-500 hover:text-rose-900 hover:bg-rose-100/30'
+                  }`}
+                  title="Bento Grid"
+                >
+                  <Grid className="w-3.5 h-3.5" />
+                  <span>Bento</span>
+                </button>
+                
+                <button
+                  onClick={() => setLayout('classic-card')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
+                    layout === 'classic-card'
+                      ? 'bg-rose-900 text-white shadow-sm'
+                      : 'text-gray-500 hover:text-rose-900 hover:bg-rose-100/30'
+                  }`}
+                  title="Classic Cards"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Cards</span>
+                </button>
               </div>
             </div>
 

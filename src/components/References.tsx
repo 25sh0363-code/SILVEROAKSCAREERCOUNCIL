@@ -190,7 +190,7 @@ export default function References({ setSelectedId, setCurrentPage }: References
                 
                 <button
                   onClick={() => setLayout('bento-grid')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
+                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
                     layout === 'bento-grid'
                       ? 'bg-rose-900 text-white shadow-sm'
                       : 'text-gray-500 hover:text-rose-900 hover:bg-rose-100/30'
