@@ -568,6 +568,13 @@ function ContentFormModal({ type, item, onClose, onSaved, uploadProgress, setUpl
 
   const richEditorRef = useRef<HTMLDivElement>(null);
 
+  // Initialize the editor with content on mount so we don't wipe it out on re-renders
+  useEffect(() => {
+    if (richEditorRef.current) {
+      richEditorRef.current.innerHTML = content;
+    }
+  }, []);
+
   // Exec Editor Formatting Commands safely
   const formatText = (command: string, value?: string) => {
     richEditorRef.current?.focus();
@@ -932,8 +939,8 @@ function ContentFormModal({ type, item, onClose, onSaved, uploadProgress, setUpl
             <div
               ref={richEditorRef}
               contentEditable
+              suppressContentEditableWarning
               onBlur={handleEditorUpdate}
-              dangerouslySetInnerHTML={{ __html: item?.Content || '' }}
               placeholder="Draft your interactive narrative guidelines here..."
               className="w-full min-h-44 bg-white border-x border-b border-gray-200 rounded-b-xl px-4 py-3 text-xs sm:text-sm font-semibold outline-none focus:ring-1 focus:ring-gray-300 overflow-y-auto max-h-60"
             />
