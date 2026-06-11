@@ -471,12 +471,31 @@ export function getYoutubeEmbedId(url: string): string {
   return m ? m[1] : "";
 }
 
-// Helper to convert drive links to raw downloads
+// Helper to convert drive links to safe preview/view links that open in any browser/iframe context
 export function getPdfDownloadUrl(url: string): string {
   if (!url) return "";
-  let m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-  if (m) return "https://drive.google.com/uc?export=download&id=" + m[1];
-  m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (m) return "https://drive.google.com/uc?export=download&id=" + m[1];
-  return url;
+  
+  // Clean if it contains HTML or quotes
+  let cleaned = url.replace(/['"<>]/g, "").trim();
+  
+  // Decode double URL encoding if present
+  try {
+    if (cleaned.includes('%')) {
+      cleaned = decodeURIComponent(cleaned);
+    }
+  } catch (e) {
+    console.error("Failed to decode URL", cleaned);
+  }
+
+  // Handle Google Drive links
+  let m = cleaned.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) {
+    return `https://drive.google.com/file/d/${m[1]}/view?usp=drivesdk`;
+  }
+  m = cleaned.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (m) {
+    return `https://drive.google.com/file/d/${m[1]}/view?usp=drivesdk`;
+  }
+  
+  return cleaned;
 }

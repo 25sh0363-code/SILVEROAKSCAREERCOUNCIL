@@ -123,11 +123,16 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
             <a
               href={getPdfDownloadUrl(course.PDFLink)}
               target="_blank"
-              rel="noreferrer"
-              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow shadow-emerald-700/5 focus:outline-none"
+              rel="noopener noreferrer"
+              title="Opens document in a new safe tab"
+              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow shadow-emerald-700/5 focus:outline-none cursor-pointer"
             >
               <FileDown className="w-4 h-4" />
-              <span className="sm:inline hidden">Download PDF</span>
+              <span className="sm:inline hidden">
+                {course.PDFLink.toLowerCase().includes("drive.google.com") || course.PDFLink.includes("/d/") 
+                  ? "View PDF" 
+                  : "Download PDF"}
+              </span>
             </a>
           </div>
         )}
@@ -204,11 +209,16 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
             <a
               href={getPdfDownloadUrl(blog.PDFLink)}
               target="_blank"
-              rel="noreferrer"
-              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow"
+              rel="noopener noreferrer"
+              title="Opens document in a new safe tab"
+              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow cursor-pointer"
             >
               <FileDown className="w-4 h-4" />
-              <span className="sm:inline hidden">Download PDF</span>
+              <span className="sm:inline hidden">
+                {blog.PDFLink.toLowerCase().includes("drive.google.com") || blog.PDFLink.includes("/d/") 
+                  ? "View PDF" 
+                  : "Download PDF"}
+              </span>
             </a>
           </div>
         )}
@@ -282,11 +292,16 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
             <a
               href={getPdfDownloadUrl(reference.PDFLink)}
               target="_blank"
-              rel="noreferrer"
-              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow"
+              rel="noopener noreferrer"
+              title="Opens document in a new safe tab"
+              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow cursor-pointer"
             >
               <FileDown className="w-4 h-4" />
-              <span className="sm:inline hidden">Download Resource</span>
+              <span className="sm:inline hidden">
+                {reference.PDFLink.toLowerCase().includes("drive.google.com") || reference.PDFLink.includes("/d/") 
+                  ? "View PDF" 
+                  : "Download PDF"}
+              </span>
             </a>
           </div>
         )}
@@ -368,11 +383,16 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
             <a
               href={getPdfDownloadUrl(lab.PDFLink)}
               target="_blank"
-              rel="noreferrer"
-              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow"
+              rel="noopener noreferrer"
+              title="Opens document in a new safe tab"
+              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow cursor-pointer"
             >
               <FileDown className="w-4 h-4" />
-              <span className="sm:inline hidden">Download Paper</span>
+              <span className="sm:inline hidden">
+                {lab.PDFLink.toLowerCase().includes("drive.google.com") || lab.PDFLink.includes("/d/") 
+                  ? "View PDF" 
+                  : "Download PDF"}
+              </span>
             </a>
           </div>
         )}
