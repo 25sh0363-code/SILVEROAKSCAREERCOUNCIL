@@ -65,7 +65,7 @@ export default function Footer({ setCurrentPage }: FooterProps) {
           <div className="space-y-4">
             <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Platform Contact</h4>
             <div className="space-y-3 text-sm text-gray-550 leading-relaxed font-semibold">
-              <p>Email: <a href="mailto:info@silveroaksschool.edu" className="text-[#B80F2E] hover:underline font-bold transition-colors">info@silveroaksschool.edu</a></p>
+              <p>Email: <a href="mailto:careercounselling@hyd.silveroaks.co.in" className="text-[#B80F2E] hover:underline font-bold transition-colors">careercounselling@hyd.silveroaks.co.in</a></p>
               <p className="font-medium text-gray-500">Hyderabad Bachupally Campus & Bengaluru</p>
               <div className="pt-1">
                 <span className="text-[10px] bg-rose-50 border border-rose-100 text-[#B80F2E] px-3.5 py-1.5 rounded-lg font-extrabold uppercase tracking-widest inline-block shadow-sm">
