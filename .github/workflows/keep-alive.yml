@@ -1,0 +1,28 @@
+name: Keep Supabase Awake
+
+on:
+  schedule:
+    # Runs every 3 days at 00:00 UTC to keep the project active
+    - cron: '0 0 */3 * *'
+  workflow_dispatch: # Allows you to manually run it anytime from the Actions tab
+
+jobs:
+  ping:
+    name: Ping Supabase Database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send API request to query DB
+        run: |
+          echo "Pinging Supabase REST API to prevent pausing..."
+          RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "https://wicihqhrjgcikcyurbtd.supabase.co/rest/v1/blogs?select=*&limit=1" \
+            -H "apikey: sb_publishable_ZgwGLXUMusAEhv1ghHdRGg_cnzDn4Of" \
+            -H "Authorization: Bearer sb_publishable_ZgwGLXUMusAEhv1ghHdRGg_cnzDn4Of")
+          
+          echo "Response code: $RESPONSE_CODE"
+          if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 204 ] || [ "$RESPONSE_CODE" -eq 406 ] || [ "$RESPONSE_CODE" -eq 401 ]; then
+            echo "Successfully connected to Supabase! Project activity registered."
+          else
+            echo "Warning: Received unexpected status code $RESPONSE_CODE"
+            exit 1
+          fi
