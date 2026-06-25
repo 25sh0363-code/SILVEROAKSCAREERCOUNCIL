@@ -20,7 +20,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 const ALLOWED_EMAIL_DOMAINS = [
   "@hyd.silveroaks.co.in",
   "@bt.silveroaks.co.in",
-  "@odl.silveroaks.co.in"
+  "@odl.silveroaks.co.in",
+  "@vizag.silveroaks.co.in",
+  "@km.silveroaks.co.in"
 ];
 
 export function isAllowedEmail(email: string): boolean {

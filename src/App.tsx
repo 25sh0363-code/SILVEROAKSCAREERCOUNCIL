@@ -109,7 +109,7 @@ export default function App() {
       }
 
       if (!isAllowedEmail(email)) {
-        throw new Error("Access Denied: Only @hyd.silveroaks.co.in, @bt.silveroaks.co.in, and @odl.silveroaks.co.in domains are permitted access.");
+        throw new Error("Access Denied: Only @hyd.silveroaks.co.in, @bt.silveroaks.co.in, @odl.silveroaks.co.in, @vizag.silveroaks.co.in, and @km.silveroaks.co.in domains are permitted access.");
       }
 
       const verifiedName = payload.name || email.split('@')[0];
@@ -486,6 +486,14 @@ export default function App() {
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-rose-300" />
                   <span>Approved for @odl.silveroaks.co.in</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-rose-300" />
+                  <span>Approved for @vizag.silveroaks.co.in</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-rose-300" />
+                  <span>Approved for @km.silveroaks.co.in</span>
                 </div>
               </div>
             </div>
