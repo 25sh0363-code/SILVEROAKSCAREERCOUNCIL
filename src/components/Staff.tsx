@@ -102,6 +102,17 @@ export default function Staff({ user }: StaffProps) {
     }
   };
 
+  const handleResetCache = () => {
+    if (!confirm("This will clear all local offline data from your browser cache, including any unsaved drafts. Are you sure you want to reset offline data?")) return;
+    localStorage.removeItem('local_counselors');
+    localStorage.removeItem('local_courses');
+    localStorage.removeItem('local_blogs');
+    localStorage.removeItem('local_reference_materials');
+    localStorage.removeItem('local_career_labs');
+    alert("Local offline caches cleared! Re-fetching from database...");
+    loadAll();
+  };
+
   // Modify user roles
   const handleRoleChange = async (email: string, targetRole: UserRole) => {
     if (!confirm(`Are you sure you want to alter the clearance level of ${email} to ${targetRole}?`)) return;
@@ -529,13 +540,22 @@ export default function Staff({ user }: StaffProps) {
                       <h3 className="text-lg font-bold text-gray-900 font-serif">Career Counsellor Profiles</h3>
                       <p className="text-xs text-gray-500">Add, edit, or delete career counsellors appearing on the homepage.</p>
                     </div>
-                    <button 
-                      onClick={() => openModal('counselors')}
-                      className="px-4 py-2 bg-[#B80F2E] hover:bg-[#8F0A22] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow transition-all"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add New Counsellor</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={handleResetCache}
+                        className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all"
+                        title="Clear local browser cache for counselor records and reset fallback cache."
+                      >
+                        <span>Reset Cache</span>
+                      </button>
+                      <button 
+                        onClick={() => openModal('counselors')}
+                        className="px-4 py-2 bg-[#B80F2E] hover:bg-[#8F0A22] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow transition-all"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add New Counsellor</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="overflow-x-auto">

@@ -50,32 +50,7 @@ const MOCK_REFS: ReferenceMaterial[] = [];
 
 const MOCK_LABS: CareerLab[] = [];
 
-const MOCK_COUNSELORS: Counselor[] = [
-  {
-    ID: "c1",
-    Name: "Ms. Shalini Sinha",
-    ImageURL: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80",
-    Intro: "A dedicated mentor with over 12 years of experience guiding students toward selective Indian and global higher education pathways.",
-    Qualifications: "M.Sc in Counseling Psychology, Certified Global Career Practitioner (UCLA Extension)",
-    Extra: "Specializes in Liberal Arts admissions, profile building, and personal statement workshops.",
-    Contact: "careercounselling@hyd.silveroaks.co.in",
-    Status: "Published",
-    CreatedDate: "2026-06-01T09:00:00Z",
-    UpdatedDate: "2026-06-01T09:00:00Z"
-  },
-  {
-    ID: "c2",
-    Name: "Mr. Arjun Mehta",
-    ImageURL: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=80",
-    Intro: "Helping students match their academic profiles with top-tier technical and engineering universities worldwide.",
-    Qualifications: "M.A in Education, Certified Career Analyst",
-    Extra: "Expert in STEM stream selections, Ivy League admissions, and preparation for aptitude assessments.",
-    Contact: "arjun.mehta@hyd.silveroaks.co.in",
-    Status: "Published",
-    CreatedDate: "2026-06-02T10:30:00Z",
-    UpdatedDate: "2026-06-02T10:30:00Z"
-  }
-];
+const MOCK_COUNSELORS: Counselor[] = [];
 
 const MOCK_USERS: DbUser[] = [
   { Name: "Suraj Kashikar", Email: "omsurajkashikarjhcsclass6@gmail.com", Role: "Admin", Status: "Active", CreatedDate: "2026-05-15T09:00:00Z" }
@@ -90,9 +65,19 @@ async function safeDbCall<T>(
     const { data, error } = await queryPromise;
     if (error) {
       console.warn("Supabase query error, fallback to mock data:", error.message || error);
-      if (typeof window !== 'undefined') {
+      
+      const errMsg = (error.message || String(error)).toLowerCase();
+      const isMissingTable = 
+        errMsg.includes("could not find the table") || 
+        errMsg.includes("relation") || 
+        errMsg.includes("does not exist") || 
+        errMsg.includes("schema cache") || 
+        error.code === "42P01" || 
+        error.code === "PGRST116";
+
+      if (typeof window !== 'undefined' && !isMissingTable) {
         window.dispatchEvent(new CustomEvent('supabase-error', { 
-          detail: error.message || String(error) 
+          detail: error.message || String(error)
         }));
       }
       return mockFallback;
@@ -103,9 +88,17 @@ async function safeDbCall<T>(
     return data as T[];
   } catch (err: any) {
     console.error("Supabase network error, fallback to mock data:", err);
-    if (typeof window !== 'undefined') {
+    
+    const errMsg = (err?.message || String(err)).toLowerCase();
+    const isMissingTable = 
+      errMsg.includes("could not find the table") || 
+      errMsg.includes("relation") || 
+      errMsg.includes("does not exist") || 
+      errMsg.includes("schema cache");
+
+    if (typeof window !== 'undefined' && !isMissingTable) {
       window.dispatchEvent(new CustomEvent('supabase-error', { 
-        detail: err?.message || String(err) 
+        detail: err?.message || String(err)
       }));
     }
     return mockFallback;
@@ -218,19 +211,25 @@ export async function fetchAllCounselors(isPublishedOnly = true): Promise<Counse
     const stored = localStorage.getItem('local_counselors');
     if (stored) {
       try {
-        localList = JSON.parse(stored);
+        const parsed: Counselor[] = JSON.parse(stored);
+        // Automatically clean out the old hardcoded mock IDs c1 and c2 from local storage
+        const filtered = parsed.filter(c => c.ID !== 'c1' && c.ID !== 'c2' && c.Name !== "Ms. Shalini Sinha" && c.Name !== "Mr. Arjun Mehta");
+        if (filtered.length !== parsed.length) {
+          localStorage.setItem('local_counselors', JSON.stringify(filtered));
+        }
+        localList = filtered;
       } catch (err) {
         console.error("Failed to parse local counselors", err);
       }
     }
   }
   
+  // Try to clean them up in the actual database silently in background
+  try {
+    supabase.from('counselors').delete().in('id', ['c1', 'c2']).then(() => {});
+  } catch {}
+
   const mergedFallback = [...localList];
-  for (const mock of MOCK_COUNSELORS) {
-    if (!mergedFallback.some(c => c.ID === mock.ID)) {
-      mergedFallback.push(mock);
-    }
-  }
 
   const finalFallback = isPublishedOnly 
     ? mergedFallback.filter(c => c.Status === 'Published')
@@ -246,10 +245,11 @@ export async function fetchAllCounselors(isPublishedOnly = true): Promise<Counse
   );
 
   if (result && result.length > 0) {
-    return result.map(toCounselor);
+    const mapped = result.map(toCounselor);
+    return mapped.filter(c => c.ID !== 'c1' && c.ID !== 'c2' && c.Name !== "Ms. Shalini Sinha" && c.Name !== "Mr. Arjun Mehta");
   }
 
-  return finalFallback;
+  return finalFallback.filter(c => c.ID !== 'c1' && c.ID !== 'c2' && c.Name !== "Ms. Shalini Sinha" && c.Name !== "Mr. Arjun Mehta");
 }
 
 export async function saveCounselor(payload: Partial<Counselor>): Promise<string> {
@@ -311,23 +311,36 @@ export async function saveCounselor(payload: Partial<Counselor>): Promise<string
 }
 
 export async function deleteCounselor(id: string): Promise<boolean> {
+  let isMissingTable = false;
   try {
     const { error } = await supabase.from('counselors').delete().eq('id', id);
-    if (!error) {
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('local_counselors');
-        if (stored) {
-          try {
-            let localList: Counselor[] = JSON.parse(stored);
-            localList = localList.filter(c => c.ID !== id);
-            localStorage.setItem('local_counselors', JSON.stringify(localList));
-          } catch {}
-        }
-      }
-      return true;
-    }
-  } catch {}
+    if (error) {
+      const errMsg = (error.message || '').toLowerCase();
+      isMissingTable = 
+        errMsg.includes("could not find the table") || 
+        errMsg.includes("relation") || 
+        errMsg.includes("does not exist") || 
+        errMsg.includes("schema cache");
 
+      if (!isMissingTable) {
+        throw new Error(error.message || "Database failed to delete counselor.");
+      }
+    }
+  } catch (err: any) {
+    // If it's a real database error (not missing table), rethrow it so the user can see it!
+    const errMsg = (err?.message || '').toLowerCase();
+    const isMissingTableError = 
+      errMsg.includes("could not find the table") || 
+      errMsg.includes("relation") || 
+      errMsg.includes("does not exist") || 
+      errMsg.includes("schema cache");
+      
+    if (!isMissingTableError) {
+      throw err;
+    }
+  }
+
+  // Always delete from localStorage fallback
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem('local_counselors');
     if (stored) {
