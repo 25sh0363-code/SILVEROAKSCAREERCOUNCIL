@@ -82,7 +82,7 @@ export default function Counsellors({ setCurrentPage }: CounsellorsProps) {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
           {counselors.map((c, idx) => (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -90,54 +90,55 @@ export default function Counsellors({ setCurrentPage }: CounsellorsProps) {
               transition={{ duration: 0.4, delay: idx * 0.1 }}
               key={c.ID}
               id={`counsellor-card-${c.ID}`}
-              className="bg-white rounded-3xl border border-rose-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col md:flex-row h-full group"
+              className="bg-white rounded-3xl border border-rose-100/80 shadow-sm hover:shadow-xl hover:border-rose-200/60 transition-all duration-300 overflow-hidden flex flex-col justify-between group"
             >
-              {/* Photo Area */}
-              <div className="w-full md:w-2/5 shrink-0 relative bg-rose-50/30 overflow-hidden h-64 md:h-auto min-h-[260px]">
-                {c.ImageURL ? (
-                  <img 
-                    src={c.ImageURL} 
-                    alt={c.Name}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-rose-300">
-                    <User className="w-16 h-16 stroke-1" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider mt-2">No Photo Attached</span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/20 to-transparent pointer-events-none" />
-              </div>
-
-              {/* Information Area */}
-              <div className="p-6 sm:p-8 flex flex-col justify-between flex-grow text-left">
-                <div className="space-y-4">
-                  
-                  {/* Name and Contact Pill */}
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight font-serif group-hover:text-[#B80F2E] transition-colors">
-                      {c.Name}
-                    </h3>
-                    <div className="inline-flex items-center gap-1.5 mt-1.5 text-[11px] font-extrabold text-[#B80F2E] uppercase tracking-wider bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-100/50">
+              <div>
+                {/* Photo Area at top */}
+                <div className="aspect-[16/10] bg-rose-50/20 relative overflow-hidden border-b border-rose-50">
+                  {c.ImageURL ? (
+                    <img 
+                      src={c.ImageURL} 
+                      alt={c.Name}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover object-top group-hover:scale-102 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-rose-300">
+                      <User className="w-16 h-16 stroke-1" />
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest mt-2">No Photo Provided</span>
+                    </div>
+                  )}
+                  {/* Visual badge */}
+                  <div className="absolute top-4 left-4">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 backdrop-blur-sm text-[#B80F2E] font-black text-[10px] uppercase tracking-wider shadow-sm border border-rose-100/40">
                       <GraduationCap className="w-3.5 h-3.5" />
                       <span>Advisory Board</span>
-                    </div>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Information Area in middle */}
+                <div className="p-6 space-y-4">
+                  {/* Name and Designation */}
+                  <div>
+                    <h3 className="text-xl font-extrabold text-gray-950 tracking-tight font-serif group-hover:text-[#B80F2E] transition-colors leading-tight">
+                      {c.Name}
+                    </h3>
                   </div>
 
                   {/* Intro/Bio */}
-                  <p className="text-gray-600 text-xs sm:text-sm leading-relaxed font-semibold">
+                  <p className="text-gray-500 text-xs sm:text-sm leading-relaxed font-medium">
                     {c.Intro}
                   </p>
 
-                  <div className="border-t border-rose-100/60 pt-4 space-y-3">
+                  <div className="border-t border-rose-100/60 pt-4 space-y-3.5">
                     {/* Qualifications */}
                     {c.Qualifications && (
                       <div className="flex items-start gap-2.5">
                         <Award className="w-4 h-4 text-[#B80F2E] shrink-0 mt-0.5" />
                         <div>
-                          <h4 className="text-[10px] font-black uppercase tracking-wider text-gray-400">Qualifications</h4>
-                          <p className="text-xs text-gray-700 font-bold leading-snug mt-0.5">{c.Qualifications}</p>
+                          <h4 className="text-[9px] font-black uppercase tracking-wider text-gray-400">Qualifications</h4>
+                          <p className="text-xs text-gray-800 font-bold leading-normal mt-0.5">{c.Qualifications}</p>
                         </div>
                       </div>
                     )}
@@ -147,32 +148,39 @@ export default function Counsellors({ setCurrentPage }: CounsellorsProps) {
                       <div className="flex items-start gap-2.5">
                         <Sparkles className="w-4 h-4 text-[#B80F2E] shrink-0 mt-0.5" />
                         <div>
-                          <h4 className="text-[10px] font-black uppercase tracking-wider text-gray-400">Advisory Focus</h4>
+                          <h4 className="text-[9px] font-black uppercase tracking-wider text-gray-400">Advisory Focus</h4>
                           <p className="text-xs text-gray-600 font-semibold leading-relaxed mt-0.5">{c.Extra}</p>
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
+              </div>
 
-                {/* Contact Footer block */}
-                {c.Contact && (
-                  <div className="border-t border-gray-100 mt-6 pt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2 truncate max-w-[200px] sm:max-w-[240px]">
-                      <Mail className="w-4 h-4 text-[#B80F2E]" />
-                      <span className="text-xs text-gray-500 font-bold truncate select-all">{c.Contact}</span>
+              {/* Contact Footer block (stacked, beautifully spaced, zero collision possible) */}
+              {c.Contact && (
+                <div className="p-6 pt-0">
+                  <div className="border-t border-gray-100 pt-5 space-y-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center shrink-0">
+                        <Mail className="w-4 h-4 text-[#B80F2E]" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="text-[9px] font-black uppercase tracking-wider text-gray-400">Email Contact</h5>
+                        <p className="text-xs text-gray-700 font-bold truncate select-all leading-tight">{c.Contact}</p>
+                      </div>
                     </div>
                     <a 
                       href={`mailto:${c.Contact}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#B80F2E] hover:bg-[#8F0A22] text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer shadow-sm"
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-[#B80F2E] hover:bg-[#8F0A22] text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer shadow-sm group-hover:shadow-md"
                     >
-                      <span>Connect</span>
-                      <ExternalLink className="w-3 h-3" />
+                      <span>Connect via Email</span>
+                      <ExternalLink className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                     </a>
                   </div>
-                )}
+                </div>
+              )}
 
-              </div>
             </motion.div>
           ))}
         </div>
