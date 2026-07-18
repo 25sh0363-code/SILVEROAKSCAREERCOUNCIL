@@ -4,11 +4,11 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings2, Plus, Edit2, Trash2, ShieldCheck, UserCheck, RefreshCw, X, Image, FileText, CheckCircle2, AlertTriangle, Bold, Italic, Link2, Heading1, Heading2, Quote, List as ListIcon, ListOrdered } from 'lucide-react';
-import { Course, BlogPost, ReferenceMaterial, CareerLab, DbUser, UserRole } from '../types';
+import { Settings2, Plus, Edit2, Trash2, ShieldCheck, UserCheck, RefreshCw, X, Image, FileText, CheckCircle2, AlertTriangle, Bold, Italic, Link2, Heading1, Heading2, Quote, List as ListIcon, ListOrdered, User } from 'lucide-react';
+import { Course, BlogPost, ReferenceMaterial, CareerLab, DbUser, UserRole, Counselor } from '../types';
 import { 
-  fetchAllCourses, fetchAllBlogs, fetchAllReferences, fetchAllCareerLabs, fetchAllUsers,
-  saveCourse, saveBlogPost, saveReference, saveCareerLab, deleteRecord, updateUserRole, deleteUserAndBlogs,
+  fetchAllCourses, fetchAllBlogs, fetchAllReferences, fetchAllCareerLabs, fetchAllUsers, fetchAllCounselors,
+  saveCourse, saveBlogPost, saveReference, saveCareerLab, saveCounselor, deleteCounselor, deleteRecord, updateUserRole, deleteUserAndBlogs,
   uploadFileToSupabase
 } from '../lib/supabase';
 
@@ -16,7 +16,7 @@ interface StaffProps {
   user: { email: string; name: string; role: string; isAdmin: boolean };
 }
 
-type StaffTab = 'courses' | 'blogs' | 'references' | 'labs' | 'users';
+type StaffTab = 'courses' | 'blogs' | 'references' | 'labs' | 'users' | 'counselors';
 
 export default function Staff({ user }: StaffProps) {
   const [activeTab, setActiveTab] = useState<StaffTab>('courses');
@@ -27,6 +27,7 @@ export default function Staff({ user }: StaffProps) {
   const [refs, setRefs] = useState<ReferenceMaterial[]>([]);
   const [labs, setLabs] = useState<CareerLab[]>([]);
   const [users, setUsers] = useState<DbUser[]>([]);
+  const [counselors, setCounselors] = useState<Counselor[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Stats
@@ -35,7 +36,8 @@ export default function Staff({ user }: StaffProps) {
     blogs: 0,
     references: 0,
     labs: 0,
-    users: 0
+    users: 0,
+    counselors: 0
   });
 
   // Modal control
@@ -53,12 +55,13 @@ export default function Staff({ user }: StaffProps) {
   const loadAll = async () => {
     setLoading(true);
     try {
-      const [cList, bList, rList, lList, uList] = await Promise.all([
+      const [cList, bList, rList, lList, uList, counsList] = await Promise.all([
         fetchAllCourses(false), // Get drafts as well
         fetchAllBlogs(false),
         fetchAllReferences(false),
         fetchAllCareerLabs(false),
-        fetchAllUsers()
+        fetchAllUsers(),
+        fetchAllCounselors(false)
       ]);
 
       setCourses(cList);
@@ -66,13 +69,15 @@ export default function Staff({ user }: StaffProps) {
       setRefs(rList);
       setLabs(lList);
       setUsers(uList);
+      setCounselors(counsList);
 
       setStats({
         courses: cList.length,
         blogs: bList.length,
         references: rList.length,
         labs: lList.length,
-        users: uList.length
+        users: uList.length,
+        counselors: counsList.length
       });
     } catch (err) {
       console.error("Failed to load staff panel assets:", err);
@@ -82,10 +87,14 @@ export default function Staff({ user }: StaffProps) {
   };
 
   // Safe delete handler
-  const handleDelete = async (type: 'courses' | 'blogs' | 'reference_materials' | 'career_labs', id: string) => {
+  const handleDelete = async (type: 'courses' | 'blogs' | 'reference_materials' | 'career_labs' | 'counselors', id: string) => {
     if (!confirm("Are you absolutely sure you want to delete this resource? This action stands irreversible from the database.")) return;
     try {
-      await deleteRecord(type, id);
+      if (type === 'counselors') {
+        await deleteCounselor(id);
+      } else {
+        await deleteRecord(type, id);
+      }
       alert("Successfully removed record ✓");
       loadAll();
     } catch (err: any) {
@@ -140,12 +149,13 @@ export default function Staff({ user }: StaffProps) {
       </section>
 
       {/* 2. KPI Indicator grids */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10 text-left">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-10 text-left">
         {[
           { label: 'Courses', val: stats.courses, color: 'text-blue-600 bg-blue-50 border-blue-100', tab: 'courses' },
           { label: 'Blog Posts', val: stats.blogs, color: 'text-red-700 bg-rose-50 border-rose-100', tab: 'blogs' },
           { label: 'References', val: stats.references, color: 'text-emerald-700 bg-emerald-50 border-emerald-100', tab: 'references' },
           { label: 'Career Labs', val: stats.labs, color: 'text-amber-600 bg-amber-50 border-amber-100', tab: 'labs' },
+          { label: 'Counsellors', val: stats.counselors, color: 'text-rose-800 bg-rose-50 border-rose-100', tab: 'counselors' },
           { label: 'Users', val: stats.users, color: 'text-rose-700 bg-rose-50 border-rose-100', tab: 'users' },
         ].map(item => (
           <button
@@ -171,6 +181,7 @@ export default function Staff({ user }: StaffProps) {
             { id: 'blogs', label: 'Counselor Blogs' },
             { id: 'references', label: 'Reference Files' },
             { id: 'labs', label: 'Career Labs' },
+            { id: 'counselors', label: 'Counsellors' },
             { id: 'users', label: 'User Roles' },
           ].map(tab => (
             <button
@@ -510,6 +521,77 @@ export default function Staff({ user }: StaffProps) {
                 </div>
               )}
 
+              {/* COUNSELLORS TAB VIEW */}
+              {activeTab === 'counselors' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-gray-100">
+                    <div className="text-left">
+                      <h3 className="text-lg font-bold text-gray-900 font-serif">Career Counsellor Profiles</h3>
+                      <p className="text-xs text-gray-500">Add, edit, or delete career counsellors appearing on the homepage.</p>
+                    </div>
+                    <button 
+                      onClick={() => openModal('counselors')}
+                      className="px-4 py-2 bg-[#B80F2E] hover:bg-[#8F0A22] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add New Counsellor</span>
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-[#101827]">
+                      <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-wider text-gray-500 border-b border-gray-100">
+                        <tr>
+                          <th className="px-4 py-3 text-left w-16">Photo</th>
+                          <th className="px-4 py-3 text-left">Name</th>
+                          <th className="px-4 py-3 text-left">Qualifications</th>
+                          <th className="px-4 py-3 text-left">Contact Detail</th>
+                          <th className="px-4 py-3 text-center">Status</th>
+                          <th className="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 font-semibold font-medium text-left">
+                        {counselors.map(item => (
+                          <tr key={item.ID} className="hover:bg-rose-50/20 transition-colors">
+                            <td className="px-4 py-3">
+                              <div className="w-10 h-10 rounded-full overflow-hidden bg-rose-50 border border-rose-100 shrink-0">
+                                {item.ImageURL ? (
+                                  <img src={item.ImageURL} alt={item.Name} className="w-full h-full object-cover object-top" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-rose-300">
+                                    <User className="w-4 h-4" />
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 font-bold text-gray-900 max-w-xs truncate" title={item.Name}>{item.Name}</td>
+                            <td className="px-4 py-4 text-gray-600 max-w-xs truncate" title={item.Qualifications}>{item.Qualifications}</td>
+                            <td className="px-4 py-4 text-gray-500 text-xs">{item.Contact}</td>
+                            <td className="px-4 py-4 text-center">
+                              <span className={`text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full ${
+                                item.Status === 'Published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {item.Status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button onClick={() => openModal('counselors', item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors" title="Edit counsellor">
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => handleDelete('counselors', item.ID)} className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors" title="Delete counsellor">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
         </div>
@@ -568,17 +650,18 @@ function ContentFormModal({
   labs
 }: ModalProps) {
   const isEdit = !!item;
+  const isCounselor = type === 'counselors';
   
   // Field values
-  const [title, setTitle] = useState(item?.Title || '');
-  const [desc, setDesc] = useState(item?.Description || '');
-  const [instructor, setInstructor] = useState(item?.Instructor || '');
-  const [author, setAuthor] = useState(item?.Author || '');
+  const [title, setTitle] = useState(isCounselor ? (item?.Name || '') : (item?.Title || ''));
+  const [desc, setDesc] = useState(isCounselor ? (item?.Intro || '') : (item?.Description || ''));
+  const [instructor, setInstructor] = useState(isCounselor ? (item?.Qualifications || '') : (item?.Instructor || ''));
+  const [author, setAuthor] = useState(isCounselor ? (item?.Contact || '') : (item?.Author || ''));
   const [student, setStudent] = useState(item?.Student || '');
-  const [mentor, setMentor] = useState(item?.Mentor || '');
+  const [mentor, setMentor] = useState(isCounselor ? (item?.Extra || '') : (item?.Mentor || ''));
   const [category, setCategory] = useState(item?.Category || '');
   const [grade, setGrade] = useState(item?.Grade || '');
-  const [thumbnailURL, setThumbnailURL] = useState(item?.ThumbnailURL || '');
+  const [thumbnailURL, setThumbnailURL] = useState(isCounselor ? (item?.ImageURL || '') : (item?.ThumbnailURL || ''));
   const [youtubeURL, setYoutubeURL] = useState(item?.YouTubeURL || '');
   const [pdfLink, setPdfLink] = useState(item?.PDFLink || '');
   const [content, setContent] = useState(item?.Content || '');
@@ -670,7 +753,7 @@ function ContentFormModal({
   // Submit and save action
   const handleSaveSubmit = async () => {
     if (!title.trim()) {
-      alert("Title is a mandatory field.");
+      alert(isCounselor ? "Counsellor Name is a mandatory field." : "Title is a mandatory field.");
       return;
     }
 
@@ -738,6 +821,18 @@ function ContentFormModal({
           Status: status,
           CreatedDate: item?.CreatedDate
         });
+      } else if (type === 'counselors') {
+        await saveCounselor({
+          ID: item?.ID,
+          Name: title.trim(),
+          ImageURL: thumbnailURL.trim(),
+          Intro: desc.trim(),
+          Qualifications: instructor.trim(),
+          Extra: mentor.trim(),
+          Contact: author.trim(),
+          Status: status,
+          CreatedDate: item?.CreatedDate
+        });
       }
 
       alert("Changes saved and written successfully!");
@@ -773,14 +868,16 @@ function ContentFormModal({
             </div>
           )}
 
-          {/* Title */}
+          {/* Title / Name */}
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Title <span className="text-red-700">*</span></label>
+            <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">
+              {isCounselor ? 'Counsellor Name' : 'Title'} <span className="text-red-700">*</span>
+            </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Aptitude Cv Guide, Liberal Arts syllabus..."
+              placeholder={isCounselor ? "e.g. Ms. Shalini Sinha..." : "Aptitude Cv Guide, Liberal Arts syllabus..."}
               className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E]"
             />
           </div>
@@ -855,8 +952,81 @@ function ContentFormModal({
             </div>
           )}
 
+          {type === 'counselors' && (
+            <div className="space-y-4 text-left">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Brief Biography / Introduction</label>
+                <textarea
+                  value={desc}
+                  onChange={(e) => setDesc(e.target.value)}
+                  placeholder="A brief introduction highlighting their advisory style and experience..."
+                  rows={3}
+                  className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Academic Qualifications</label>
+                  <input
+                    type="text"
+                    value={instructor}
+                    onChange={(e) => setInstructor(e.target.value)}
+                    placeholder="e.g. M.Sc in Counseling Psychology, UCLA..."
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Advisory Focus / Specialties</label>
+                  <input
+                    type="text"
+                    value={mentor}
+                    onChange={(e) => setMentor(e.target.value)}
+                    placeholder="e.g. Liberal Arts, STEM profile building..."
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Contact Email</label>
+                  <input
+                    type="email"
+                    value={author}
+                    onChange={(e) => setAuthor(e.target.value)}
+                    placeholder="e.g. shalini@hyd.silveroaks.co.in"
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-1.5">
+                    <Image className="w-3.5 h-3.5 text-[#B80F2E]" /> 
+                    <span>Profile Photo File</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => handleFileUpload(e, 'thumb')}
+                      className="flex-1 py-1 text-xs"
+                    />
+                    {thumbnailURL && <span className="text-emerald-700 font-extrabold text-[10px] self-center shrink-0">Photo Attached ✓</span>}
+                  </div>
+                  <input 
+                    type="text"
+                    value={thumbnailURL} 
+                    onChange={(e) => setThumbnailURL(e.target.value)}
+                    placeholder="Or paste image URL bypass..."
+                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-[10px] font-semibold focus:outline-none mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Description brief & category with autocomplete suggestions dropdown */}
-          {type !== 'blogs' && (
+          {type !== 'blogs' && type !== 'counselors' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1 relative" ref={dropdownRef}>
                 <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center justify-between">
@@ -982,7 +1152,7 @@ function ContentFormModal({
           )}
 
           {/* Standard Media Asset Upload fields */}
-          {type !== 'blogs' && (
+          {type !== 'blogs' && type !== 'counselors' && (
             <div className="border border-rose-50 rounded-2xl p-4 bg-gray-50/50 gap-4 grid grid-cols-1 sm:grid-cols-2">
               
               {/* Thumbnail image */}
@@ -1020,64 +1190,68 @@ function ContentFormModal({
           )}
 
           {/* Unified PDF Document Attachment */}
-          <div className="space-y-1 border border-gray-200 rounded-2xl p-4 bg-zinc-50/50 text-left">
-            <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
-              <FileText className="w-4 h-4 text-rose-800 animate-pulse" />
-              <span>Drive PDF Attachment</span>
-            </label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input 
-                type="file" 
-                accept="application/pdf" 
-                onChange={(e) => handleFileUpload(e, 'pdf')}
-                className="flex-1 py-1.5 rounded-lg text-xs"
-              />
-              <input 
-                type="text"
-                value={pdfLink} 
-                onChange={(e) => setPdfLink(e.target.value)}
-                placeholder="Google Drive link or raw CDN URL..."
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-[10px] font-bold focus:outline-none bg-white"
-              />
+          {type !== 'counselors' && (
+            <div className="space-y-1 border border-gray-200 rounded-2xl p-4 bg-zinc-50/50 text-left">
+              <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                <FileText className="w-4 h-4 text-rose-800 animate-pulse" />
+                <span>Drive PDF Attachment</span>
+              </label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input 
+                  type="file" 
+                  accept="application/pdf" 
+                  onChange={(e) => handleFileUpload(e, 'pdf')}
+                  className="flex-1 py-1.5 rounded-lg text-xs"
+                />
+                <input 
+                  type="text"
+                  value={pdfLink} 
+                  onChange={(e) => setPdfLink(e.target.value)}
+                  placeholder="Google Drive link or raw CDN URL..."
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-[10px] font-bold focus:outline-none bg-white"
+                />
+              </div>
+              <p className="text-[10px] text-gray-400 font-medium mt-1">Accepts native PDF documents or linked Drive directories.</p>
             </div>
-            <p className="text-[10px] text-gray-400 font-medium mt-1">Accepts native PDF documents or linked Drive directories.</p>
-          </div>
+          )}
 
           {/* Clean Rich Text Body Editor */}
-          <div className="space-y-1 text-left">
-            <label className="text-xs font-bold text-[#B80F2E] uppercase tracking-widest">Lesson Content / Publication Body</label>
-            
-            {/* Formatting utility row */}
-            <div className="flex flex-wrap gap-1 bg-gray-50 border border-gray-200 p-1.5 rounded-t-xl overflow-x-auto">
-              <button onClick={() => formatText('bold')} className="p-1.5 hover:bg-gray-200 rounded" title="Bold text"><Bold className="w-3.5 h-3.5" /></button>
-              <button onClick={() => formatText('italic')} className="p-1.5 hover:bg-gray-200 rounded" title="Italic text"><Italic className="w-3.5 h-3.5" /></button>
-              <button onClick={() => formatText('formatBlock', '<h2>')} className="p-1.5 hover:bg-gray-200 rounded text-xs font-bold" title="H2 Section">H2</button>
-              <button onClick={() => formatText('formatBlock', '<h3>')} className="p-1.5 hover:bg-gray-200 rounded text-xs font-bold" title="H3 Sub-section">H3</button>
-              <button onClick={() => formatText('insertUnorderedList')} className="p-1.5 hover:bg-gray-200 rounded" title="Bullet list"><ListIcon className="w-3.5 h-3.5" /></button>
-              <button onClick={() => formatText('insertOrderedList')} className="p-1.5 hover:bg-gray-200 rounded" title="Numbered list"><ListOrdered className="w-3.5 h-3.5" /></button>
-              <button onClick={() => formatText('formatBlock', '<blockquote>')} className="p-1.5 hover:bg-gray-200 rounded" title="Quote block"><Quote className="w-3.5 h-3.5" /></button>
-              <button 
-                onClick={() => {
-                  const url = prompt("Link destination URI Address (e.g. hpps://...):");
-                  if (url) formatText('createLink', url);
-                }} 
-                className="p-1.5 hover:bg-gray-200 rounded" 
-                title="Hyperlink"
-              >
-                <Link2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
+          {type !== 'counselors' && (
+            <div className="space-y-1 text-left">
+              <label className="text-xs font-bold text-[#B80F2E] uppercase tracking-widest">Lesson Content / Publication Body</label>
+              
+              {/* Formatting utility row */}
+              <div className="flex flex-wrap gap-1 bg-gray-50 border border-gray-200 p-1.5 rounded-t-xl overflow-x-auto">
+                <button onClick={() => formatText('bold')} className="p-1.5 hover:bg-gray-200 rounded" title="Bold text"><Bold className="w-3.5 h-3.5" /></button>
+                <button onClick={() => formatText('italic')} className="p-1.5 hover:bg-gray-200 rounded" title="Italic text"><Italic className="w-3.5 h-3.5" /></button>
+                <button onClick={() => formatText('formatBlock', '<h2>')} className="p-1.5 hover:bg-gray-200 rounded text-xs font-bold" title="H2 Section">H2</button>
+                <button onClick={() => formatText('formatBlock', '<h3>')} className="p-1.5 hover:bg-gray-200 rounded text-xs font-bold" title="H3 Sub-section">H3</button>
+                <button onClick={() => formatText('insertUnorderedList')} className="p-1.5 hover:bg-gray-200 rounded" title="Bullet list"><ListIcon className="w-3.5 h-3.5" /></button>
+                <button onClick={() => formatText('insertOrderedList')} className="p-1.5 hover:bg-gray-200 rounded" title="Numbered list"><ListOrdered className="w-3.5 h-3.5" /></button>
+                <button onClick={() => formatText('formatBlock', '<blockquote>')} className="p-1.5 hover:bg-gray-200 rounded" title="Quote block"><Quote className="w-3.5 h-3.5" /></button>
+                <button 
+                  onClick={() => {
+                    const url = prompt("Link destination URI Address (e.g. hpps://...):");
+                    if (url) formatText('createLink', url);
+                  }} 
+                  className="p-1.5 hover:bg-gray-200 rounded" 
+                  title="Hyperlink"
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
 
-            {/* Editable drafting canvas */}
-            <div
-              ref={richEditorRef}
-              contentEditable
-              suppressContentEditableWarning
-              onBlur={handleEditorUpdate}
-              placeholder="Draft your interactive narrative guidelines here..."
-              className="w-full min-h-44 bg-white border-x border-b border-gray-200 rounded-b-xl px-4 py-3 text-xs sm:text-sm font-semibold outline-none focus:ring-1 focus:ring-gray-300 overflow-y-auto max-h-60"
-            />
-          </div>
+              {/* Editable drafting canvas */}
+              <div
+                ref={richEditorRef}
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={handleEditorUpdate}
+                placeholder="Draft your interactive narrative guidelines here..."
+                className="w-full min-h-44 bg-white border-x border-b border-gray-200 rounded-b-xl px-4 py-3 text-xs sm:text-sm font-semibold outline-none focus:ring-1 focus:ring-gray-300 overflow-y-auto max-h-60"
+              />
+            </div>
+          )}
 
           {/* Status draft or publish checkboxes */}
           <div className="space-y-1">

@@ -4,9 +4,9 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ArrowRight, BookOpen, Newspaper, FolderGit, CheckSquare, ChevronLeft, ChevronRight, PlayCircle, FileDown, CheckCircle } from 'lucide-react';
-import { Course, BlogPost, ReferenceMaterial, CareerLab, CardLayoutPreset } from '../types';
-import { fetchAllCourses, fetchAllBlogs, fetchAllReferences, fetchAllCareerLabs, getYoutubeEmbedId } from '../lib/supabase';
+import { Search, ArrowRight, BookOpen, Newspaper, FolderGit, CheckSquare, ChevronLeft, ChevronRight, PlayCircle, FileDown, CheckCircle, GraduationCap, Award, Sparkles, Mail, User } from 'lucide-react';
+import { Course, BlogPost, ReferenceMaterial, CareerLab, CardLayoutPreset, Counselor } from '../types';
+import { fetchAllCourses, fetchAllBlogs, fetchAllReferences, fetchAllCareerLabs, fetchAllCounselors, getYoutubeEmbedId } from '../lib/supabase';
 
 interface HomeProps {
   setCurrentPage: (page: string) => void;
@@ -18,6 +18,7 @@ export default function Home({ setCurrentPage, setSelectedId }: HomeProps) {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [refs, setRefs] = useState<ReferenceMaterial[]>([]);
   const [labs, setLabs] = useState<CareerLab[]>([]);
+  const [counselors, setCounselors] = useState<Counselor[]>([]);
   
   // Search state
   const [query, setQuery] = useState('');
@@ -35,16 +36,18 @@ export default function Home({ setCurrentPage, setSelectedId }: HomeProps) {
     // Gather featured resources safely from Supabase / Mocks
     async function loadFeatured() {
       try {
-        const [cList, bList, rList, lList] = await Promise.all([
+        const [cList, bList, rList, lList, counsList] = await Promise.all([
           fetchAllCourses(true),
           fetchAllBlogs(true),
           fetchAllReferences(true),
-          fetchAllCareerLabs(true)
+          fetchAllCareerLabs(true),
+          fetchAllCounselors(true)
         ]);
         setCourses(cList.slice(0, 5));
         setBlogs(bList.slice(0, 5));
         setRefs(rList.slice(0, 5));
         setLabs(lList.slice(0, 5));
+        setCounselors(counsList.slice(0, 4)); // Show up to 4 featured counsellors on home
       } catch (err) {
         console.error("Failed to load home featured items:", err);
       }
@@ -621,6 +624,98 @@ export default function Home({ setCurrentPage, setSelectedId }: HomeProps) {
               </div>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* 4. Meet Your Career Counsellors Section */}
+      <section className="bg-rose-50/20 border-t border-b border-rose-100/40 py-20 px-4">
+        <div className="max-w-7xl mx-auto">
+          
+          <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-12">
+            <div className="text-left max-w-2xl">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-100 text-[#B80F2E] font-bold text-[10px] uppercase tracking-wider mb-3">
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span>Student Advisory Desk</span>
+              </span>
+              <h2 className="text-3xl sm:text-4.5xl font-extrabold tracking-tight text-gray-900 font-serif">Meet Your Career Counsellors</h2>
+              <p className="text-gray-500 text-sm sm:text-base leading-relaxed mt-3">
+                Our qualified advisory team is ready to guide you in portfolio creation, college admission personal statements, stream selection analysis, and academic development.
+              </p>
+            </div>
+            <button 
+              onClick={() => setCurrentPage('counselors')}
+              className="px-5 py-3 bg-[#B80F2E] hover:bg-[#8F0A22] text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 cursor-pointer shadow transition-all self-start md:self-auto"
+            >
+              <span>View Roster</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {counselors.length ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+              {counselors.map((c) => (
+                <div 
+                  key={c.ID}
+                  onClick={() => setCurrentPage('counselors')}
+                  className="bg-white rounded-2xl border border-rose-100/80 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between group h-[380px]"
+                >
+                  <div>
+                    {/* Headshot Photo */}
+                    <div className="aspect-[4/3] bg-rose-50/50 relative overflow-hidden shrink-0 border-b border-rose-50">
+                      {c.ImageURL ? (
+                        <img 
+                          src={c.ImageURL} 
+                          alt={c.Name} 
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-rose-300">
+                          <User className="w-12 h-12 stroke-1" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
+                    </div>
+
+                    <div className="p-5">
+                      <h3 className="font-extrabold text-base text-gray-950 truncate font-serif group-hover:text-[#B80F2E] transition-colors">{c.Name}</h3>
+                      <p className="text-xs text-[#B80F2E] font-extrabold uppercase tracking-wide mt-1 truncate">{c.Qualifications || "Student Counsellor"}</p>
+                      
+                      <p className="text-gray-500 text-xs line-clamp-3 mt-3 leading-relaxed font-medium">
+                        {c.Intro}
+                      </p>
+                    </div>
+                  </div>
+
+                  {c.Contact && (
+                    <div className="p-5 pt-0">
+                      <div className="flex items-center gap-2 text-[10px] sm:text-xs text-gray-500 font-bold border-t border-gray-100 pt-4">
+                        <Mail className="w-3.5 h-3.5 text-[#B80F2E]" />
+                        <span className="truncate select-all">{c.Contact}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl border border-dashed border-rose-100 p-16 text-center max-w-md mx-auto shadow-sm">
+              <p className="text-xs text-gray-400 font-black uppercase tracking-widest leading-relaxed">
+                Connect with counselors in the staff portal to register new active profiles.
+              </p>
+            </div>
+          )}
+
+          <div className="mt-12 text-center">
+            <button
+              onClick={() => setCurrentPage('counselors')}
+              className="inline-flex items-center gap-2 px-6 py-3 border border-rose-200 hover:border-[#B80F2E] rounded-xl text-xs font-black uppercase tracking-widest text-gray-700 hover:text-[#B80F2E] bg-white transition-all shadow-sm cursor-pointer"
+            >
+              <span>Explore Dedicated Counseling Board</span>
+              <ArrowRight className="w-4 h-4 text-[#B80F2E]" />
+            </button>
+          </div>
+
         </div>
       </section>
 

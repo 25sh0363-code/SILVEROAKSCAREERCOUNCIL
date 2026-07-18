@@ -80,5 +80,18 @@ export interface DbUser {
   CreatedDate: string;
 }
 
+export interface Counselor {
+  ID: string;
+  Name: string;
+  ImageURL: string;
+  Intro: string;
+  Qualifications: string;
+  Extra: string;
+  Contact: string;
+  Status: 'Draft' | 'Published';
+  CreatedDate: string;
+  UpdatedDate: string;
+}
+
 // UI configuration
 export type CardLayoutPreset = 'classic-card' | 'bento-grid' | 'compact-list';

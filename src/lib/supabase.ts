@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { Course, BlogPost, ReferenceMaterial, CareerLab, DbUser, AppUser, UserRole } from '../types';
+import { Course, BlogPost, ReferenceMaterial, CareerLab, DbUser, AppUser, UserRole, Counselor } from '../types';
 
 // Exact original credentials provided in the user's source code
 export const SUPABASE_URL = "https://wicihqhrjgcikcyurbtd.supabase.co";
@@ -50,6 +50,33 @@ const MOCK_REFS: ReferenceMaterial[] = [];
 
 const MOCK_LABS: CareerLab[] = [];
 
+const MOCK_COUNSELORS: Counselor[] = [
+  {
+    ID: "c1",
+    Name: "Ms. Shalini Sinha",
+    ImageURL: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80",
+    Intro: "A dedicated mentor with over 12 years of experience guiding students toward selective Indian and global higher education pathways.",
+    Qualifications: "M.Sc in Counseling Psychology, Certified Global Career Practitioner (UCLA Extension)",
+    Extra: "Specializes in Liberal Arts admissions, profile building, and personal statement workshops.",
+    Contact: "careercounselling@hyd.silveroaks.co.in",
+    Status: "Published",
+    CreatedDate: "2026-06-01T09:00:00Z",
+    UpdatedDate: "2026-06-01T09:00:00Z"
+  },
+  {
+    ID: "c2",
+    Name: "Mr. Arjun Mehta",
+    ImageURL: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=600&q=80",
+    Intro: "Helping students match their academic profiles with top-tier technical and engineering universities worldwide.",
+    Qualifications: "M.A in Education, Certified Career Analyst",
+    Extra: "Expert in STEM stream selections, Ivy League admissions, and preparation for aptitude assessments.",
+    Contact: "arjun.mehta@hyd.silveroaks.co.in",
+    Status: "Published",
+    CreatedDate: "2026-06-02T10:30:00Z",
+    UpdatedDate: "2026-06-02T10:30:00Z"
+  }
+];
+
 const MOCK_USERS: DbUser[] = [
   { Name: "Suraj Kashikar", Email: "omsurajkashikarjhcsclass6@gmail.com", Role: "Admin", Status: "Active", CreatedDate: "2026-05-15T09:00:00Z" }
 ];
@@ -63,14 +90,24 @@ async function safeDbCall<T>(
     const { data, error } = await queryPromise;
     if (error) {
       console.warn("Supabase query error, fallback to mock data:", error.message || error);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('supabase-error', { 
+          detail: error.message || String(error) 
+        }));
+      }
       return mockFallback;
     }
     if (!data || data.length === 0) {
       return mockFallback;
     }
     return data as T[];
-  } catch (err) {
+  } catch (err: any) {
     console.error("Supabase network error, fallback to mock data:", err);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('supabase-error', { 
+        detail: err?.message || String(err) 
+      }));
+    }
     return mockFallback;
   }
 }
@@ -173,6 +210,135 @@ export async function fetchCareerLabById(id: string): Promise<CareerLab | null> 
   } catch {
     return MOCK_LABS.find(l => l.ID === id) || null;
   }
+}
+
+export async function fetchAllCounselors(isPublishedOnly = true): Promise<Counselor[]> {
+  let localList: Counselor[] = [];
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('local_counselors');
+    if (stored) {
+      try {
+        localList = JSON.parse(stored);
+      } catch (err) {
+        console.error("Failed to parse local counselors", err);
+      }
+    }
+  }
+  
+  const mergedFallback = [...localList];
+  for (const mock of MOCK_COUNSELORS) {
+    if (!mergedFallback.some(c => c.ID === mock.ID)) {
+      mergedFallback.push(mock);
+    }
+  }
+
+  const finalFallback = isPublishedOnly 
+    ? mergedFallback.filter(c => c.Status === 'Published')
+    : mergedFallback;
+
+  let query = supabase.from('counselors').select('*');
+  if (isPublishedOnly) {
+    query = query.eq('status', 'Published');
+  }
+  const result = await safeDbCall(
+    query.order('created_date', { ascending: false }),
+    []
+  );
+
+  if (result && result.length > 0) {
+    return result.map(toCounselor);
+  }
+
+  return finalFallback;
+}
+
+export async function saveCounselor(payload: Partial<Counselor>): Promise<string> {
+  const id = payload.ID || uuid();
+  const row = {
+    id: id,
+    name: payload.Name || "",
+    image_url: payload.ImageURL || "",
+    intro: payload.Intro || "",
+    qualifications: payload.Qualifications || "",
+    extra: payload.Extra || "",
+    contact: payload.Contact || "",
+    status: payload.Status || "Draft",
+    created_date: payload.CreatedDate || new Date().toISOString(),
+    updated_date: new Date().toISOString()
+  };
+
+  try {
+    const { data, error } = await supabase.from('counselors').upsert([row], { onConflict: 'id' }).select('*').single();
+    if (!error && data) {
+      return data.id;
+    }
+    console.warn("Failed to save counselor in Supabase, using local storage fallback:", error?.message);
+  } catch (err) {
+    console.warn("Supabase save counselor error, using local storage fallback:", err);
+  }
+
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('local_counselors');
+    let localList: Counselor[] = [];
+    if (stored) {
+      try {
+        localList = JSON.parse(stored);
+      } catch {}
+    }
+    const counselor: Counselor = {
+      ID: id,
+      Name: row.name,
+      ImageURL: row.image_url,
+      Intro: row.intro,
+      Qualifications: row.qualifications,
+      Extra: row.extra,
+      Contact: row.contact,
+      Status: row.status as 'Draft' | 'Published',
+      CreatedDate: row.created_date,
+      UpdatedDate: row.updated_date
+    };
+    
+    const existingIndex = localList.findIndex(c => c.ID === id);
+    if (existingIndex >= 0) {
+      localList[existingIndex] = counselor;
+    } else {
+      localList.push(counselor);
+    }
+    localStorage.setItem('local_counselors', JSON.stringify(localList));
+  }
+
+  return id;
+}
+
+export async function deleteCounselor(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.from('counselors').delete().eq('id', id);
+    if (!error) {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('local_counselors');
+        if (stored) {
+          try {
+            let localList: Counselor[] = JSON.parse(stored);
+            localList = localList.filter(c => c.ID !== id);
+            localStorage.setItem('local_counselors', JSON.stringify(localList));
+          } catch {}
+        }
+      }
+      return true;
+    }
+  } catch {}
+
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('local_counselors');
+    if (stored) {
+      try {
+        let localList: Counselor[] = JSON.parse(stored);
+        localList = localList.filter(c => c.ID !== id);
+        localStorage.setItem('local_counselors', JSON.stringify(localList));
+      } catch {}
+    }
+  }
+  return true;
 }
 
 export async function fetchAllUsers(): Promise<DbUser[]> {
@@ -458,6 +624,21 @@ function toDbUser(row: any): DbUser {
     Role: row.role as UserRole,
     Status: row.status,
     CreatedDate: row.created_date,
+  };
+}
+
+function toCounselor(row: any): Counselor {
+  return {
+    ID: row.id,
+    Name: row.name,
+    ImageURL: row.image_url,
+    Intro: row.intro,
+    Qualifications: row.qualifications,
+    Extra: row.extra,
+    Contact: row.contact,
+    Status: row.status,
+    CreatedDate: row.created_date,
+    UpdatedDate: row.updated_date,
   };
 }
 
