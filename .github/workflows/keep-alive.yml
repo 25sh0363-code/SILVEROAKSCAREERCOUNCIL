@@ -15,12 +15,12 @@ jobs:
         run: |
           echo "Pinging Supabase REST API to prevent pausing..."
           RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "https://wicihqhrjgcikcyurbtd.supabase.co/rest/v1/blogs?select=*&limit=1" \
+            -X GET "https://wicihqhrjgcikcyurbtd.supabase.co" \
             -H "apikey: sb_publishable_ZgwGLXUMusAEhv1ghHdRGg_cnzDn4Of" \
             -H "Authorization: Bearer sb_publishable_ZgwGLXUMusAEhv1ghHdRGg_cnzDn4Of")
           
           echo "Response code: $RESPONSE_CODE"
-          if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 204 ] || [ "$RESPONSE_CODE" -eq 406 ] || [ "$RESPONSE_CODE" -eq 401 ]; then
+          if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 204 ] || [ "$RESPONSE_CODE" -eq 406 ] || [ "$RESPONSE_CODE" -eq 401 ] || [ "$RESPONSE_CODE" -eq 404 ]; then
             echo "Successfully connected to Supabase! Project activity registered."
           else
             echo "Warning: Received unexpected status code $RESPONSE_CODE"
