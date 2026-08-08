@@ -2,27 +2,27 @@ name: Keep Supabase Awake
 
 on:
   schedule:
-    # Runs every 3 days at 00:00 UTC to keep the project active
+    # Runs every 3 days at 00:00 UTC
     - cron: '0 0 */3 * *'
-  workflow_dispatch: # Allows you to manually run it anytime from the Actions tab
+  workflow_dispatch:
 
 jobs:
   ping:
     name: Ping Supabase Database
     runs-on: ubuntu-latest
     steps:
-      - name: Send API request to query DB
+      - name: Send API request to Supabase REST API
         run: |
-          echo "Pinging Supabase REST API to prevent pausing..."
+          echo "Pinging Supabase REST API..."
           RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "https://wicihqhrjgcikcyurbtd.supabase.co" \
+            -X GET "https://wicihqhrjgcikcyurbtd.supabase.co/rest/v1/" \
             -H "apikey: sb_publishable_ZgwGLXUMusAEhv1ghHdRGg_cnzDn4Of" \
             -H "Authorization: Bearer sb_publishable_ZgwGLXUMusAEhv1ghHdRGg_cnzDn4Of")
           
           echo "Response code: $RESPONSE_CODE"
-          if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 204 ] || [ "$RESPONSE_CODE" -eq 406 ] || [ "$RESPONSE_CODE" -eq 401 ] || [ "$RESPONSE_CODE" -eq 404 ]; then
-            echo "Successfully connected to Supabase! Project activity registered."
+          if [ "$RESPONSE_CODE" -eq 200 ]; then
+            echo "Successfully pinged Supabase PostgREST API! Activity registered."
           else
-            echo "Warning: Received unexpected status code $RESPONSE_CODE"
+            echo "Failed to connect to REST endpoint. Received status code $RESPONSE_CODE"
             exit 1
           fi
