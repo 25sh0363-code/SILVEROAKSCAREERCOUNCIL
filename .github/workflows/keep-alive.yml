@@ -16,7 +16,7 @@ jobs:
           echo "Pinging Supabase REST API..."
           # Replace 'todos' with any real table name in your database, or keep 'todos' if anonymous read is allowed
           RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "https://wicihqhrjgcikcyurbtd.supabase.co/rest/v1/todos?select=id&limit=1" \
+            -X GET "https://wicihqhrjgcikcyurbtd.supabase.co/rest/v1/counselors?select=id&limit=1" \
             -H "apikey: sb_publishable_ZgwGLXUMusAEhv1ghHdRGg_cnzDn4Of")
           
           echo "Response code: $RESPONSE_CODE"
