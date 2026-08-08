@@ -10,6 +10,7 @@ import {
   fetchCourseById, fetchBlogById, fetchReferenceById, fetchCareerLabById,
   getYoutubeEmbedId, getPdfDownloadUrl 
 } from '../lib/supabase';
+import { renderContentToHtml } from '../lib/renderContent';
 
 interface DetailProps {
   type: 'course' | 'blog-item' | 'reference-item' | 'lab-item';
@@ -145,7 +146,7 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
             </h3>
             <div 
               className="rich-content"
-              dangerouslySetInnerHTML={{ __html: course.Content }}
+              dangerouslySetInnerHTML={{ __html: renderContentToHtml(course.Content) }}
             />
           </div>
         )}
@@ -228,7 +229,7 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
           <div className="bg-white rounded-3xl border border-[#dde4ee] shadow-sm p-6 sm:p-10 text-left">
             <div 
               className="rich-content"
-              dangerouslySetInnerHTML={{ __html: blog.Content }}
+              dangerouslySetInnerHTML={{ __html: renderContentToHtml(blog.Content) }}
             />
           </div>
         )}
@@ -314,7 +315,7 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
             </h3>
             <div 
               className="rich-content"
-              dangerouslySetInnerHTML={{ __html: reference.Content }}
+              dangerouslySetInnerHTML={{ __html: renderContentToHtml(reference.Content) }}
             />
           </div>
         )}
@@ -405,7 +406,7 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
             </h3>
             <div 
               className="rich-content"
-              dangerouslySetInnerHTML={{ __html: lab.Content }}
+              dangerouslySetInnerHTML={{ __html: renderContentToHtml(lab.Content) }}
             />
           </div>
         )}
