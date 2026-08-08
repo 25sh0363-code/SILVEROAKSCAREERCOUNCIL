@@ -11,18 +11,19 @@ jobs:
     name: Ping Supabase Database
     runs-on: ubuntu-latest
     steps:
-      - name: Send API request to Supabase REST API
+      - name: Send REST Request
         run: |
           echo "Pinging Supabase REST API..."
+          # Replace 'todos' with any real table name in your database, or keep 'todos' if anonymous read is allowed
           RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "https://wicihqhrjgcikcyurbtd.supabase.co/rest/v1/" \
-            -H "apikey: sb_publishable_ZgwGLXUMusAEhv1ghHdRGg_cnzDn4Of" \
-            -H "Authorization: Bearer sb_publishable_ZgwGLXUMusAEhv1ghHdRGg_cnzDn4Of")
+            -X GET "https://wicihqhrjgcikcyurbtd.supabase.co/rest/v1/todos?select=id&limit=1" \
+            -H "apikey: sb_publishable_ZgwGLXUMusAEhv1ghHdRGg_cnzDn4Of")
           
           echo "Response code: $RESPONSE_CODE"
-          if [ "$RESPONSE_CODE" -eq 200 ]; then
-            echo "Successfully pinged Supabase PostgREST API! Activity registered."
+          # 200 = Success, 206 = Partial Content
+          if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 206 ]; then
+            echo "Successfully connected and queried Supabase!"
           else
-            echo "Failed to connect to REST endpoint. Received status code $RESPONSE_CODE"
+            echo "Failed to query REST endpoint. Code: $RESPONSE_CODE"
             exit 1
           fi
