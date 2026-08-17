@@ -14,10 +14,13 @@ jobs:
       - name: Send REST Request
         run: |
           echo "Pinging Supabase REST API..."
+          TIMESTAMP=$(date +%s)
           RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/counselors?select=id&limit=1" \
-            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}")
-          
+            -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/counselors?select=id&limit=1&_ts=eq.${TIMESTAMP}" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Cache-Control: no-cache")
+
           echo "Response code: $RESPONSE_CODE"
           if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 206 ]; then
             echo "Successfully connected and queried Supabase!"
