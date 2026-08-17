@@ -2,8 +2,7 @@ name: Keep Supabase Awake
 
 on:
   schedule:
-    # Runs every 3 days at 00:00 UTC
-    - cron: '0 0 */3 * *'
+    - cron: '0 0 * * 1,4'   # Mon & Thu
   workflow_dispatch:
 
 jobs:
@@ -11,20 +10,20 @@ jobs:
     name: Ping Supabase Database
     runs-on: ubuntu-latest
     steps:
-      - name: Send REST Request
+      - name: Send Heartbeat
         run: |
-          echo "Pinging Supabase REST API..."
-          TIMESTAMP=$(date +%s)
+          echo "Sending heartbeat to Supabase..."
           RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/counselors?select=id&limit=1&_ts=eq.${TIMESTAMP}" \
+            -X POST "${{ secrets.SUPABASE_URL }}/rest/v1/heartbeat" \
             -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
-            -H "Cache-Control: no-cache")
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d '{}')
 
           echo "Response code: $RESPONSE_CODE"
-          if [ "$RESPONSE_CODE" -eq 200 ] || [ "$RESPONSE_CODE" -eq 206 ]; then
-            echo "Successfully connected and queried Supabase!"
+          if [ "$RESPONSE_CODE" -eq 201 ] || [ "$RESPONSE_CODE" -eq 200 ]; then
+            echo "Heartbeat recorded successfully!"
           else
-            echo "Failed to query REST endpoint. Code: $RESPONSE_CODE"
+            echo "Failed to insert heartbeat. Code: $RESPONSE_CODE"
             exit 1
           fi
