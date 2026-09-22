@@ -593,33 +593,10 @@ export default function App() {
 
       {/* Database Connection Status Warning Banner */}
       {supabaseError && (
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-y border-amber-200 py-3.5 px-4 text-center">
-          <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm font-semibold text-amber-900">
-            <div className="flex items-center gap-2.5 text-left">
-              <span className="text-lg">⚠️</span>
-              <div>
-                <p className="font-extrabold text-amber-950">Database Offline / Project Paused</p>
-                <p className="text-xs text-amber-700 font-medium">
-                  Supabase returned a fetch error ({supabaseError}). This usually means the free-tier database is **paused** due to inactivity or URL configuration is incorrect.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <a 
-                href="https://supabase.com/dashboard" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-black text-[10px] uppercase tracking-widest transition shadow-sm cursor-pointer"
-              >
-                Restore Supabase
-              </a>
-              <button 
-                onClick={() => setSupabaseError(null)}
-                className="px-3 py-1.5 bg-white border border-amber-200 text-amber-800 hover:bg-amber-100 rounded-lg font-black text-[10px] uppercase tracking-widest transition cursor-pointer"
-              >
-                Dismiss
-              </button>
-            </div>
+        <div className="bg-rose-50 border-y border-rose-200 py-4 px-4 text-center relative z-50">
+          <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 text-xs sm:text-sm font-extrabold text-rose-950 uppercase tracking-widest">
+            <span className="text-base">⚠️</span>
+            <span>database is inactive please contact the the career counsellors</span>
           </div>
         </div>
       )}
