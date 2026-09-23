@@ -59,7 +59,7 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
     return (
       <div className="max-w-4xl mx-auto px-4 py-24 text-center">
         <div className="spinner" />
-        <p className="text-gray-400 font-semibold uppercase tracking-widest text-xs mt-4">Streaming publication briefs...</p>
+        <p className="text-stone-400 font-medium uppercase tracking-wider text-xs mt-4">Loading details...</p>
       </div>
     );
   }
@@ -69,35 +69,34 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
     const embedId = getYoutubeEmbedId(course.YouTubeURL);
     return (
       <article className="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-left">
-        <button onClick={onBack} className="mb-6 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-800 hover:text-rose-900 border-b border-transparent hover:border-rose-900 pb-0.5 transition-all">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Go back to Courses</span>
+        <button 
+          onClick={onBack} 
+          className="mb-6 flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Courses</span>
         </button>
 
-        <div className="space-y-4 mb-8">
-          <div className="flex gap-2 flex-wrap">
-            <span className="text-[10px] font-black uppercase tracking-wider bg-rose-50 text-[#B80F2E] px-3 py-1 rounded">
-              {course.Category}
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-500 px-3 py-1 rounded-md">
-              {course.Grade}
-            </span>
+        <div className="space-y-3 mb-8 pb-6 border-b border-stone-200">
+          <div className="flex items-center gap-2 text-[11px] font-medium text-stone-500">
+            <span>{course.Category}</span>
+            <span>· Grade {course.Grade}</span>
           </div>
-          <h1 className="text-3xl sm:text-4.5xl font-black text-gray-900 tracking-tight font-serif select-all leading-tight">
+          <h1 className="text-2xl sm:text-3.5xl font-serif font-normal text-stone-900 tracking-tight leading-tight">
             {course.Title}
           </h1>
-          <div className="flex items-center gap-4 text-xs font-semibold text-gray-400">
-            <span className="flex items-center gap-1.5"><User className="w-4 h-4 text-rose-700" /> 👨‍🏫 Instructor: {course.Instructor}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1.5">📅 Updated {new Date(course.UpdatedDate || course.CreatedDate).toLocaleDateString()}</span>
+          <div className="flex items-center gap-3 text-xs text-stone-500">
+            <span>Instructor: {course.Instructor}</span>
+            <span>·</span>
+            <span>Updated {new Date(course.UpdatedDate || course.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           </div>
         </div>
 
         {/* Video Embedding Frame */}
         {embedId && (
-          <div className="bg-white rounded-3xl border border-rose-100 shadow-sm overflow-hidden p-3.5 mb-8">
-            <span className="text-[10px] font-black uppercase text-rose-700 block mb-2 tracking-widest">🎬 Video Lecture</span>
-            <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow shadow-rose-900/10">
+          <div className="bg-white rounded-lg border border-stone-200 overflow-hidden p-2.5 mb-8">
+            <span className="text-[11px] font-medium text-stone-500 block mb-2 px-1">Video Lecture</span>
+            <div className="relative aspect-video w-full rounded overflow-hidden bg-black">
               <iframe
                 src={`https://www.youtube.com/embed/${embedId}`}
                 title="Course Lecture"
@@ -111,24 +110,23 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
 
         {/* PDF Download line */}
         {course.PDFLink && (
-          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex items-center justify-between gap-4 mb-8">
-            <div className="text-left flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg shrink-0">
-                📄
+          <div className="bg-white border border-stone-200 rounded-lg p-5 flex items-center justify-between gap-4 mb-8">
+            <div className="text-left flex items-start gap-3.5">
+              <div className="w-9 h-9 rounded bg-stone-100 text-stone-700 flex items-center justify-center text-base shrink-0">
+                <FileDown className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-bold text-emerald-950 text-sm sm:text-base leading-tight">Syllabus PDF Material</h4>
-                <p className="text-xs sm:text-sm text-emerald-800 mt-0.5">Complementary worksheets, outlines, and task lists ready to download.</p>
+                <h4 className="font-medium text-stone-900 text-sm leading-tight">Syllabus PDF Material</h4>
+                <p className="text-xs text-stone-500 mt-0.5">Complementary worksheets, outlines, and task lists ready to download.</p>
               </div>
             </div>
             <a
               href={getPdfDownloadUrl(course.PDFLink)}
               target="_blank"
               rel="noopener noreferrer"
-              title="Opens document in a new safe tab"
-              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow shadow-emerald-700/5 focus:outline-none cursor-pointer"
+              className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded text-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
             >
-              <FileDown className="w-4 h-4" />
+              <FileDown className="w-3.5 h-3.5" />
               <span className="sm:inline hidden">
                 {course.PDFLink.toLowerCase().includes("drive.google.com") || course.PDFLink.includes("/d/") 
                   ? "View PDF" 
@@ -140,9 +138,9 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
 
         {/* Course Core HTML content */}
         {course.Content && (
-          <div className="bg-white rounded-3xl border border-[#dde4ee] shadow-sm p-6 sm:p-10 text-left">
-            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 font-serif mb-6 border-b border-rose-50 pb-3">
-              Course syllabus content
+          <div className="bg-white rounded-lg border border-stone-200 p-6 sm:p-10 text-left">
+            <h3 className="text-lg font-serif font-medium text-stone-900 mb-6 pb-3 border-b border-stone-100">
+              Course Syllabus & Readings
             </h3>
             <div 
               className="rich-content"
@@ -159,34 +157,35 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
   if (type === 'blog-item' && blog) {
     return (
       <article className="max-w-3xl mx-auto px-4 sm:px-6 py-12 text-left">
-        <button onClick={onBack} className="mb-6 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-800 hover:text-rose-900 border-b border-transparent hover:border-rose-900 pb-0.5 transition-all">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Go back to Publications</span>
+        <button 
+          onClick={onBack} 
+          className="mb-6 flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Publications</span>
         </button>
 
-        <div className="space-y-4 mb-8">
-          <div className="flex gap-1.5">
+        <div className="space-y-3 mb-8 pb-6 border-b border-stone-200">
+          <div className="flex items-center gap-2 text-[11px] font-medium text-stone-500">
             {(blog.Tags || "").split(',').filter(Boolean).map((t, idx) => (
-              <span key={idx} className="text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-700 px-3 py-1 rounded">
-                #{t.trim()}
-              </span>
+              <span key={idx}>#{t.trim()}</span>
             ))}
           </div>
 
-          <h1 className="text-3xl sm:text-4.5xl font-black text-gray-900 tracking-tight font-serif leading-tight">
+          <h1 className="text-2xl sm:text-3.5xl font-serif font-normal text-stone-900 tracking-tight leading-tight">
             {blog.Title}
           </h1>
 
-          <div className="flex items-center gap-4 text-xs font-semibold text-gray-400">
-            <span className="flex items-center gap-1.5"><User className="w-4 h-4 text-rose-700" /> By Counselor Panel ({blog.AuthorEmail.split('@')[0]})</span>
-            <span>•</span>
-            <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> Published {new Date(blog.CreatedDate).toLocaleDateString()}</span>
+          <div className="flex items-center gap-3 text-xs text-stone-500">
+            <span>Counselor Faculty ({blog.AuthorEmail.split('@')[0]})</span>
+            <span>·</span>
+            <span>Published {new Date(blog.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           </div>
         </div>
 
         {/* Featured Image */}
         {blog.FeaturedImageURL && (
-          <div className="aspect-video w-full rounded-2xl overflow-hidden border border-rose-100 shadow mb-8">
+          <div className="aspect-video w-full rounded-lg overflow-hidden border border-stone-200 mb-8 bg-stone-100">
             <img 
               src={blog.FeaturedImageURL} 
               alt="" 
@@ -197,24 +196,23 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
 
         {/* PDF Download line */}
         {blog.PDFLink && (
-          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex items-center justify-between gap-4 mb-8">
-            <div className="text-left flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg shrink-0">
-                📄
+          <div className="bg-white border border-stone-200 rounded-lg p-5 flex items-center justify-between gap-4 mb-8">
+            <div className="text-left flex items-start gap-3.5">
+              <div className="w-9 h-9 rounded bg-stone-100 text-stone-700 flex items-center justify-center text-base shrink-0">
+                <FileDown className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-bold text-emerald-950 text-sm sm:text-base leading-tight">Supplemental PDF Brief</h4>
-                <p className="text-xs sm:text-sm text-emerald-800 mt-0.5">Counselor-attached checklist guidelines ready to download.</p>
+                <h4 className="font-medium text-stone-900 text-sm leading-tight">Supplemental PDF Brief</h4>
+                <p className="text-xs text-stone-500 mt-0.5">Official checklist guidelines available for offline reference.</p>
               </div>
             </div>
             <a
               href={getPdfDownloadUrl(blog.PDFLink)}
               target="_blank"
               rel="noopener noreferrer"
-              title="Opens document in a new safe tab"
-              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow cursor-pointer"
+              className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded text-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
             >
-              <FileDown className="w-4 h-4" />
+              <FileDown className="w-3.5 h-3.5" />
               <span className="sm:inline hidden">
                 {blog.PDFLink.toLowerCase().includes("drive.google.com") || blog.PDFLink.includes("/d/") 
                   ? "View PDF" 
@@ -226,7 +224,7 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
 
         {/* Full post Content */}
         {blog.Content && (
-          <div className="bg-white rounded-3xl border border-[#dde4ee] shadow-sm p-6 sm:p-10 text-left">
+          <div className="bg-white rounded-lg border border-stone-200 p-6 sm:p-10 text-left">
             <div 
               className="rich-content"
               dangerouslySetInnerHTML={{ __html: renderContentToHtml(blog.Content) }}
@@ -243,30 +241,33 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
     const embedId = getYoutubeEmbedId(reference.YouTubeURL);
     return (
       <article className="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-left">
-        <button onClick={onBack} className="mb-6 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-800 hover:text-rose-900 border-b border-transparent hover:border-rose-900 pb-0.5 transition-all">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Go back to References</span>
+        <button 
+          onClick={onBack} 
+          className="mb-6 flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to References</span>
         </button>
 
-        <div className="space-y-4 mb-8">
-          <span className="text-[10px] font-black uppercase tracking-wider bg-rose-50 text-[#B80F2E] px-3 py-1 rounded">
+        <div className="space-y-3 mb-8 pb-6 border-b border-stone-200">
+          <div className="text-[11px] font-medium text-stone-500">
             {reference.Category}
-          </span>
-          <h1 className="text-3xl sm:text-4.5xl font-black text-gray-900 tracking-tight font-serif leading-tight">
+          </div>
+          <h1 className="text-2xl sm:text-3.5xl font-serif font-normal text-stone-900 tracking-tight leading-tight">
             {reference.Title}
           </h1>
-          <div className="flex items-center gap-4 text-xs font-semibold text-gray-400">
-            <span className="flex items-center gap-1.5"><User className="w-4 h-4 text-rose-700" /> Compiled by {reference.Author}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1.5">📅 Updated {new Date(reference.UpdatedDate || reference.CreatedDate).toLocaleDateString()}</span>
+          <div className="flex items-center gap-3 text-xs text-stone-500">
+            <span>Compiled by {reference.Author}</span>
+            <span>·</span>
+            <span>Updated {new Date(reference.UpdatedDate || reference.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           </div>
         </div>
 
         {/* Video Embedding Frame */}
         {embedId && (
-          <div className="bg-white rounded-3xl border border-rose-100 shadow-sm overflow-hidden p-3.5 mb-8">
-            <span className="text-[10px] font-black uppercase text-rose-700 block mb-2 tracking-widest">🎬 Briefing video</span>
-            <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow">
+          <div className="bg-white rounded-lg border border-stone-200 overflow-hidden p-2.5 mb-8">
+            <span className="text-[11px] font-medium text-stone-500 block mb-2 px-1">Briefing Video</span>
+            <div className="relative aspect-video w-full rounded overflow-hidden bg-black">
               <iframe
                 src={`https://www.youtube.com/embed/${embedId}`}
                 title="Reference Lecture"
@@ -280,24 +281,23 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
 
         {/* PDF Download line */}
         {reference.PDFLink && (
-          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex items-center justify-between gap-4 mb-8">
-            <div className="text-left flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg shrink-0">
-                📄
+          <div className="bg-white border border-stone-200 rounded-lg p-5 flex items-center justify-between gap-4 mb-8">
+            <div className="text-left flex items-start gap-3.5">
+              <div className="w-9 h-9 rounded bg-stone-100 text-stone-700 flex items-center justify-center text-base shrink-0">
+                <FileDown className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-bold text-emerald-950 text-sm sm:text-base leading-tight">Reference File PDF</h4>
-                <p className="text-xs sm:text-sm text-emerald-800 mt-0.5">Standard CV outlines and tracking spreadsheets ready to download.</p>
+                <h4 className="font-medium text-stone-900 text-sm leading-tight">Reference Document PDF</h4>
+                <p className="text-xs text-stone-500 mt-0.5">Standard CV outlines and tracking spreadsheets ready to download.</p>
               </div>
             </div>
             <a
               href={getPdfDownloadUrl(reference.PDFLink)}
               target="_blank"
               rel="noopener noreferrer"
-              title="Opens document in a new safe tab"
-              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow cursor-pointer"
+              className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded text-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
             >
-              <FileDown className="w-4 h-4" />
+              <FileDown className="w-3.5 h-3.5" />
               <span className="sm:inline hidden">
                 {reference.PDFLink.toLowerCase().includes("drive.google.com") || reference.PDFLink.includes("/d/") 
                   ? "View PDF" 
@@ -309,9 +309,9 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
 
         {/* Reference HTML content */}
         {reference.Content && (
-          <div className="bg-white rounded-3xl border border-[#dde4ee] shadow-sm p-6 sm:p-10 text-left">
-            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 font-serif mb-6 border-b border-rose-50 pb-3">
-              Official document details
+          <div className="bg-white rounded-lg border border-stone-200 p-6 sm:p-10 text-left">
+            <h3 className="text-lg font-serif font-medium text-stone-900 mb-6 pb-3 border-b border-stone-100">
+              Official Document Details
             </h3>
             <div 
               className="rich-content"
@@ -329,35 +329,34 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
     const embedId = getYoutubeEmbedId(lab.YouTubeURL);
     return (
       <article className="max-w-4xl mx-auto px-4 sm:px-6 py-12 text-left">
-        <button onClick={onBack} className="mb-6 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-800 hover:text-rose-900 border-b border-transparent hover:border-rose-900 pb-0.5 transition-all">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Go back to Career Lab</span>
+        <button 
+          onClick={onBack} 
+          className="mb-6 flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Career Lab</span>
         </button>
 
-        <div className="space-y-4 mb-8">
-          <div className="flex gap-2 flex-wrap">
-            <span className="text-[10px] font-black uppercase tracking-wider bg-rose-50 text-[#B80F2E] px-3 py-1 rounded">
-              {lab.Category}
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-[#111827] px-3 py-1 rounded-md">
-              Student: {lab.Student}
-            </span>
+        <div className="space-y-3 mb-8 pb-6 border-b border-stone-200">
+          <div className="flex items-center gap-2 text-[11px] font-medium text-stone-500">
+            <span>{lab.Category}</span>
+            <span>· Student: {lab.Student}</span>
           </div>
-          <h1 className="text-3xl sm:text-4.5xl font-black text-gray-900 tracking-tight font-serif leading-tight">
+          <h1 className="text-2xl sm:text-3.5xl font-serif font-normal text-stone-900 tracking-tight leading-tight">
             {lab.Title}
           </h1>
-          <div className="flex items-center gap-4 text-xs font-semibold text-gray-400">
-            <span className="flex items-center gap-1.5"><User className="w-4 h-4 text-rose-700" /> 👤 Mentor: {lab.Mentor}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1.5">📅 Submitted {new Date(lab.UpdatedDate || lab.CreatedDate).toLocaleDateString()}</span>
+          <div className="flex items-center gap-3 text-xs text-stone-500">
+            <span>Mentor: {lab.Mentor}</span>
+            <span>·</span>
+            <span>Submitted {new Date(lab.UpdatedDate || lab.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           </div>
         </div>
 
         {/* Video Embedding Frame */}
         {embedId && (
-          <div className="bg-white rounded-3xl border border-rose-100 shadow-sm overflow-hidden p-3.5 mb-8">
-            <span className="text-[10px] font-black uppercase text-rose-700 block mb-2 tracking-widest">🎬 Project Video Explainer</span>
-            <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow">
+          <div className="bg-white rounded-lg border border-stone-200 overflow-hidden p-2.5 mb-8">
+            <span className="text-[11px] font-medium text-stone-500 block mb-2 px-1">Project Video</span>
+            <div className="relative aspect-video w-full rounded overflow-hidden bg-black">
               <iframe
                 src={`https://www.youtube.com/embed/${embedId}`}
                 title="Career Lab Lecture"
@@ -371,24 +370,23 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
 
         {/* PDF Download line */}
         {lab.PDFLink && (
-          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex items-center justify-between gap-4 mb-8">
-            <div className="text-left flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-lg shrink-0">
-                📄
+          <div className="bg-white border border-stone-200 rounded-lg p-5 flex items-center justify-between gap-4 mb-8">
+            <div className="text-left flex items-start gap-3.5">
+              <div className="w-9 h-9 rounded bg-stone-100 text-stone-700 flex items-center justify-center text-base shrink-0">
+                <FileDown className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-bold text-emerald-950 text-sm sm:text-base leading-tight">Research Paper PDF</h4>
-                <p className="text-xs sm:text-sm text-emerald-800 mt-0.5">Download full research briefs, data sheets, and charts.</p>
+                <h4 className="font-medium text-stone-900 text-sm leading-tight">Research Paper PDF</h4>
+                <p className="text-xs text-stone-500 mt-0.5">Full research brief, data sheets, and analytical appendices.</p>
               </div>
             </div>
             <a
               href={getPdfDownloadUrl(lab.PDFLink)}
               target="_blank"
               rel="noopener noreferrer"
-              title="Opens document in a new safe tab"
-              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition shadow cursor-pointer"
+              className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white font-medium rounded text-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
             >
-              <FileDown className="w-4 h-4" />
+              <FileDown className="w-3.5 h-3.5" />
               <span className="sm:inline hidden">
                 {lab.PDFLink.toLowerCase().includes("drive.google.com") || lab.PDFLink.includes("/d/") 
                   ? "View PDF" 
@@ -400,9 +398,9 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
 
         {/* Lab Content */}
         {lab.Content && (
-          <div className="bg-white rounded-3xl border border-[#dde4ee] shadow-sm p-6 sm:p-10 text-left">
-            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 font-serif mb-6 border-b border-rose-50 pb-3">
-              Research thesis & findings
+          <div className="bg-white rounded-lg border border-stone-200 p-6 sm:p-10 text-left">
+            <h3 className="text-lg font-serif font-medium text-stone-900 mb-6 pb-3 border-b border-stone-100">
+              Research Thesis & Findings
             </h3>
             <div 
               className="rich-content"
@@ -417,10 +415,13 @@ export default function ItemDetail({ type, id, onBack, setCurrentPage, setSelect
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-24 text-center">
-      <div className="text-4xl mb-4">🔍</div>
-      <h3 className="text-lg font-bold text-gray-900 font-serif">Resource Not Found</h3>
-      <button onClick={onBack} className="mt-4 px-6 py-2 bg-[#B80F2E] text-white rounded-xl font-bold text-xs uppercase tracking-wider">
-        Go Back
+      <h3 className="font-serif text-lg text-stone-900">Resource not found</h3>
+      <p className="text-stone-500 text-xs mt-1">The requested document could not be located in the archive.</p>
+      <button 
+        onClick={onBack} 
+        className="mt-4 px-4 py-2 bg-stone-900 text-white rounded text-xs font-medium hover:bg-stone-800 transition-colors cursor-pointer"
+      >
+        Return to Previous Page
       </button>
     </div>
   );

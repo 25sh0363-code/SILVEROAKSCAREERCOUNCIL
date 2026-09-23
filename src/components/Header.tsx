@@ -30,97 +30,94 @@ export default function Header({
   };
 
   const navLinks = [
-    { id: 'home', label: 'Home', icon: GraduationCap },
-    { id: 'courses', label: 'Courses', icon: BookOpen },
-    { id: 'blog', label: 'Blog', icon: Newspaper },
-    { id: 'references', label: 'References', icon: FolderGit },
-    { id: 'career-lab', label: 'Career Lab', icon: CheckSquare },
+    { id: 'home', label: 'Home' },
+    { id: 'courses', label: 'Courses' },
+    { id: 'blog', label: 'Editorial' },
+    { id: 'references', label: 'Reference Library' },
+    { id: 'career-lab', label: 'Career Lab' },
+    { id: 'counselors', label: 'Counsellors' },
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-rose-100 shadow-sm transition-all duration-300">
-      {/* Red accent bar on top */}
-      <div className="h-1 w-full bg-gradient-to-r from-[#8F0A22] via-[#B80F2E] to-[#EF4444]" />
-
-      <div className="max-w-[1536px] mx-auto px-4 sm:px-8 lg:px-12">
-        <div className="flex items-center justify-between h-20 sm:h-22">
+    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-stone-200 transition-all">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-18">
           
-          {/* Logo Brand with elegant spacing */}
-          <div className="flex items-center cursor-pointer group shrink-0" onClick={() => setCurrentPage('home')}>
-            <Logo className="h-12 lg:h-13 group-hover:scale-105 transition-all duration-300 shadow-sm rounded-xl" />
+          {/* Logo Brand with clean alignment */}
+          <div 
+            className="flex items-center cursor-pointer shrink-0" 
+            onClick={() => setCurrentPage('home')}
+          >
+            <Logo className="h-9 sm:h-10 transition-opacity hover:opacity-85" />
           </div>
 
-          {/* Desktop Navigation Links - Spacious and beautifully optimized */}
-          <nav className="hidden md:flex items-center space-x-3 lg:space-x-5 xl:space-x-7 ml-10 mr-auto">
+          {/* Desktop Navigation Links - Clean, quiet typography */}
+          <nav className="hidden md:flex items-center space-x-7 ml-8 mr-auto">
             {navLinks.map((link) => {
-              const LinkIcon = link.icon;
               const isActive = currentPage === link.id || (link.id !== 'home' && currentPage.startsWith(link.id));
               return (
                 <button
                   key={link.id}
                   onClick={() => setCurrentPage(link.id)}
-                  className={`flex items-center gap-2 px-3 py-2.5 lg:px-4.5 xl:px-5 rounded-xl text-xs lg:text-sm font-bold tracking-wider uppercase transition-all duration-200 ${
+                  className={`relative py-1 text-sm font-medium transition-colors cursor-pointer ${
                     isActive
-                      ? 'bg-rose-50 text-[#B80F2E] shadow-sm font-black'
-                      : 'text-gray-600 hover:text-[#B80F2E] hover:bg-rose-50/50'
+                      ? 'text-[#8B1D2C] font-semibold after:absolute after:bottom-[-6px] after:left-0 after:right-0 after:h-[2px] after:bg-[#8B1D2C]'
+                      : 'text-stone-600 hover:text-stone-900'
                   }`}
                 >
-                  <LinkIcon className="w-4 h-4 shrink-0" />
-                  <span>{link.label}</span>
+                  {link.label}
                 </button>
               );
             })}
             
-            {/* Admin link */}
+            {/* Staff Portal Link */}
             {user.isAdmin && (
               <button
                 onClick={() => setCurrentPage('staff')}
-                className={`flex items-center gap-2 px-3 py-2.5 lg:px-4.5 xl:px-5 rounded-xl text-xs lg:text-sm font-bold tracking-wider transition-all duration-200 uppercase ${
+                className={`py-1 text-sm font-medium transition-colors cursor-pointer ${
                   currentPage === 'staff' || currentPage.startsWith('staff-')
-                    ? 'bg-rose-900 text-white shadow-md font-black'
-                    : 'text-rose-850 hover:text-[#B80F2E] hover:bg-rose-50'
+                    ? 'text-[#8B1D2C] font-semibold'
+                    : 'text-stone-500 hover:text-stone-900'
                 }`}
               >
-                <Settings2 className="w-4 h-4 shrink-0" />
-                <span>Staff Portal</span>
+                Staff Portal
               </button>
             )}
           </nav>
 
-          {/* Right utilities: User profile & Logout */}
-          <div className="hidden md:flex items-center gap-6 shrink-0">
-            
-            {/* Profile Avatar Meta */}
-            <div className="flex items-center gap-3 pr-4 border-r border-rose-100 max-w-sm">
-              <div className="w-10 h-10 rounded-full bg-rose-100 text-[#B80F2E] font-extrabold text-sm uppercase flex items-center justify-center border-2 border-rose-200 shadow-sm shrink-0">
+          {/* Right utilities: User info & Logout */}
+          <div className="hidden md:flex items-center gap-5 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-stone-100 text-stone-700 font-medium text-xs flex items-center justify-center border border-stone-200 shrink-0">
                 {getInitials(user.name)}
               </div>
-              <div className="flex flex-col text-left leading-tight max-w-[280px]">
-                <span className="text-[#101827] font-black text-sm truncate" title={user.name}>{user.name}</span>
-                <span className="text-[10px] text-rose-700 font-extrabold uppercase tracking-widest mt-0.5">{user.role}</span>
+              <div className="flex flex-col text-left leading-tight max-w-[180px]">
+                <span className="text-stone-900 font-medium text-xs truncate" title={user.name}>{user.name}</span>
+                <span className="text-[10px] text-stone-500 tracking-wide mt-0.5">{user.role}</span>
               </div>
             </div>
 
-            {/* Logout button */}
+            <span className="w-px h-4 bg-stone-200" aria-hidden="true" />
+
             <button
               onClick={onLogout}
-              className="px-4 py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 hover:text-red-700 hover:bg-rose-50 hover:border-rose-200 transition-all text-xs font-extrabold uppercase tracking-widest flex items-center gap-2"
+              className="text-xs font-medium text-stone-500 hover:text-stone-900 transition-colors flex items-center gap-1.5 cursor-pointer py-1.5 px-2 hover:bg-stone-100 rounded"
+              title="Log out of session"
             >
-              <LogOut className="w-4 h-4 shrink-0" />
+              <LogOut className="w-3.5 h-3.5" />
               <span>Log out</span>
             </button>
           </div>
 
-          {/* Hamburger trigger for mobile display */}
+          {/* Mobile hamburger button */}
           <div className="flex md:hidden items-center gap-3">
-            {/* Quick profile circle */}
-            <div className="w-9 h-9 rounded-full bg-rose-100 text-[#B80F2E] font-black text-xs flex items-center justify-center border border-rose-200">
+            <div className="w-8 h-8 rounded-full bg-stone-100 text-stone-800 font-medium text-xs flex items-center justify-center border border-stone-200">
               {getInitials(user.name)}
             </div>
 
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2.5 rounded-xl text-gray-700 hover:text-[#B80F2E] hover:bg-rose-50 border border-gray-200 transition-all"
+              className="p-2 text-stone-600 hover:text-stone-900 transition-colors"
               aria-label="Toggle navigation menu"
             >
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -132,10 +129,9 @@ export default function Header({
 
       {/* Mobile Drawer */}
       {menuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-rose-100 shadow-xl transition-all duration-300">
-          <div className="px-4 pt-2 pb-6 space-y-2 flex flex-col text-left">
+        <div className="md:hidden border-t border-stone-200 bg-white shadow-lg">
+          <div className="px-4 py-4 space-y-1 text-left">
             {navLinks.map((link) => {
-              const LinkIcon = link.icon;
               const isActive = currentPage === link.id || (link.id !== 'home' && currentPage.startsWith(link.id));
               return (
                 <button
@@ -144,14 +140,13 @@ export default function Header({
                     setCurrentPage(link.id);
                     setMenuOpen(false);
                   }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
+                  className={`w-full text-left px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-rose-50 text-[#B80F2E] border-rose-200/60 shadow-sm'
-                      : 'text-gray-700 border-transparent hover:bg-rose-50/50 hover:text-[#B80F2E]'
+                      ? 'text-[#8B1D2C] bg-stone-50 font-semibold'
+                      : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                   }`}
                 >
-                  <LinkIcon className="w-4 h-4" />
-                  <span>{link.label}</span>
+                  {link.label}
                 </button>
               );
             })}
@@ -162,32 +157,25 @@ export default function Header({
                   setCurrentPage('staff');
                   setMenuOpen(false);
                 }}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wide border transition-all ${
+                className={`w-full text-left px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                   currentPage === 'staff' || currentPage.startsWith('staff-')
-                    ? 'bg-rose-950 text-white border-rose-950 shadow-md'
-                    : 'text-rose-800 border-rose-200 bg-rose-50 hover:bg-rose-100/50'
+                    ? 'text-[#8B1D2C] bg-stone-50 font-semibold'
+                    : 'text-stone-600 hover:bg-stone-50 hover:text-stone-900'
                 }`}
               >
-                <Settings2 className="w-4 h-4" />
-                <span>Staff Portal</span>
+                Staff Portal
               </button>
             )}
 
-            {/* Mobile User Profile Footer */}
-            <div className="pt-4 border-t border-gray-100 mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-rose-100 text-[#B80F2E] font-bold text-xs flex items-center justify-center">
-                  {getInitials(user.name)}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-gray-900 font-bold text-xs truncate max-w-44 text-[#101827]">{user.name}</span>
-                  <span className="text-[10px] text-rose-700 font-bold uppercase tracking-wider">{user.role}</span>
-                </div>
+            <div className="pt-3 mt-3 border-t border-stone-200 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-stone-900 font-medium text-xs truncate max-w-44">{user.name}</span>
+                <span className="text-[10px] text-stone-500">{user.role}</span>
               </div>
 
               <button
                 onClick={onLogout}
-                className="px-3 py-2 rounded-lg border border-red-200 text-red-700 hover:bg-rose-50 bg-white transition-all text-xs font-bold uppercase tracking-wider flex items-center gap-1.5"
+                className="text-xs text-stone-600 hover:text-stone-900 font-medium flex items-center gap-1.5 py-1 px-2.5 rounded border border-stone-200"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Log out</span>

@@ -89,37 +89,38 @@ export default function Blog({ setSelectedId, setCurrentPage }: BlogProps) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen text-left">
+    <div className="flex flex-col min-h-screen text-left bg-[#fafaf9]">
       
       {/* Banner */}
-      <section className="bg-gradient-to-r from-[#8F0A22] via-[#B80F2E] to-[#D61A3C] text-white py-16 px-4 relative overflow-hidden shadow-md">
-        <div className="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-overlay" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1000&q=80')` }} />
-        <div className="relative z-10 max-w-7xl mx-auto">
-          <span className="text-xs text-rose-300 font-extrabold uppercase tracking-widest">Guidance Publications</span>
-          <h1 className="text-3xl sm:text-4.5xl font-extrabold tracking-tight mt-1 font-serif">Counselor Insights & Editorial Blog</h1>
-          <p className="text-rose-100 text-sm sm:text-base mt-2 max-w-2xl">
-            Read professional stream guides, selective Indian admission guidelines, student testimonials, and regular news updates from the Counselor panel.
+      <section className="bg-[#1c1917] text-stone-100 py-12 sm:py-16 px-4 sm:px-6 lg:px-8 border-b border-stone-800">
+        <div className="max-w-7xl mx-auto">
+          <span className="text-xs font-semibold text-stone-400 uppercase tracking-widest">Counselor Dispatch</span>
+          <h1 className="text-2xl sm:text-4xl font-serif font-normal tracking-tight mt-1 text-stone-100">
+            Advisory Notes & Editorial Publications
+          </h1>
+          <p className="text-stone-400 text-sm sm:text-base mt-2 max-w-2xl font-light">
+            Read professional stream selection analyses, competitive examination guidelines, university application strategies, and regular dispatches from the counselor faculty.
           </p>
         </div>
       </section>
 
       {/* Main Column Listing */}
-      <section className="py-12 px-4 bg-gray-50 flex-1">
+      <section className="py-10 px-4 sm:px-6 lg:px-8 flex-1">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
           
           {/* Tag Filter Sidebar */}
           <aside className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-2xl border border-rose-100 p-5 shadow-sm space-y-5">
+            <div className="bg-white rounded-lg border border-stone-200 p-5 space-y-5">
               
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                <span className="font-extrabold text-gray-950 uppercase text-xs tracking-wider flex items-center gap-1.5">
-                  <Filter className="w-3.5 h-3.5 text-[#B80F2E]" />
-                  <span>Topic Tags</span>
+              <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                <span className="font-semibold text-stone-900 uppercase text-xs tracking-wider flex items-center gap-1.5">
+                  <Filter className="w-3.5 h-3.5 text-stone-600" />
+                  <span>Topic Archive</span>
                 </span>
                 {(selectedTag || search) && (
                   <button 
                     onClick={resetFilters}
-                    className="text-[10px] text-[#B80F2E] font-bold uppercase tracking-wider hover:underline"
+                    className="text-xs text-[#8B1D2C] hover:underline cursor-pointer"
                   >
                     Reset
                   </button>
@@ -128,29 +129,29 @@ export default function Blog({ setSelectedId, setCurrentPage }: BlogProps) {
 
               {/* Keyword Search */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-gray-500 uppercase tracking-widest">Article Keyword</label>
+                <label className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">Search</label>
                 <div className="relative">
                   <input
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search posts..."
-                    className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E] focus:border-transparent bg-gray-50/50"
+                    placeholder="Search titles or keywords..."
+                    className="w-full pl-8 pr-3 py-2 border border-stone-200 rounded text-xs text-stone-800 focus:outline-none focus:border-stone-500 bg-white"
                   />
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                  <Search className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-2.5" />
                 </div>
               </div>
 
               {/* Unique Tags loop */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-gray-500 uppercase tracking-widest">Guidance Focus</label>
-                <div className="flex flex-col gap-1 max-h-60 overflow-y-auto pr-1">
+                <label className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">Topics</label>
+                <div className="flex flex-col gap-0.5 max-h-60 overflow-y-auto pr-1">
                   <button
                     onClick={() => setSelectedTag('')}
-                    className={`text-left px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`text-left px-2.5 py-1.5 rounded text-xs transition-colors cursor-pointer ${
                       selectedTag === ''
-                        ? 'bg-rose-50 text-[#B80F2E] border-l-2 border-[#B80F2E]'
-                        : 'text-gray-600 hover:bg-rose-50/30'
+                        ? 'font-semibold text-stone-900 bg-stone-100'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
                     }`}
                   >
                     All Publications
@@ -159,10 +160,10 @@ export default function Blog({ setSelectedId, setCurrentPage }: BlogProps) {
                     <button
                       key={tag}
                       onClick={() => setSelectedTag(tag)}
-                      className={`text-left px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-tight ${
+                      className={`text-left px-2.5 py-1.5 rounded text-xs transition-colors cursor-pointer ${
                         selectedTag === tag
-                          ? 'bg-rose-50 text-[#B80F2E] border-l-2 border-[#B80F2E]'
-                          : 'text-gray-600 hover:bg-rose-50/30'
+                          ? 'font-semibold text-stone-900 bg-stone-100'
+                          : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
                       }`}
                     >
                       #{tag}
@@ -178,23 +179,23 @@ export default function Blog({ setSelectedId, setCurrentPage }: BlogProps) {
           <main className="lg:col-span-3 space-y-6">
             
             {/* View presets switcher */}
-            <div className="flex items-center justify-between flex-wrap gap-4 bg-white px-5 py-4 border border-rose-100 rounded-2xl shadow-sm">
-              <div className="text-xs sm:text-sm font-bold text-gray-500">
+            <div className="flex items-center justify-between flex-wrap gap-4 bg-white px-5 py-3 border border-stone-200 rounded-lg">
+              <div className="text-xs text-stone-600">
                 {filtered.length ? (
-                  <span>Showing <strong className="text-gray-900">{filtered.length}</strong> written posts</span>
+                  <span>Showing <strong className="text-stone-900 font-semibold">{filtered.length}</strong> articles</span>
                 ) : (
-                  <span>No posts found under selected topic</span>
+                  <span>No articles found under selected topic</span>
                 )}
               </div>
               
-              {/* Dynamic Design Selection Button Group */}
-              <div className="flex items-center gap-1 bg-rose-50/50 p-1 rounded-xl border border-rose-100">
+              {/* Design Selection Button Group */}
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => setLayout('compact-list')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
                     layout === 'compact-list'
-                      ? 'bg-rose-900 text-white shadow-sm'
-                      : 'text-gray-500 hover:text-rose-900 hover:bg-rose-100/30'
+                      ? 'bg-stone-900 text-white'
+                      : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                   }`}
                   title="List View"
                 >
@@ -204,23 +205,23 @@ export default function Blog({ setSelectedId, setCurrentPage }: BlogProps) {
                 
                 <button
                   onClick={() => setLayout('bento-grid')}
-                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
+                  className={`hidden md:flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
                     layout === 'bento-grid'
-                      ? 'bg-rose-900 text-white shadow-sm'
-                      : 'text-gray-500 hover:text-rose-900 hover:bg-rose-100/30'
+                      ? 'bg-stone-900 text-white'
+                      : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                   }`}
                   title="Bento Grid"
                 >
                   <Grid className="w-3.5 h-3.5" />
-                  <span>Bento</span>
+                  <span>Grid</span>
                 </button>
                 
                 <button
                   onClick={() => setLayout('classic-card')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors cursor-pointer ${
                     layout === 'classic-card'
-                      ? 'bg-rose-900 text-white shadow-sm'
-                      : 'text-gray-500 hover:text-rose-900 hover:bg-rose-100/30'
+                      ? 'bg-stone-900 text-white'
+                      : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                   }`}
                   title="Classic Cards"
                 >
@@ -233,20 +234,19 @@ export default function Blog({ setSelectedId, setCurrentPage }: BlogProps) {
             {loading ? (
               <div className="py-24 text-center">
                 <div className="spinner" />
-                <p className="text-gray-500 font-semibold uppercase tracking-wider text-xs mt-4">Streaming publication logs...</p>
+                <p className="text-stone-400 font-medium uppercase tracking-wider text-xs mt-4">Streaming publication logs...</p>
               </div>
             ) : filtered.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center shadow-sm">
-                <div className="text-4xl mb-4">📭</div>
-                <h3 className="text-lg font-bold text-gray-900 font-serif">No Publications Logged</h3>
-                <p className="text-gray-500 text-xs sm:text-sm mt-1 max-w-sm mx-auto">
-                  No post matches your keyword selection. Try resetting active category options.
+              <div className="bg-white rounded-lg border border-dashed border-stone-200 p-12 text-center">
+                <h3 className="font-serif text-lg text-stone-900">No publications found</h3>
+                <p className="text-stone-500 text-xs mt-1 max-w-sm mx-auto">
+                  No article matches your keyword or tag selection. Try clearing active filters.
                 </p>
                 <button 
                   onClick={resetFilters}
-                  className="mt-6 px-6 py-2.5 bg-[#B80F2E] text-white rounded-lg font-bold text-xs uppercase tracking-wider"
+                  className="mt-4 px-4 py-2 bg-stone-900 text-white rounded text-xs font-medium hover:bg-stone-800 transition-colors cursor-pointer"
                 >
-                  View All Blogs
+                  View All Publications
                 </button>
               </div>
             ) : (
@@ -254,7 +254,7 @@ export default function Blog({ setSelectedId, setCurrentPage }: BlogProps) {
               /* Layout mapping dispatcher */
               <div className={
                 layout === 'compact-list' 
-                  ? 'flex flex-col gap-4' 
+                  ? 'flex flex-col gap-3' 
                   : layout === 'bento-grid'
                     ? 'grid grid-cols-1 md:grid-cols-6 gap-6'
                     : 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
@@ -270,31 +270,25 @@ export default function Blog({ setSelectedId, setCurrentPage }: BlogProps) {
                       <div
                         key={p.ID}
                         onClick={() => navigateToPost(p.ID)}
-                        className="bg-white border border-rose-100 hover:border-[#B80F2E] p-4 sm:p-5 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm hover:shadow-md cursor-pointer transition-all group"
+                        className="bg-white border border-stone-200 hover:border-stone-400 p-4 sm:p-5 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer transition-colors group"
                       >
-                        <div className="flex items-start gap-4 text-left">
-                          <div className="w-10 h-10 rounded-lg bg-rose-50 border border-rose-100 text-[#B80F2E] flex items-center justify-center font-bold text-sm shrink-0 sm:flex hidden">
-                            ✍️
+                        <div className="text-left">
+                          <div className="flex items-center flex-wrap gap-1.5 text-[11px] font-medium text-stone-500 mb-1">
+                            <span>{new Date(p.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            {(p.Tags || '').split(',').filter(Boolean).slice(0, 2).map((tag, i) => (
+                              <span key={i} className="text-stone-400">· #{tag.trim()}</span>
+                            ))}
                           </div>
-                          <div>
-                            <div className="flex items-center flex-wrap gap-1.5">
-                              {(p.Tags || '').split(',').filter(Boolean).slice(0, 3).map((tag, i) => (
-                                <span key={i} className="text-[9px] font-black uppercase text-[#B80F2E] tracking-wider bg-rose-50 px-2 py-0.5 rounded">
-                                  #{tag.trim()}
-                                </span>
-                              ))}
-                            </div>
-                            <h3 className="font-bold text-gray-900 text-sm sm:text-base group-hover:text-[#B80F2E] transition-all font-serif mt-1">
-                              {p.Title}
-                            </h3>
-                            <p className="text-gray-500 text-xs sm:text-sm line-clamp-1 mt-0.5 max-w-xl">{excerpt}</p>
-                          </div>
+                          <h3 className="font-serif font-medium text-stone-900 text-base group-hover:text-[#8B1D2C] transition-colors">
+                            {p.Title}
+                          </h3>
+                          <p className="text-stone-500 text-xs line-clamp-1 mt-0.5 max-w-xl">{excerpt}</p>
                         </div>
-                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-t-0 border-rose-50 pt-2.5 sm:pt-0 shrink-0">
-                          <span className="text-xs font-semibold text-gray-500">📅 {new Date(p.CreatedDate).toLocaleDateString()}</span>
-                          <button className="p-2 rounded-full bg-rose-50 text-[#B80F2E] group-hover:bg-[#B80F2E] group-hover:text-white transition-all">
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
+                        <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto border-t sm:border-t-0 border-stone-100 pt-2.5 sm:pt-0 shrink-0 text-xs text-stone-500">
+                          <span>Staff Article</span>
+                          <span className="text-stone-900 group-hover:text-[#8B1D2C] font-medium flex items-center gap-1">
+                            Read <ArrowRight className="w-3.5 h-3.5" />
+                          </span>
                         </div>
                       </div>
                     );
@@ -306,40 +300,40 @@ export default function Blog({ setSelectedId, setCurrentPage }: BlogProps) {
                       <div
                         key={p.ID}
                         onClick={() => navigateToPost(p.ID)}
-                        className={`bg-white border border-[#dde4ee] hover:border-[#B80F2E] hover:shadow-lg rounded-xl overflow-hidden cursor-pointer group transition-all flex flex-col h-full ${bentoSpan}`}
+                        className={`bg-white border border-stone-200 hover:border-stone-400 rounded-lg overflow-hidden cursor-pointer group transition-colors flex flex-col ${bentoSpan}`}
                       >
-                        <div className="relative aspect-video bg-rose-50 overflow-hidden shrink-0">
+                        <div className="relative aspect-[16/10] bg-stone-100 overflow-hidden shrink-0">
                           <img 
                             src={p.FeaturedImageURL || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80"} 
                             alt="" 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
                           />
-                          <div className="absolute top-3 right-3 flex gap-1">
-                            {p.PDFLink && <span className="text-[8px] bg-emerald-700 text-white font-extrabold uppercase px-2 py-0.5 rounded shadow flex items-center gap-1"><FileDown className="w-2.5 h-2.5"/> PDF</span>}
-                          </div>
+                          {p.PDFLink && (
+                            <span className="absolute top-2.5 right-2.5 text-[10px] font-medium bg-stone-900/80 backdrop-blur-sm text-white px-2 py-0.5 rounded">
+                              PDF
+                            </span>
+                          )}
                         </div>
                         <div className="p-5 flex flex-col justify-between flex-1">
                           <div>
-                            <div className="flex gap-1 flex-wrap mb-1.5">
-                              {(p.Tags || '').split(',').filter(Boolean).slice(0, 3).map((tag, i) => (
-                                <span key={i} className="text-[9px] font-black uppercase text-rose-700 bg-rose-50 px-2 py-0.5 rounded tracking-wide">
-                                  #{tag.trim()}
-                                </span>
+                            <div className="flex items-center gap-2 text-[11px] font-medium text-stone-500 mb-1.5">
+                              <span>{new Date(p.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                              {(p.Tags || '').split(',').filter(Boolean).slice(0, 2).map((tag, i) => (
+                                <span key={i} className="text-stone-400">· #{tag.trim()}</span>
                               ))}
                             </div>
-                            <h3 className="font-extrabold text-base text-gray-900 group-hover:text-[#B80F2E] transition-all line-clamp-2 mb-2 font-serif">
+                            <h3 className="font-serif font-medium text-base text-stone-900 group-hover:text-[#8B1D2C] transition-colors line-clamp-2 mb-1.5">
                               {p.Title}
                             </h3>
-                            <p className="text-gray-500 text-xs sm:text-sm line-clamp-3 leading-relaxed">
+                            <p className="text-stone-500 text-xs line-clamp-3 leading-relaxed">
                               {excerpt}
                             </p>
                           </div>
                           
-                          <div className="flex items-center justify-between border-t border-rose-50 pt-4 mt-4 text-xs font-bold text-gray-500">
-                            <span>📅 {new Date(p.CreatedDate).toLocaleDateString()}</span>
-                            <span className="text-[#B80F2E] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                              <span>Read Entry</span>
-                              <ArrowRight className="w-3.5 h-3.5" />
+                          <div className="flex items-center justify-between border-t border-stone-100 pt-3 mt-4 text-xs text-stone-500">
+                            <span>Counselor Panel</span>
+                            <span className="text-stone-900 group-hover:text-[#8B1D2C] font-medium flex items-center gap-1">
+                              Read entry <ArrowRight className="w-3.5 h-3.5" />
                             </span>
                           </div>
                         </div>
@@ -352,39 +346,44 @@ export default function Blog({ setSelectedId, setCurrentPage }: BlogProps) {
                     <div
                       key={p.ID}
                       onClick={() => navigateToPost(p.ID)}
-                      className="bg-white border border-[#dde4ee] hover:border-[#B80F2E] hover:shadow-lg rounded-xl overflow-hidden cursor-pointer group transition-all flex flex-col h-[400px]"
+                      className="bg-white border border-stone-200 hover:border-stone-400 rounded-lg overflow-hidden cursor-pointer group transition-colors flex flex-col justify-between"
                     >
-                      <div className="relative aspect-video bg-rose-50 overflow-hidden shrink-0">
-                        <img 
-                          src={p.FeaturedImageURL || "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=600&q=80"} 
-                          alt="" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute top-3 right-3 flex gap-1">
-                          {p.PDFLink && <span className="text-[8px] bg-emerald-700 text-white font-extrabold uppercase px-2.5 py-1 rounded shadow flex items-center gap-1"><FileDown className="w-2.5 h-2.5"/> PDF</span>}
+                      <div>
+                        <div className="relative aspect-[16/10] bg-stone-100 overflow-hidden shrink-0">
+                          <img 
+                            src={p.FeaturedImageURL || "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=600&q=80"} 
+                            alt="" 
+                            className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+                          />
+                          {p.PDFLink && (
+                            <span className="absolute top-2.5 right-2.5 text-[10px] font-medium bg-stone-900/80 backdrop-blur-sm text-white px-2 py-0.5 rounded">
+                              PDF
+                            </span>
+                          )}
                         </div>
-                      </div>
-                      
-                      <div className="p-5 flex flex-col justify-between flex-1">
-                        <div>
-                          <div className="flex gap-1 flex-wrap mb-1.5">
-                            {(p.Tags || '').split(',').filter(Boolean).slice(0, 3).map((tag, i) => (
-                              <span key={i} className="text-[9px] font-black uppercase text-rose-700 bg-rose-50 px-2 py-0.5 rounded tracking-wide">
-                                #{tag.trim()}
-                              </span>
+                        
+                        <div className="p-5">
+                          <div className="flex items-center gap-2 text-[11px] font-medium text-stone-500 mb-1.5">
+                            <span>{new Date(p.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            {(p.Tags || '').split(',').filter(Boolean).slice(0, 1).map((tag, i) => (
+                              <span key={i} className="text-stone-400">· #{tag.trim()}</span>
                             ))}
                           </div>
-                          <h3 className="font-extrabold text-base text-gray-900 group-hover:text-[#B80F2E] transition-all line-clamp-2 mb-2 font-serif">
+                          <h3 className="font-serif font-medium text-base text-stone-900 group-hover:text-[#8B1D2C] transition-colors line-clamp-2 mb-1.5">
                             {p.Title}
                           </h3>
-                          <p className="text-gray-500 text-xs sm:text-sm line-clamp-2 leading-relaxed">
+                          <p className="text-stone-500 text-xs line-clamp-2 leading-relaxed">
                             {excerpt}
                           </p>
                         </div>
-                        
-                        <div className="flex items-center justify-between border-t border-rose-50 pt-4 mt-2 text-xs font-bold text-gray-500">
-                          <span>📅 {new Date(p.CreatedDate).toLocaleDateString()}</span>
-                          <span className="text-[#B80F2E] group-hover:underline">Read Publications →</span>
+                      </div>
+                      
+                      <div className="p-5 pt-0">
+                        <div className="flex items-center justify-between border-t border-stone-100 pt-3 text-xs text-stone-500">
+                          <span>Guidance Note</span>
+                          <span className="text-stone-900 group-hover:text-[#8B1D2C] font-medium flex items-center gap-1">
+                            Read <ArrowRight className="w-3.5 h-3.5" />
+                          </span>
                         </div>
                       </div>
                     </div>
