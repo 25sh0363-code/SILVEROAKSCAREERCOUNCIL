@@ -4,13 +4,29 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  GraduationCap, LogIn, ShieldAlert, Sparkles, User, AlertCircle, 
-  MapPin, CheckCircle, Search, ArrowRight, Grid, List, RefreshCw 
+import {
+  GraduationCap,
+  ShieldAlert,
+  Sparkles,
+  AlertCircle,
+  CheckCircle,
+  Search,
+  ArrowRight,
+  RefreshCw,
+  Lock,
+  Pin,
+  FileSearch
 } from 'lucide-react';
 
-import { AppUser, DbUser } from './types';
-import { isAllowedEmail, ensureUser } from './lib/supabase';
+import { AppUser } from './types';
+import {
+  isAllowedEmail,
+  ensureUser,
+  fetchAllCourses,
+  fetchAllBlogs,
+  fetchAllReferences,
+  fetchAllCareerLabs
+} from './lib/supabase';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './components/Home';
@@ -21,7 +37,6 @@ import CareerLabs from './components/CareerLabs';
 import Staff from './components/Staff';
 import ItemDetail from './components/ItemDetail';
 import Counsellors from './components/Counsellors';
-import { fetchAllCourses, fetchAllBlogs, fetchAllReferences, fetchAllCareerLabs } from './lib/supabase';
 import Logo from './components/Logo';
 
 export default function App() {
@@ -42,7 +57,7 @@ export default function App() {
 
   // Notifications Toast State
   const [toasts, setToasts] = useState<{ id: string; msg: string; type: 'success' | 'err' }[]>([]);
-  
+
   // Supabase error status state
   const [supabaseError, setSupabaseError] = useState<string | null>(null);
 
@@ -53,6 +68,11 @@ export default function App() {
     window.addEventListener('supabase-error', handleDbError);
     return () => window.removeEventListener('supabase-error', handleDbError);
   }, []);
+
+  // Scroll cleanly to top when switching views
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage, selectedId]);
 
   const addToast = (msg: string, type: 'success' | 'err' = 'success') => {
     const id = Math.random().toString(36).slice(2);
@@ -76,7 +96,7 @@ export default function App() {
 
   // Set up standard Google Identity sign-on button
   useEffect(() => {
-    if (user) return; // Only bind if not authenticated
+    if (user) return;
 
     function initGoogleGSI() {
       const google = (window as any).google;
@@ -87,21 +107,19 @@ export default function App() {
           auto_select: false,
         });
 
-        // Try rendering standard button inside login form if visible
         const container = document.getElementById("g_login_btn");
         if (container) {
           google.accounts.id.renderButton(container, {
             theme: "outline",
             size: "large",
-            width: 320
+            width: Math.min(300, Math.max(240, window.innerWidth - 96))
           });
         }
       } else {
-        // Retry GSI loading if library takes time to stream in
         setTimeout(initGoogleGSI, 400);
       }
     }
-    
+
     initGoogleGSI();
   }, [user]);
 
@@ -163,7 +181,6 @@ export default function App() {
     setUser(null);
     sessionStorage.removeItem('c_user');
     addToast("Logged out from the portal session.", "success");
-    // Ensure standard google gsi listener resets properly
     const google = (window as any).google;
     if (google && google.accounts && google.accounts.id) {
       google.accounts.id.disableAutoSelect();
@@ -173,8 +190,7 @@ export default function App() {
   // Global search compilation logic
   useEffect(() => {
     if (!currentPage.startsWith('search')) return;
-    
-    // Extract query string
+
     try {
       const q = decodeURIComponent(currentPage.split('q=')[1] || '');
       setSearchQuery(q);
@@ -191,7 +207,7 @@ export default function App() {
         const bMatch = bList.filter(b => b.Title.toLowerCase().includes(qTerm) || b.Content.toLowerCase().includes(qTerm) || (b.Tags && b.Tags.toLowerCase().includes(qTerm)));
         const rMatch = rList.filter(r => r.Title.toLowerCase().includes(qTerm) || r.Description.toLowerCase().includes(qTerm) || r.Category.toLowerCase().includes(qTerm));
         const lMatch = lList.filter(l => l.Title.toLowerCase().includes(qTerm) || l.Description.toLowerCase().includes(qTerm) || l.Student.toLowerCase().includes(qTerm));
-        
+
         setGlobalResults({
           courses: cMatch,
           blogs: bMatch,
@@ -210,378 +226,465 @@ export default function App() {
 
   // Main Page Router switch
   const renderCurrentPage = () => {
-    
-    // Detailed inner resource views
     if (currentPage === 'course') {
       return (
-        <ItemDetail 
-          type="course" 
-          id={selectedId} 
-          onBack={() => setCurrentPage('courses')} 
-          setCurrentPage={setCurrentPage} 
-          setSelectedId={setSelectedId} 
+        <ItemDetail
+          type="course"
+          id={selectedId}
+          onBack={() => setCurrentPage('courses')}
+          setCurrentPage={setCurrentPage}
+          setSelectedId={setSelectedId}
+          onNotify={addToast}
         />
       );
     }
     if (currentPage === 'blog-item') {
       return (
-        <ItemDetail 
-          type="blog-item" 
-          id={selectedId} 
-          onBack={() => setCurrentPage('blog')} 
-          setCurrentPage={setCurrentPage} 
-          setSelectedId={setSelectedId} 
+        <ItemDetail
+          type="blog-item"
+          id={selectedId}
+          onBack={() => setCurrentPage('blog')}
+          setCurrentPage={setCurrentPage}
+          setSelectedId={setSelectedId}
+          onNotify={addToast}
         />
       );
     }
     if (currentPage === 'reference-item') {
       return (
-        <ItemDetail 
-          type="reference-item" 
-          id={selectedId} 
-          onBack={() => setCurrentPage('references')} 
-          setCurrentPage={setCurrentPage} 
-          setSelectedId={setSelectedId} 
+        <ItemDetail
+          type="reference-item"
+          id={selectedId}
+          onBack={() => setCurrentPage('references')}
+          setCurrentPage={setCurrentPage}
+          setSelectedId={setSelectedId}
+          onNotify={addToast}
         />
       );
     }
     if (currentPage === 'lab-item') {
       return (
-        <ItemDetail 
-          type="lab-item" 
-          id={selectedId} 
-          onBack={() => setCurrentPage('career-lab')} 
-          setCurrentPage={setCurrentPage} 
-          setSelectedId={setSelectedId} 
+        <ItemDetail
+          type="lab-item"
+          id={selectedId}
+          onBack={() => setCurrentPage('career-lab')}
+          setCurrentPage={setCurrentPage}
+          setSelectedId={setSelectedId}
+          onNotify={addToast}
         />
       );
     }
 
-    // List/Main components view
     switch (currentPage) {
       case 'home':
         return (
-          <Home 
-            setCurrentPage={setCurrentPage} 
-            setSelectedId={setSelectedId} 
+          <Home
+            setCurrentPage={setCurrentPage}
+            setSelectedId={setSelectedId}
+            onNotify={addToast}
           />
         );
       case 'courses':
         return (
-          <Courses 
-            setSelectedId={setSelectedId} 
-            setCurrentPage={setCurrentPage} 
+          <Courses
+            setSelectedId={setSelectedId}
+            setCurrentPage={setCurrentPage}
+            onNotify={addToast}
           />
         );
       case 'blog':
         return (
-          <Blog 
-            setSelectedId={setSelectedId} 
-            setCurrentPage={setCurrentPage} 
+          <Blog
+            setSelectedId={setSelectedId}
+            setCurrentPage={setCurrentPage}
+            onNotify={addToast}
           />
         );
       case 'references':
         return (
-          <References 
-            setSelectedId={setSelectedId} 
-            setCurrentPage={setCurrentPage} 
+          <References
+            setSelectedId={setSelectedId}
+            setCurrentPage={setCurrentPage}
+            onNotify={addToast}
           />
         );
       case 'career-lab':
         return (
-          <CareerLabs 
-            setSelectedId={setSelectedId} 
-            setCurrentPage={setCurrentPage} 
+          <CareerLabs
+            setSelectedId={setSelectedId}
+            setCurrentPage={setCurrentPage}
+            onNotify={addToast}
           />
         );
       case 'counselors':
-        return (
-          <Counsellors 
-            setCurrentPage={setCurrentPage} 
-          />
-        );
+        return <Counsellors setCurrentPage={setCurrentPage} />;
       case 'staff':
-        return user?.isAdmin 
-          ? <Staff user={user} /> 
+        return user?.isAdmin
+          ? <Staff user={user} onNotify={addToast} />
           : <ForbiddenErrorPane onRedirect={() => setCurrentPage('home')} />;
-      
+
       default:
-        // Render Search Results index if currentPage contains search
         if (currentPage.startsWith('search')) {
           return (
-            <div className="max-w-7xl mx-auto px-4 py-12 text-left">
-              <span className="text-xs text-rose-500 font-extrabold uppercase tracking-widest block mb-1">Search queries index</span>
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight font-serif mb-6 border-b pb-3">Results for "{searchQuery}"</h1>
-              
-              {loading ? (
-                <div className="py-24 text-center">
-                  <div className="spinner" />
-                  <p className="text-sm text-gray-500 font-semibold uppercase tracking-wider mt-4">Indexing database files...</p>
+            <div className="min-h-screen bg-[#FFFBFB]">
+              <section className="bg-gradient-to-br from-[#6B081B] via-[#9E0D28] to-[#C21434] text-white py-10 sm:py-12 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto text-left">
+                  <span className="text-xs text-rose-100 font-semibold uppercase tracking-[0.16em] inline-flex items-center gap-1.5">
+                    <Search className="w-3.5 h-3.5" />
+                    <span>Search Queries Index</span>
+                  </span>
+                  <h1 className="text-2xl sm:text-4xl font-serif font-medium tracking-tight mt-1.5">
+                    Results for "{searchQuery}"
+                  </h1>
                 </div>
-              ) : (
-                <div className="space-y-12">
-                  
-                  {/* Courses Matching block */}
-                  {globalResults.courses.length > 0 && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-bold text-gray-900 uppercase tracking-tight flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#B80F2E]" />
-                        <span>Matching Courses ({globalResults.courses.length})</span>
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {globalResults.courses.map(c => (
-                          <div 
-                            key={c.ID} 
-                            onClick={() => { setSelectedId(c.ID); setCurrentPage('course'); }}
-                            className="bg-white border hover:border-[#B80F2E] p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between"
-                          >
-                            <div>
-                              <span className="text-[10px] bg-rose-50 text-[#B80F2E] font-black uppercase px-2.5 py-0.5 rounded tracking-wide">{c.Category}</span>
-                              <h4 className="font-extrabold text-base text-gray-900 line-clamp-1 mt-2 mb-1.5 font-serif">{c.Title}</h4>
-                              <p className="text-gray-500 text-xs sm:text-sm line-clamp-2 leading-relaxed">{c.Description}</p>
-                            </div>
-                            <span className="text-xs text-rose-800 font-bold mt-4 block">Enter course lesson →</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+              </section>
 
-                  {/* Blogs matching block */}
-                  {globalResults.blogs.length > 0 && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-bold text-gray-900 uppercase tracking-tight flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#B80F2E]" />
-                        <span>Guidance Articles ({globalResults.blogs.length})</span>
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {globalResults.blogs.map(p => (
-                          <div 
-                            key={p.ID} 
-                            onClick={() => { setSelectedId(p.ID); setCurrentPage('blog-item'); }}
-                            className="bg-white border hover:border-[#B80F2E] p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between"
-                          >
-                            <div>
-                              <span className="text-[10px] bg-rose-50 text-[#B80F3E] font-black uppercase px-2.5 py-0.5 rounded tracking-wide">#{p.Tags ? p.Tags.split(',')[0].trim() : 'General'}</span>
-                              <h4 className="font-extrabold text-base text-gray-900 line-clamp-1 mt-2 mb-1.5 font-serif">{p.Title}</h4>
-                              <p className="text-gray-500 text-xs sm:text-sm line-clamp-2 leading-relaxed">{p.Content.replace(/<[^>]*>/g, '')}</p>
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-left">
+                {loading ? (
+                  <div className="py-24 text-center">
+                    <div className="spinner" />
+                    <p className="text-xs text-[#8A6970] font-semibold uppercase tracking-wider mt-3">
+                      Indexing archive files...
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-12">
+                    {/* Courses Matching */}
+                    {globalResults.courses.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-base font-bold text-[#241115] uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#B80F2E]" />
+                          <span>Matching Courses ({globalResults.courses.length})</span>
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          {globalResults.courses.map(c => (
+                            <div
+                              key={c.ID}
+                              onClick={() => { setSelectedId(c.ID); setCurrentPage('course'); }}
+                              className="bg-white border border-rose-100 hover:border-[#B80F2E] p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group"
+                            >
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {c.IsPinned && (
+                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#B80F2E] text-white font-bold uppercase px-2 py-0.5 rounded-full">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] bg-rose-50 text-[#B80F2E] font-bold uppercase px-2.5 py-0.5 rounded-md tracking-wide">{c.Category}</span>
+                                </div>
+                                <h4 className="font-serif font-semibold text-lg text-[#241115] group-hover:text-[#B80F2E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{c.Title}</h4>
+                                <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">{c.Description}</p>
+                              </div>
+                              <span className="text-xs text-[#B80F2E] font-semibold mt-4 inline-flex items-center gap-1">
+                                Enter course <ArrowRight className="w-3.5 h-3.5" />
+                              </span>
                             </div>
-                            <span className="text-xs text-[#B80F2E] font-bold mt-4 block">Read article →</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Reference matching block */}
-                  {globalResults.references.length > 0 && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-bold text-gray-900 uppercase tracking-tight flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-700" />
-                        <span>Guides & Reference Documents ({globalResults.references.length})</span>
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {globalResults.references.map(r => (
-                          <div 
-                            key={r.ID} 
-                            onClick={() => { setSelectedId(r.ID); setCurrentPage('reference-item'); }}
-                            className="bg-white border hover:border-emerald-700 p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between"
-                          >
-                            <div>
-                              <span className="text-[10px] bg-emerald-50 text-emerald-700 font-black uppercase px-2.5 py-0.5 rounded tracking-wide">{r.Category}</span>
-                              <h4 className="font-extrabold text-base text-gray-900 line-clamp-1 mt-2 mb-1.5 font-serif">{r.Title}</h4>
-                              <p className="text-gray-500 text-xs sm:text-sm line-clamp-2 leading-relaxed">{r.Description}</p>
-                            </div>
-                            <span className="text-xs text-emerald-800 font-bold mt-4 block">View reference guide →</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Lab matching block */}
-                  {globalResults.labs.length > 0 && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-bold text-gray-900 uppercase tracking-tight flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-600" />
-                        <span>Student Career Labs ({globalResults.labs.length})</span>
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {globalResults.labs.map(l => (
-                          <div 
-                            key={l.ID} 
-                            onClick={() => { setSelectedId(l.ID); setCurrentPage('lab-item'); }}
-                            className="bg-white border hover:border-amber-600 p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between"
-                          >
-                            <div>
-                              <span className="text-[10px] bg-amber-50 text-amber-700 font-black uppercase px-2.5 py-0.5 rounded tracking-wide">Category: {l.Category}</span>
-                              <h4 className="font-extrabold text-base text-gray-900 line-clamp-1 mt-2 mb-1.5 font-serif">{l.Title}</h4>
-                              <p className="text-gray-500 text-xs sm:text-sm line-clamp-2 leading-relaxed">{l.Description}</p>
-                            </div>
-                            <span className="text-xs text-amber-800 font-bold mt-4 block">Open research project →</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* If absolutely nothing matches */}
-                  {globalResults.courses.length === 0 &&
-                    globalResults.blogs.length === 0 &&
-                    globalResults.references.length === 0 &&
-                    globalResults.labs.length === 0 && (
-                      <div className="bg-white rounded-2xl border text-center p-16 shadow-inner max-w-xl mx-auto">
-                        <div className="text-4xl mb-4">🛸</div>
-                        <h3 className="text-lg font-bold text-gray-900 font-serif">No platform items match your query</h3>
-                        <p className="text-gray-500 text-xs sm:text-sm mt-1">
-                          Try searching for alternative topics such as "CV", "LaTeX", "Class 11", "Mehta", or "Science".
-                        </p>
-                        <button 
-                          onClick={() => setCurrentPage('home')}
-                          className="mt-6 px-5 py-2.5 bg-[#B80F2E] hover:bg-[#8F0A22] text-white rounded-xl text-xs font-bold uppercase tracking-wider"
-                        >
-                          Return Home
-                        </button>
+                          ))}
+                        </div>
                       </div>
                     )}
 
-                </div>
-              )}
+                    {/* Blogs Matching */}
+                    {globalResults.blogs.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-base font-bold text-[#241115] uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#9E0D28]" />
+                          <span>Guidance Articles ({globalResults.blogs.length})</span>
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          {globalResults.blogs.map(p => (
+                            <div
+                              key={p.ID}
+                              onClick={() => { setSelectedId(p.ID); setCurrentPage('blog-item'); }}
+                              className="bg-white border border-rose-100 hover:border-[#B80F2E] p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group"
+                            >
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {p.IsPinned && (
+                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#B80F2E] text-white font-bold uppercase px-2 py-0.5 rounded-full">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] bg-rose-50 text-[#B80F2E] font-bold uppercase px-2.5 py-0.5 rounded-md tracking-wide">
+                                    #{p.Tags ? p.Tags.split(',')[0].trim() : 'General'}
+                                  </span>
+                                </div>
+                                <h4 className="font-serif font-semibold text-lg text-[#241115] group-hover:text-[#B80F2E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{p.Title}</h4>
+                                <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">{p.Content.replace(/<[^>]*>/g, '')}</p>
+                              </div>
+                              <span className="text-xs text-[#B80F2E] font-semibold mt-4 inline-flex items-center gap-1">
+                                Read article <ArrowRight className="w-3.5 h-3.5" />
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* References Matching */}
+                    {globalResults.references.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-base font-bold text-[#241115] uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#D91E3E]" />
+                          <span>Guides & Reference Documents ({globalResults.references.length})</span>
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          {globalResults.references.map(r => (
+                            <div
+                              key={r.ID}
+                              onClick={() => { setSelectedId(r.ID); setCurrentPage('reference-item'); }}
+                              className="bg-white border border-rose-100 hover:border-[#B80F2E] p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group"
+                            >
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {r.IsPinned && (
+                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#B80F2E] text-white font-bold uppercase px-2 py-0.5 rounded-full">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] bg-rose-50 text-[#8B0E24] font-bold uppercase px-2.5 py-0.5 rounded-md tracking-wide">{r.Category}</span>
+                                </div>
+                                <h4 className="font-serif font-semibold text-lg text-[#241115] group-hover:text-[#B80F2E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{r.Title}</h4>
+                                <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">{r.Description}</p>
+                              </div>
+                              <span className="text-xs text-[#B80F2E] font-semibold mt-4 inline-flex items-center gap-1">
+                                View reference <ArrowRight className="w-3.5 h-3.5" />
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Labs Matching */}
+                    {globalResults.labs.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-base font-bold text-[#241115] uppercase tracking-wider flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#6B081B]" />
+                          <span>Student Career Labs ({globalResults.labs.length})</span>
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                          {globalResults.labs.map(l => (
+                            <div
+                              key={l.ID}
+                              onClick={() => { setSelectedId(l.ID); setCurrentPage('lab-item'); }}
+                              className="bg-white border border-rose-100 hover:border-[#B80F2E] p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group"
+                            >
+                              <div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {l.IsPinned && (
+                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#B80F2E] text-white font-bold uppercase px-2 py-0.5 rounded-full">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] bg-rose-50 text-[#8B0E24] font-bold uppercase px-2.5 py-0.5 rounded-md tracking-wide">{l.Category}</span>
+                                </div>
+                                <h4 className="font-serif font-semibold text-lg text-[#241115] group-hover:text-[#B80F2E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{l.Title}</h4>
+                                <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">{l.Description}</p>
+                              </div>
+                              <span className="text-xs text-[#B80F2E] font-semibold mt-4 inline-flex items-center gap-1">
+                                Open research <ArrowRight className="w-3.5 h-3.5" />
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Empty Search State */}
+                    {globalResults.courses.length === 0 &&
+                      globalResults.blogs.length === 0 &&
+                      globalResults.references.length === 0 &&
+                      globalResults.labs.length === 0 && (
+                        <div className="bg-white rounded-2xl border border-rose-100 text-center p-12 sm:p-16 shadow-2xs max-w-xl mx-auto">
+                          <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#B80F2E] flex items-center justify-center mx-auto mb-4 border border-rose-100">
+                            <FileSearch className="w-7 h-7" />
+                          </div>
+                          <h3 className="text-xl font-semibold text-[#241115] font-serif">
+                            No platform items match your query
+                          </h3>
+                          <p className="text-[#694D53] text-xs sm:text-sm mt-2">
+                            Try searching for alternative topics such as "CV", "LaTeX", "Class 11", or "Science".
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setCurrentPage('home')}
+                            className="mt-6 px-5 py-2.5 bg-[#B80F2E] hover:bg-[#8B0E24] text-white rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
+                          >
+                            Return Home
+                          </button>
+                        </div>
+                      )}
+                  </div>
+                )}
+              </div>
             </div>
           );
         }
-        
+
         return <NotFoundErrorPane onRedirect={() => setCurrentPage('home')} />;
     }
   };
 
-  // Login visual screen
+  // Login visual screen — refined red shades & white, balanced on mobile & desktop
   if (!user) {
+    const allowedDomains = [
+      '@hyd.silveroaks.co.in',
+      '@bt.silveroaks.co.in',
+      '@odl.silveroaks.co.in',
+      '@vizag.silveroaks.co.in',
+      '@km.silveroaks.co.in'
+    ];
+
     return (
-      <div className="relative min-h-screen bg-[#8F0A22] flex flex-col justify-between select-none">
-        
-        {/* Animated background overlays representing Silver Oaks branding red gradients */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,rgba(214,26,60,0.5),rgba(255,255,255,0)_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,rgba(143,10,34,0.7),rgba(255,255,255,0)_50%)]" />
+      <div className="relative min-h-screen bg-gradient-to-br from-[#5C0717] via-[#980D27] to-[#C21434] flex flex-col justify-between overflow-hidden">
+        {/* Ambient radial red highlights */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_95%_5%,rgba(255,255,255,0.18),transparent_48%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_5%_95%,rgba(74,4,17,0.65),transparent_52%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
 
-        {/* Vector dot graph grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] opacity-30" />
-
-        {/* Top dummy navbar just to represent structural spacing */}
-        <header className="relative z-10 px-6 py-5 max-w-7xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo className="h-11 sm:h-12 shadow-md rounded-xl" />
+        {/* Dynamic Toast notifications on Login screen too */}
+        {toasts.length > 0 && (
+          <div className="fixed bottom-6 right-4 sm:right-6 z-[99999] flex flex-col gap-2.5 max-w-sm w-[calc(100vw-2rem)]">
+            {toasts.map(t => (
+              <div
+                key={t.id}
+                className={`p-4 rounded-2xl border flex items-start gap-3 shadow-2xl animate-slide-in ${
+                  t.type === 'success'
+                    ? 'bg-white border-rose-200 text-[#241115] border-l-4 border-l-[#B80F2E]'
+                    : 'bg-[#FFF0F2] border-rose-300 text-[#7A0B1F] border-l-4 border-l-[#9E0D28]'
+                }`}
+              >
+                {t.type === 'success'
+                  ? <CheckCircle className="w-4 h-4 text-[#B80F2E] shrink-0 mt-0.5" />
+                  : <AlertCircle className="w-4 h-4 text-[#B80F2E] shrink-0 mt-0.5" />
+                }
+                <span className="text-xs sm:text-sm font-semibold text-left leading-snug">{t.msg}</span>
+              </div>
+            ))}
           </div>
-          <span className="text-[10px] text-rose-100 font-bold uppercase bg-white/5 border border-white/10 px-3 py-1.5 rounded-full tracking-widest">
+        )}
+
+        {/* Top Header */}
+        <header className="relative z-10 px-4 sm:px-6 py-5 max-w-7xl mx-auto w-full flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Logo className="h-10 sm:h-12 shadow-lg rounded-xl" />
+            <div className="flex flex-col text-left text-white leading-tight">
+              <span className="font-serif font-semibold text-sm sm:text-base">Silver Oaks Career Council</span>
+              <span className="text-[10px] uppercase tracking-[0.16em] text-rose-200 font-semibold">Resource Center</span>
+            </div>
+          </div>
+          <span className="text-[10px] text-white font-bold uppercase bg-white/12 border border-white/25 px-3 py-1.5 rounded-full tracking-widest backdrop-blur-xs">
             Internal Portal
           </span>
         </header>
 
         {/* Center Card Panel */}
-        <main className="relative z-10 max-w-6xl mx-auto px-4 w-full flex-grow flex items-center justify-center py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full max-w-4xl bg-white/10 backdrop-blur-md p-6 sm:p-10 rounded-3xl border border-white/20 shadow-2xl">
-            
-            {/* Visual Text Panel */}
-            <div className="text-left space-y-6 text-white hidden md:block select-text">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-400 to-[#B80F2E] flex items-center justify-center shadow-lg">
-                <Sparkles className="w-5 h-5 text-shadow animate-pulse" />
+        <main className="relative z-10 max-w-5xl mx-auto px-4 w-full flex-grow flex items-center justify-center py-6 sm:py-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center w-full bg-white/10 backdrop-blur-md p-5 sm:p-8 lg:p-10 rounded-3xl border border-white/20 shadow-[0_24px_64px_rgba(52,3,13,0.4)]">
+            {/* Editorial Copy Column */}
+            <div className="lg:col-span-6 text-left space-y-5 text-white">
+              <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shadow-sm">
+                <Sparkles className="w-5 h-5 text-rose-100" />
               </div>
-              <h2 className="text-4xl font-extrabold tracking-tight leading-tight font-serif">
+              <h1 className="text-3xl sm:text-4xl font-serif font-medium tracking-tight leading-[1.12]">
                 Design thinking & stream advice pipelines.
-              </h2>
-              <p className="text-rose-100 text-sm leading-relaxed max-w-sm">
-                Log in using your official school domain credentials to browse academic courses, view peer submission labs, and download CV LaTeX structures.
+              </h1>
+              <p className="text-rose-100/90 text-xs sm:text-sm leading-relaxed max-w-md">
+                Sign in with your official Silver Oaks domain credentials to access curated courses, editorial dispatches, peer career labs, and CV templates.
               </p>
-              <div className="flex flex-col gap-2.5 text-xs text-rose-200 font-semibold tracking-wide">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-rose-300" />
-                  <span>Approved for @hyd.silveroaks.co.in</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-rose-300" />
-                  <span>Approved for @bt.silveroaks.co.in</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-rose-300" />
-                  <span>Approved for @odl.silveroaks.co.in</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-rose-300" />
-                  <span>Approved for @vizag.silveroaks.co.in</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-rose-300" />
-                  <span>Approved for @km.silveroaks.co.in</span>
+
+              {/* Approved Domains */}
+              <div className="pt-1">
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-rose-200 block mb-2.5">
+                  Authorized Campus Domains
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {allowedDomains.map(domain => (
+                    <span
+                      key={domain}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-medium text-rose-50"
+                    >
+                      <CheckCircle className="w-3 h-3 text-rose-200 shrink-0" />
+                      {domain}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Login Card options */}
-            <div className="bg-white rounded-2xl p-6 sm:p-10 shadow-2xl border border-gray-100 flex flex-col justify-center gap-6 min-h-[420px]">
-              <div className="text-center space-y-2">
-                <div className="text-3xl">🎓</div>
-                <h2 className="text-xl sm:text-2xl font-black text-gray-900 font-serif leading-none">Internal Sign In</h2>
-                <p className="text-xs sm:text-sm text-gray-500 font-semibold">Please authenticate only with your designated email domain.</p>
+            {/* White Sign-In Card */}
+            <div className="lg:col-span-6 bg-white rounded-2xl p-6 sm:p-8 shadow-2xl border border-rose-100 flex flex-col justify-center gap-6 min-h-[340px] sm:min-h-[380px]">
+              <div className="text-center space-y-2.5">
+                <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 text-[#B80F2E] flex items-center justify-center mx-auto">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl font-serif font-semibold text-[#241115]">
+                  Internal Sign In
+                </h2>
+                <p className="text-xs sm:text-sm text-[#694D53]">
+                  Authenticate with your designated Silver Oaks Google account.
+                </p>
               </div>
 
-              {loading && (
+              {loading ? (
                 <div className="py-6 flex flex-col items-center justify-center gap-3">
                   <RefreshCw className="w-8 h-8 text-[#B80F2E] animate-spin" />
-                  <span className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold animate-pulse">Verifying credentials...</span>
+                  <span className="text-[11px] text-[#8A6970] uppercase tracking-widest font-bold">
+                    Verifying credentials...
+                  </span>
                 </div>
-              )}
-
-              {/* Autocomplete Google Button Wrapper */}
-              {!loading && (
-                <div className="flex flex-col items-center justify-center gap-6">
-                  <div className="p-4 bg-rose-50/50 border border-rose-100/50 rounded-xl text-center flex items-center justify-center sm:text-xs text-[10px] font-bold text-rose-800 leading-tight">
-                    🔒 Certified secure network. Standard Single Sign-On handles official member logins below.
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-5">
+                  <div className="w-full p-3.5 bg-[#FFF6F7] border border-rose-100 rounded-xl text-center flex items-center justify-center gap-2 text-xs font-medium text-[#8B0E24] leading-snug">
+                    <Lock className="w-4 h-4 text-[#B80F2E] shrink-0" />
+                    <span>Certified school network · Google Single Sign-On</span>
                   </div>
-                  
+
                   {/* Google Button mounting point target */}
-                  <div id="g_login_btn" className="w-full flex justify-center py-2" />
+                  <div id="g_login_btn" className="w-full flex justify-center py-1 min-h-[44px]" />
                 </div>
               )}
-
             </div>
-
           </div>
         </main>
 
-        {/* Login footer statement */}
-        <footer className="relative z-10 px-6 py-5 max-w-7xl mx-auto w-full text-center border-t border-white/5">
-          <p className="text-rose-100 text-xs font-semibold uppercase tracking-wider">
-            Silver Oaks School Group © {new Date().getFullYear()} · Hyderabad · Bangalore · ODL · character before competence
+        {/* Login Footer */}
+        <footer className="relative z-10 px-4 sm:px-6 py-4 max-w-7xl mx-auto w-full text-center border-t border-white/10">
+          <p className="text-rose-100/85 text-[11px] font-medium tracking-wider uppercase">
+            Silver Oaks School Group © {new Date().getFullYear()} · Hyderabad · Bangalore · ODL · Character Before Competence
           </p>
         </footer>
-
       </div>
     );
   }
 
   // Loaded full React application view
   return (
-    <div className="flex flex-col min-h-screen bg-rose-50/10">
-      
-      {/* Dynamic Toast notifications overlay lists */}
+    <div className="flex flex-col min-h-screen bg-[#FFFBFB]">
+      {/* Dynamic Toast notifications — positioned safely above mobile bottom nav */}
       {toasts.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-[99999] flex flex-col gap-2.5 max-w-md w-full">
+        <div className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-[99999] flex flex-col gap-2.5 max-w-sm w-[calc(100vw-2rem)]">
           {toasts.map(t => (
             <div
               key={t.id}
-              className={`p-4 rounded-xl border flex items-center justify-between shadow-2xl relative overflow-hidden transition-all duration-300 animate-slide-in ${
-                t.type === 'success' 
-                  ? 'bg-emerald-50 border-emerald-100 text-emerald-950 border-l-4 border-l-emerald-600' 
-                  : 'bg-rose-50 border-rose-100 text-rose-950 border-l-4 border-l-rose-700'
+              className={`p-4 rounded-2xl border flex items-start gap-3 shadow-xl transition-all duration-300 animate-slide-in ${
+                t.type === 'success'
+                  ? 'bg-white border-rose-200 text-[#241115] border-l-4 border-l-[#B80F2E]'
+                  : 'bg-[#FFF0F2] border-rose-300 text-[#7A0B1F] border-l-4 border-l-[#8B0E24]'
               }`}
             >
-              <span className="text-xs sm:text-sm font-bold text-left">{t.msg}</span>
+              {t.type === 'success'
+                ? <CheckCircle className="w-4 h-4 text-[#B80F2E] shrink-0 mt-0.5" />
+                : <AlertCircle className="w-4 h-4 text-[#B80F2E] shrink-0 mt-0.5" />
+              }
+              <span className="text-xs sm:text-sm font-semibold text-left leading-snug">{t.msg}</span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Main navigation Header */}
+      {/* Main Navigation Header + Mobile Bottom Bar */}
       <Header
         user={user}
         currentPage={currentPage}
@@ -593,9 +696,9 @@ export default function App() {
 
       {/* Database Connection Status Warning Banner */}
       {supabaseError && (
-        <div className="bg-rose-50 border-y border-rose-200 py-4 px-4 text-center relative z-50">
-          <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 text-xs sm:text-sm font-extrabold text-rose-950 uppercase tracking-widest">
-            <span className="text-base">⚠️</span>
+        <div className="bg-[#FFF0F2] border-b border-rose-200 py-3.5 px-4 text-center relative z-40">
+          <div className="max-w-4xl mx-auto flex items-center justify-center gap-2.5 text-xs sm:text-sm font-bold text-[#8B0E24] uppercase tracking-wider">
+            <AlertCircle className="w-4 h-4 text-[#B80F2E] shrink-0" />
             <span>database is inactive please contact the the career counsellors</span>
           </div>
         </div>
@@ -610,41 +713,43 @@ export default function App() {
   );
 }
 
-// Reusable standard Forbidden access screen
+// Reusable Forbidden access screen
 function ForbiddenErrorPane({ onRedirect }: { onRedirect: () => void }) {
   return (
     <div className="max-w-md mx-auto py-24 px-4 text-center space-y-4">
-      <div className="w-16 h-16 rounded-2xl bg-rose-100 text-[#B80F2E] flex items-center justify-center font-bold text-3xl mx-auto shadow-sm">
-        🚫
+      <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-[#B80F2E] flex items-center justify-center mx-auto shadow-xs">
+        <ShieldAlert className="w-8 h-8" />
       </div>
-      <h2 className="text-2xl font-black text-gray-900 font-serif leading-none">Clearance Check Failed</h2>
-      <p className="text-gray-500 text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
+      <h2 className="text-2xl font-serif font-semibold text-[#241115]">Clearance Check Failed</h2>
+      <p className="text-[#694D53] text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
         Access Denied. You need to be assigned as either an Editor or Admin from the counselor panel to view the command workspace.
       </p>
-      <button 
+      <button
+        type="button"
         onClick={onRedirect}
-        className="px-6 py-2.5 bg-[#B80F2E] text-white rounded-xl font-bold text-xs uppercase tracking-wider"
+        className="px-6 py-2.5 bg-[#B80F2E] hover:bg-[#8B0E24] text-white rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer transition-colors"
       >
-        Return to Home Track
+        Return to Home
       </button>
     </div>
   );
 }
 
-// Reusable generic Not Found screen
+// Reusable Not Found screen
 function NotFoundErrorPane({ onRedirect }: { onRedirect: () => void }) {
   return (
     <div className="max-w-md mx-auto py-24 px-4 text-center space-y-4">
-      <div className="w-16 h-16 rounded-2xl bg-rose-50 text-gray-900 flex items-center justify-center font-bold text-3xl mx-auto border border-rose-100 shadow-sm">
-        🔍
+      <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-[#B80F2E] flex items-center justify-center mx-auto shadow-xs">
+        <FileSearch className="w-8 h-8" />
       </div>
-      <h2 className="text-2xl font-black text-gray-900 font-serif leading-none">Content Missing</h2>
-      <p className="text-gray-500 text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
-        This page path does not currently exist. Try choosing another category option or link from the top navigation.
+      <h2 className="text-2xl font-serif font-semibold text-[#241115]">Content Missing</h2>
+      <p className="text-[#694D53] text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
+        This page path does not currently exist. Try choosing another category option or link from the navigation menu.
       </p>
-      <button 
+      <button
+        type="button"
         onClick={onRedirect}
-        className="px-6 py-2.5 bg-[#B80F2E] text-white rounded-xl font-bold text-xs uppercase tracking-wider"
+        className="px-6 py-2.5 bg-[#B80F2E] hover:bg-[#8B0E24] text-white rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer transition-colors"
       >
         Navigate to Home
       </button>

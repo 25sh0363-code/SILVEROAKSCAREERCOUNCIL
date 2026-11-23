@@ -4,23 +4,72 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings2, Plus, Edit2, Trash2, ShieldCheck, UserCheck, RefreshCw, X, Image, FileText, CheckCircle2, AlertTriangle, Bold, Italic, Link2, Heading1, Heading2, Quote, List as ListIcon, ListOrdered, User } from 'lucide-react';
-import { Course, BlogPost, ReferenceMaterial, CareerLab, DbUser, UserRole, Counselor } from '../types';
-import { 
-  fetchAllCourses, fetchAllBlogs, fetchAllReferences, fetchAllCareerLabs, fetchAllUsers, fetchAllCounselors,
-  saveCourse, saveBlogPost, saveReference, saveCareerLab, saveCounselor, deleteCounselor, deleteRecord, updateUserRole, deleteUserAndBlogs,
-  uploadFileToSupabase
+import {
+  Settings2,
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  Image,
+  FileText,
+  Bold,
+  Italic,
+  Link2,
+  Quote,
+  List as ListIcon,
+  ListOrdered,
+  User,
+  Pin,
+  RotateCcw,
+  Save,
+  BookOpen,
+  Newspaper,
+  Library,
+  FlaskConical,
+  Users,
+  GraduationCap
+} from 'lucide-react';
+import {
+  Course,
+  BlogPost,
+  ReferenceMaterial,
+  CareerLab,
+  DbUser,
+  UserRole,
+  Counselor,
+  PinnableTable
+} from '../types';
+import {
+  fetchAllCourses,
+  fetchAllBlogs,
+  fetchAllReferences,
+  fetchAllCareerLabs,
+  fetchAllUsers,
+  fetchAllCounselors,
+  saveCourse,
+  saveBlogPost,
+  saveReference,
+  saveCareerLab,
+  saveCounselor,
+  deleteCounselor,
+  deleteRecord,
+  updateUserRole,
+  deleteUserAndBlogs,
+  uploadFileToSupabase,
+  togglePinRecord,
+  sortPinnedFirst
 } from '../lib/supabase';
 
 interface StaffProps {
   user: { email: string; name: string; role: string; isAdmin: boolean };
+  onNotify?: (msg: string, type?: 'success' | 'err') => void;
 }
 
 type StaffTab = 'courses' | 'blogs' | 'references' | 'labs' | 'users' | 'counselors';
 
-export default function Staff({ user }: StaffProps) {
+export default function Staff({ user, onNotify }: StaffProps) {
   const [activeTab, setActiveTab] = useState<StaffTab>('courses');
-  
+
   // Data lists
   const [courses, setCourses] = useState<Course[]>([]);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -56,7 +105,7 @@ export default function Staff({ user }: StaffProps) {
     setLoading(true);
     try {
       const [cList, bList, rList, lList, uList, counsList] = await Promise.all([
-        fetchAllCourses(false), // Get drafts as well
+        fetchAllCourses(false),
         fetchAllBlogs(false),
         fetchAllReferences(false),
         fetchAllCareerLabs(false),
@@ -86,6 +135,31 @@ export default function Staff({ user }: StaffProps) {
     }
   };
 
+  // Pin toggle handler for Staff tables
+  const handleTogglePin = async (
+    table: PinnableTable,
+    id: string,
+    title: string,
+    currentlyPinned?: boolean
+  ) => {
+    const nextPinned = !currentlyPinned;
+    if (table === 'courses') {
+      setCourses(prev => sortPinnedFirst(prev.map(i => i.ID === id ? { ...i, IsPinned: nextPinned } : i)));
+    } else if (table === 'blogs') {
+      setBlogs(prev => sortPinnedFirst(prev.map(i => i.ID === id ? { ...i, IsPinned: nextPinned } : i)));
+    } else if (table === 'reference_materials') {
+      setRefs(prev => sortPinnedFirst(prev.map(i => i.ID === id ? { ...i, IsPinned: nextPinned } : i)));
+    } else if (table === 'career_labs') {
+      setLabs(prev => sortPinnedFirst(prev.map(i => i.ID === id ? { ...i, IsPinned: nextPinned } : i)));
+    }
+
+    await togglePinRecord(table, id, nextPinned);
+    onNotify?.(
+      nextPinned ? `Pinned "${title}" to top` : `Unpinned "${title}"`,
+      'success'
+    );
+  };
+
   // Safe delete handler
   const handleDelete = async (type: 'courses' | 'blogs' | 'reference_materials' | 'career_labs' | 'counselors', id: string) => {
     if (!confirm("Are you absolutely sure you want to delete this resource? This action stands irreversible from the database.")) return;
@@ -95,7 +169,7 @@ export default function Staff({ user }: StaffProps) {
       } else {
         await deleteRecord(type, id);
       }
-      alert("Successfully removed record ✓");
+      onNotify?.("Successfully removed record", "success");
       loadAll();
     } catch (err: any) {
       alert("Failed to remove item: " + err.message);
@@ -109,7 +183,7 @@ export default function Staff({ user }: StaffProps) {
     localStorage.removeItem('local_blogs');
     localStorage.removeItem('local_reference_materials');
     localStorage.removeItem('local_career_labs');
-    alert("Local offline caches cleared! Re-fetching from database...");
+    onNotify?.("Local offline caches cleared. Re-fetching from database...", "success");
     loadAll();
   };
 
@@ -118,7 +192,7 @@ export default function Staff({ user }: StaffProps) {
     if (!confirm(`Are you sure you want to alter the clearance level of ${email} to ${targetRole}?`)) return;
     try {
       await updateUserRole(email, targetRole);
-      alert("Role changes published successfully!");
+      onNotify?.("Role changes published successfully!", "success");
       loadAll();
     } catch (err: any) {
       alert("Clearance update failed: " + err.message);
@@ -130,7 +204,7 @@ export default function Staff({ user }: StaffProps) {
     if (!confirm(`CRITICAL WARNING:\nPurging user ${email} will permanently remove their credential rows AND they will lose custody of all blogs they authored. Proceed?`)) return;
     try {
       await deleteUserAndBlogs(email);
-      alert("purged user and matching data!");
+      onNotify?.("Purged user and matching data.", "success");
       loadAll();
     } catch (err: any) {
       alert("Operation failed: " + err.message);
@@ -144,478 +218,630 @@ export default function Staff({ user }: StaffProps) {
     setModalOpen(true);
   };
 
+  const kpiCards = [
+    { label: 'Courses', val: stats.courses, tab: 'courses' as StaffTab, icon: BookOpen },
+    { label: 'Blog Posts', val: stats.blogs, tab: 'blogs' as StaffTab, icon: Newspaper },
+    { label: 'References', val: stats.references, tab: 'references' as StaffTab, icon: Library },
+    { label: 'Career Labs', val: stats.labs, tab: 'labs' as StaffTab, icon: FlaskConical },
+    { label: 'Counsellors', val: stats.counselors, tab: 'counselors' as StaffTab, icon: GraduationCap },
+    { label: 'Users', val: stats.users, tab: 'users' as StaffTab, icon: Users },
+  ];
+
+  const renderStatusPill = (status: string) => (
+    <span
+      className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full border ${
+        status === 'Published'
+          ? 'bg-[#B80F2E] text-white border-[#B80F2E]'
+          : 'bg-rose-50 text-[#9E0D28] border-rose-200'
+      }`}
+    >
+      {status}
+    </span>
+  );
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 text-left">
-      
-      {/* 1. Header Hero Panel - Clean, spacious light theme */}
-      <section className="mb-10 text-left border-b border-rose-100 pb-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 border border-rose-100/80 text-[#B80F2E] font-bold text-[10px] uppercase tracking-wider mb-4">
-          <Settings2 className="w-3.5 h-3.5 text-[#B80F2E] animate-spin" />
-          <span>Resource Administrative Panel</span>
+    <div className="min-h-screen bg-[#FFFBFB]">
+      {/* Crimson Header Banner */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#6B081B] via-[#9E0D28] to-[#C21434] text-white py-10 sm:py-14 px-4 sm:px-6 lg:px-8">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_70%_at_90%_-15%,rgba(255,255,255,0.16),transparent)] pointer-events-none" />
+        <div className="relative max-w-7xl mx-auto text-left">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/25 text-rose-50 font-semibold text-[11px] uppercase tracking-wider mb-3 backdrop-blur-xs">
+            <Settings2 className="w-3.5 h-3.5" />
+            <span>Resource Administrative Panel</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-serif font-medium tracking-tight text-white">
+            Workspace Library Dashboard
+          </h1>
+          <p className="text-rose-100/90 text-xs sm:text-sm mt-2 max-w-2xl leading-relaxed">
+            Stream, edit, pin, approve, or prune counseling assets. Update user roles or configure templates immediately.
+          </p>
         </div>
-        <h1 className="text-2.5xl sm:text-3.5xl font-black text-gray-900 tracking-tight">Workspace Library Dashboard</h1>
-        <p className="text-gray-500 text-xs sm:text-sm mt-2 max-w-2xl leading-relaxed">
-          Stream, edit, approve, or prune counseling assets. Update user roles or configure templates immediately.
-        </p>
       </section>
 
-      {/* 2. KPI Indicator grids */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-10 text-left">
-        {[
-          { label: 'Courses', val: stats.courses, color: 'text-blue-600 bg-blue-50 border-blue-100', tab: 'courses' },
-          { label: 'Blog Posts', val: stats.blogs, color: 'text-red-700 bg-rose-50 border-rose-100', tab: 'blogs' },
-          { label: 'References', val: stats.references, color: 'text-emerald-700 bg-emerald-50 border-emerald-100', tab: 'references' },
-          { label: 'Career Labs', val: stats.labs, color: 'text-amber-600 bg-amber-50 border-amber-100', tab: 'labs' },
-          { label: 'Counsellors', val: stats.counselors, color: 'text-rose-800 bg-rose-50 border-rose-100', tab: 'counselors' },
-          { label: 'Users', val: stats.users, color: 'text-rose-700 bg-rose-50 border-rose-100', tab: 'users' },
-        ].map(item => (
-          <button
-            key={item.label}
-            onClick={() => setActiveTab(item.tab as StaffTab)}
-            className={`p-4 rounded-2xl border text-left cursor-pointer transition-all hover:shadow-md ${item.color} ${
-              activeTab === item.tab ? 'ring-2 ring-gray-900 ring-offset-2' : ''
-            }`}
-          >
-            <div className="text-2xl font-black">{item.val}</div>
-            <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-500 mt-1">{item.label}</div>
-          </button>
-        ))}
-      </div>
-
-      {/* 3. Panel Container Board */}
-      <div className="bg-white rounded-2xl border border-rose-100 shadow-sm overflow-hidden">
-        
-        {/* Navigation tabs */}
-        <div className="flex border-b border-gray-100 bg-gray-50/50 flex-wrap overflow-x-auto">
-          {[
-            { id: 'courses', label: 'Manage Courses' },
-            { id: 'blogs', label: 'Counselor Blogs' },
-            { id: 'references', label: 'Reference Files' },
-            { id: 'labs', label: 'Career Labs' },
-            { id: 'counselors', label: 'Counsellors' },
-            { id: 'users', label: 'User Roles' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as StaffTab)}
-              className={`px-5 py-4 border-b-2 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                activeTab === tab.id
-                  ? 'border-[#B80F2E] text-[#B80F2E] bg-white font-extrabold'
-                  : 'border-transparent text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 text-left">
+        {/* 2. KPI Indicator grids — cohesive red shades & white */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 sm:gap-4 mb-8 text-left">
+          {kpiCards.map(item => {
+            const Icon = item.icon;
+            const active = activeTab === item.tab;
+            return (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => setActiveTab(item.tab)}
+                className={`p-4 rounded-2xl border text-left cursor-pointer transition-all ${
+                  active
+                    ? 'bg-gradient-to-br from-[#8B0E24] to-[#B80F2E] text-white border-[#8B0E24] shadow-md'
+                    : 'bg-white text-[#241115] border-rose-100 hover:border-rose-300 hover:bg-[#FFF7F8] shadow-2xs'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                    active ? 'bg-white/15 text-white' : 'bg-rose-50 text-[#B80F2E]'
+                  }`}>
+                    <Icon className="w-4 h-4" />
+                  </span>
+                  <span className={`text-2xl font-bold ${active ? 'text-white' : 'text-[#8B0E24]'}`}>
+                    {item.val}
+                  </span>
+                </div>
+                <div className={`text-[11px] font-bold uppercase tracking-wider ${
+                  active ? 'text-rose-100' : 'text-[#694D53]'
+                }`}>
+                  {item.label}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Dynamic Inner Tab Renderer */}
-        <div className="p-6">
-          {loading ? (
-            <div className="py-24 text-center">
-              <div className="spinner" />
-              <p className="text-gray-400 font-semibold uppercase tracking-widest text-xs mt-4">Streaming database list...</p>
-            </div>
-          ) : (
-            <div>
-              
-              {/* COURSES TAB VIEW */}
-              {activeTab === 'courses' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-gray-100">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 font-serif">Academic Course Modules</h3>
-                      <p className="text-xs text-gray-500">Add or edit student challenges pipelines and CV preparation guides.</p>
-                    </div>
-                    <button 
-                      onClick={() => openModal('courses')}
-                      className="px-4 py-2 bg-gradient-to-r from-[#8F0A22] to-[#B80F2E] text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Course</span>
-                    </button>
-                  </div>
+        {/* 3. Panel Container Board */}
+        <div className="bg-white rounded-2xl border border-rose-100 shadow-xs overflow-hidden">
+          {/* Navigation tabs */}
+          <div className="flex border-b border-rose-100 bg-[#FFF8F9] overflow-x-auto scrollbar-none">
+            {[
+              { id: 'courses', label: 'Manage Courses' },
+              { id: 'blogs', label: 'Counselor Blogs' },
+              { id: 'references', label: 'Reference Files' },
+              { id: 'labs', label: 'Career Labs' },
+              { id: 'counselors', label: 'Counsellors' },
+              { id: 'users', label: 'User Roles' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as StaffTab)}
+                className={`px-4 sm:px-5 py-4 border-b-2 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'border-[#B80F2E] text-[#B80F2E] bg-white'
+                    : 'border-transparent text-[#7A5A60] hover:text-[#9E0D28]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-[#101827]">
-                      <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-wider text-gray-500 border-b border-gray-100">
-                        <tr>
-                          <th className="px-4 py-3 text-left">Title</th>
-                          <th className="px-4 py-3 text-left">Instructor</th>
-                          <th className="px-4 py-3 text-left">Category</th>
-                          <th className="px-4 py-3 text-left">Grade</th>
-                          <th className="px-4 py-3 text-center">Status</th>
-                          <th className="px-4 py-3 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 font-semibold">
-                        {courses.map(item => (
-                          <tr key={item.ID} className="hover:bg-rose-50/20 transition-colors">
-                            <td className="px-4 py-4 font-bold text-gray-900 max-w-xs truncate" title={item.Title}>{item.Title}</td>
-                            <td className="px-4 py-4 text-gray-600">{item.Instructor}</td>
-                            <td className="px-4 py-4 text-xs font-extrabold uppercase text-[#B80F2E]">
-                              <span className="bg-rose-50 px-2 py-0.5 rounded">{item.Category}</span>
-                            </td>
-                            <td className="px-4 py-4 text-xs font-bold uppercase text-gray-500">
-                              <span className="bg-gray-100 px-2.5 py-0.5 rounded-lg">{item.Grade}</span>
-                            </td>
-                            <td className="px-4 py-4 text-center">
-                              <span className={`text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full ${
-                                item.Status === 'Published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                              }`}>
-                                {item.Status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button onClick={() => openModal('courses', item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors" title="Edit course">
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => handleDelete('courses', item.ID)} className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors" title="Delete course">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* BLOGS TAB VIEW */}
-              {activeTab === 'blogs' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-gray-100">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 font-serif">Counselor Publications</h3>
-                      <p className="text-xs text-gray-500">Draft or publish editorial posts, guidance notes, and checklists.</p>
-                    </div>
-                    <button 
-                      onClick={() => openModal('blogs')}
-                      className="px-4 py-2 bg-gradient-to-r from-[#8F0A22] to-[#B80F2E] text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Create Post</span>
-                    </button>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-[#101827]">
-                      <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-wider text-gray-500 border-b border-gray-100">
-                        <tr>
-                          <th className="px-4 py-3 text-left">Post Title</th>
-                          <th className="px-4 py-3 text-left">Author</th>
-                          <th className="px-4 py-3 text-left">Tags</th>
-                          <th className="px-4 py-3 text-center">Status</th>
-                          <th className="px-4 py-3 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 font-semibold font-medium">
-                        {blogs.map(item => (
-                          <tr key={item.ID} className="hover:bg-rose-50/20 transition-colors">
-                            <td className="px-4 py-4 font-bold text-gray-900 max-w-sm truncate" title={item.Title}>{item.Title}</td>
-                            <td className="px-4 py-4 text-gray-600 text-xs truncate max-w-xs">{item.AuthorEmail}</td>
-                            <td className="px-4 py-4 text-xs font-bold text-rose-700">
-                              <span className="flex flex-wrap gap-1 max-w-44">
-                                {(item.Tags || "").split(',').filter(Boolean).slice(0, 3).map((t, idx) => (
-                                  <span key={idx} className="bg-rose-50 px-1.5 py-0.5 rounded">#{t.trim()}</span>
-                                ))}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 text-center">
-                              <span className={`text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full ${
-                                item.Status === 'Published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                              }`}>
-                                {item.Status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button onClick={() => openModal('blogs', item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors" title="Edit post">
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => handleDelete('blogs', item.ID)} className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors" title="Delete post">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* REFERENCES TAB VIEW */}
-              {activeTab === 'references' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-gray-100">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 font-serif">Reference Material Assets</h3>
-                      <p className="text-xs text-gray-500">Edit Latex templates, Ivy lists, and catalog guides.</p>
-                    </div>
-                    <button 
-                      onClick={() => openModal('references')}
-                      className="px-4 py-2 bg-gradient-to-r from-[#8F0A22] to-[#B80F2E] text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Reference</span>
-                    </button>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-[#101827]">
-                      <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-wider text-gray-500 border-b border-gray-100">
-                        <tr>
-                          <th className="px-4 py-3 text-left">Document Title</th>
-                          <th className="px-4 py-3 text-left">Creator</th>
-                          <th className="px-4 py-3 text-left">Category</th>
-                          <th className="px-4 py-3 text-center">Status</th>
-                          <th className="px-4 py-3 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 font-semibold font-medium">
-                        {refs.map(item => (
-                          <tr key={item.ID} className="hover:bg-rose-50/20 transition-colors">
-                            <td className="px-4 py-4 font-bold text-gray-900 max-w-sm truncate" title={item.Title}>{item.Title}</td>
-                            <td className="px-4 py-4 text-gray-600">{item.Author}</td>
-                            <td className="px-4 py-4 text-xs font-extrabold uppercase text-[#B80F2E]">
-                              <span className="bg-rose-50 px-2 py-0.5 rounded">{item.Category}</span>
-                            </td>
-                            <td className="px-4 py-4 text-center">
-                              <span className={`text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full ${
-                                item.Status === 'Published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                              }`}>
-                                {item.Status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button onClick={() => openModal('references', item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors" title="Edit reference">
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => handleDelete('reference_materials', item.ID)} className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors" title="Delete reference">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* LABS TAB VIEW */}
-              {activeTab === 'labs' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-gray-100">
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 font-serif font-serif">Career Laboratory Index</h3>
-                      <p className="text-xs text-gray-500">Edit or approve student-authored portfolio submissions.</p>
-                    </div>
-                    <button 
-                      onClick={() => openModal('labs')}
-                      className="px-4 py-2 bg-gradient-to-r from-[#8F0A22] to-[#B80F2E] text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Add Submission</span>
-                    </button>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-[#101827]">
-                      <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-wider text-gray-500 border-b border-gray-100">
-                        <tr>
-                          <th className="px-4 py-3 text-left">Project Title</th>
-                          <th className="px-4 py-3 text-left">Student</th>
-                          <th className="px-4 py-3 text-left">Mentor</th>
-                          <th className="px-4 py-3 text-left">Discipline</th>
-                          <th className="px-4 py-3 text-center">Status</th>
-                          <th className="px-4 py-3 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 font-semibold font-medium">
-                        {labs.map(item => (
-                          <tr key={item.ID} className="hover:bg-rose-50/20 transition-colors">
-                            <td className="px-4 py-4 font-bold text-gray-900 max-w-xs truncate" title={item.Title}>{item.Title}</td>
-                            <td className="px-4 py-4 text-gray-600">{item.Student}</td>
-                            <td className="px-4 py-4 text-gray-600">👤 {item.Mentor}</td>
-                            <td className="px-4 py-4 text-xs font-extrabold uppercase text-[#B80F2E]">
-                              <span className="bg-rose-50 px-2 py-0.5 rounded">{item.Category}</span>
-                            </td>
-                            <td className="px-4 py-4 text-center">
-                              <span className={`text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full ${
-                                item.Status === 'Published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                              }`}>
-                                {item.Status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button onClick={() => openModal('labs', item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors" title="Edit portfolio">
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => handleDelete('career_labs', item.ID)} className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors" title="Delete portfolio">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* USERS TAB VIEW */}
-              {activeTab === 'users' && (
-                <div className="space-y-4">
-                  <div className="pb-4 border-b border-gray-100 text-left">
-                    <h3 className="text-lg font-bold text-gray-900 font-serif">Credential Clearance & User Roles</h3>
-                    <p className="text-xs text-gray-500">Edit role clearance level to allow access to this Staff admin console.</p>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-[#101827]">
-                      <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-wider text-gray-500 border-b border-gray-100">
-                        <tr>
-                          <th className="px-4 py-3 text-left">User Name</th>
-                          <th className="px-4 py-3 text-left">Email Address (school standard)</th>
-                          <th className="px-4 py-3 text-left">Current clearance</th>
-                          <th className="px-4 py-3 text-right">Admin actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 font-semibold font-medium">
-                        {users.map(u => {
-                          const isSelf = u.Email.toLowerCase() === user.email.toLowerCase();
-                          return (
-                            <tr key={u.Email} className="hover:bg-rose-50/20 transition-colors">
-                              <td className="px-4 py-4 font-bold text-gray-900">{u.Name}</td>
-                              <td className="px-4 py-4 text-gray-500 text-xs sm:text-sm font-semibold">{u.Email}</td>
-                              <td className="px-4 py-4 text-xs font-bold text-rose-700">
-                                <select
-                                  value={u.Role}
-                                  disabled={isSelf}
-                                  onChange={(e) => handleRoleChange(u.Email, e.target.value as UserRole)}
-                                  className="px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E] disabled:opacity-50"
-                                >
-                                  <option value="Student">Student</option>
-                                  <option value="Editor">Editor (Counselor/Faculty)</option>
-                                  <option value="Admin">Admin (Full override)</option>
-                                </select>
-                              </td>
-                              <td className="px-4 py-4 text-right">
-                                {!isSelf && (
-                                  <button
-                                    onClick={() => handleDeleteUser(u.Email)}
-                                    className="px-2.5 py-1 text-red-700 border border-red-100 hover:bg-rose-50 rounded-lg text-[11px] font-bold uppercase transition-all"
-                                  >
-                                    Purge user completely
-                                  </button>
-                                )}
-                                {isSelf && (
-                                  <span className="text-[10px] text-gray-400 uppercase italic font-bold">Acting Clearance Account</span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {/* COUNSELLORS TAB VIEW */}
-              {activeTab === 'counselors' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-gray-100">
-                    <div className="text-left">
-                      <h3 className="text-lg font-bold text-gray-900 font-serif">Career Counsellor Profiles</h3>
-                      <p className="text-xs text-gray-500">Add, edit, or delete career counsellors appearing on the homepage.</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={handleResetCache}
-                        className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all"
-                        title="Clear local browser cache for counselor records and reset fallback cache."
-                      >
-                        <span>Reset Cache</span>
-                      </button>
-                      <button 
-                        onClick={() => openModal('counselors')}
-                        className="px-4 py-2 bg-[#B80F2E] hover:bg-[#8F0A22] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow transition-all"
+          {/* Dynamic Inner Tab Renderer */}
+          <div className="p-4 sm:p-6">
+            {loading ? (
+              <div className="py-24 text-center">
+                <div className="spinner" />
+                <p className="text-[#8A6970] font-semibold uppercase tracking-widest text-xs mt-3">
+                  Streaming database list...
+                </p>
+              </div>
+            ) : (
+              <div>
+                {/* COURSES TAB VIEW */}
+                {activeTab === 'courses' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-rose-100">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#241115] font-serif">Academic Course Modules</h3>
+                        <p className="text-xs text-[#694D53]">Add, pin, or edit student challenges pipelines and CV preparation guides.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openModal('courses')}
+                        className="px-4 py-2.5 bg-gradient-to-r from-[#8B0E24] to-[#B80F2E] hover:brightness-110 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs"
                       >
                         <Plus className="w-4 h-4" />
-                        <span>Add New Counsellor</span>
+                        <span>Add Course</span>
                       </button>
                     </div>
-                  </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-[#101827]">
-                      <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-wider text-gray-500 border-b border-gray-100">
-                        <tr>
-                          <th className="px-4 py-3 text-left w-16">Photo</th>
-                          <th className="px-4 py-3 text-left">Name</th>
-                          <th className="px-4 py-3 text-left">Qualifications</th>
-                          <th className="px-4 py-3 text-left">Contact Detail</th>
-                          <th className="px-4 py-3 text-center">Status</th>
-                          <th className="px-4 py-3 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 font-semibold font-medium text-left">
-                        {counselors.map(item => (
-                          <tr key={item.ID} className="hover:bg-rose-50/20 transition-colors">
-                            <td className="px-4 py-3">
-                              <div className="w-10 h-10 rounded-full overflow-hidden bg-rose-50 border border-rose-100 shrink-0">
-                                {item.ImageURL ? (
-                                  <img src={item.ImageURL} alt={item.Name} className="w-full h-full object-cover object-top" referrerPolicy="no-referrer" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-rose-300">
-                                    <User className="w-4 h-4" />
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 font-bold text-gray-900 max-w-xs truncate" title={item.Name}>{item.Name}</td>
-                            <td className="px-4 py-4 text-gray-600 max-w-xs truncate" title={item.Qualifications}>{item.Qualifications}</td>
-                            <td className="px-4 py-4 text-gray-500 text-xs">{item.Contact}</td>
-                            <td className="px-4 py-4 text-center">
-                              <span className={`text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded-full ${
-                                item.Status === 'Published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                              }`}>
-                                {item.Status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <button onClick={() => openModal('counselors', item)} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors" title="Edit counsellor">
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button onClick={() => handleDelete('counselors', item.ID)} className="p-1.5 text-gray-400 hover:text-red-700 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors" title="Delete counsellor">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-[#241115]">
+                        <thead className="bg-[#FFF7F8] text-[10px] font-bold uppercase tracking-wider text-[#8A6970] border-b border-rose-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left">Title</th>
+                            <th className="px-4 py-3 text-left">Instructor</th>
+                            <th className="px-4 py-3 text-left">Category</th>
+                            <th className="px-4 py-3 text-left">Grade</th>
+                            <th className="px-4 py-3 text-center">Status</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-rose-100/70">
+                          {courses.map(item => (
+                            <tr key={item.ID} className={`transition-colors ${item.IsPinned ? 'bg-[#FFF5F6]' : 'hover:bg-[#FFF9FA]'}`}>
+                              <td className="px-4 py-3.5 font-semibold text-[#241115] max-w-xs" title={item.Title}>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {item.IsPinned && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#B80F2E] text-white text-[9px] font-bold uppercase shrink-0">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pin
+                                    </span>
+                                  )}
+                                  <span className="truncate">{item.Title}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3.5 text-[#5C4146] text-xs font-medium">{item.Instructor}</td>
+                              <td className="px-4 py-3.5 text-xs font-bold uppercase text-[#B80F2E]">
+                                <span className="bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md">{item.Category}</span>
+                              </td>
+                              <td className="px-4 py-3.5 text-xs font-semibold text-[#694D53]">
+                                <span className="bg-[#FFF5F6] px-2.5 py-0.5 rounded-lg">{item.Grade}</span>
+                              </td>
+                              <td className="px-4 py-3.5 text-center">{renderStatusPill(item.Status)}</td>
+                              <td className="px-4 py-3.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleTogglePin('courses', item.ID, item.Title, item.IsPinned)}
+                                    className={`p-2 rounded-lg cursor-pointer transition-colors ${
+                                      item.IsPinned
+                                        ? 'bg-[#B80F2E] text-white'
+                                        : 'text-[#8A6970] hover:text-[#B80F2E] hover:bg-rose-50'
+                                    }`}
+                                    title={item.IsPinned ? 'Unpin course' : 'Pin course to top'}
+                                  >
+                                    <Pin className={`w-4 h-4 ${item.IsPinned ? 'fill-current' : ''}`} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openModal('courses', item)}
+                                    className="p-2 text-[#694D53] hover:text-[#9E0D28] hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                    title="Edit course"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete('courses', item.ID)}
+                                    className="p-2 text-[#9E7880] hover:text-[#B80F2E] hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                    title="Delete course"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-            </div>
-          )}
+                {/* BLOGS TAB VIEW */}
+                {activeTab === 'blogs' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-rose-100">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#241115] font-serif">Counselor Publications</h3>
+                        <p className="text-xs text-[#694D53]">Draft, pin, or publish editorial posts, guidance notes, and checklists.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openModal('blogs')}
+                        className="px-4 py-2.5 bg-gradient-to-r from-[#8B0E24] to-[#B80F2E] hover:brightness-110 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Create Post</span>
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-[#241115]">
+                        <thead className="bg-[#FFF7F8] text-[10px] font-bold uppercase tracking-wider text-[#8A6970] border-b border-rose-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left">Post Title</th>
+                            <th className="px-4 py-3 text-left">Author</th>
+                            <th className="px-4 py-3 text-left">Tags</th>
+                            <th className="px-4 py-3 text-center">Status</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-rose-100/70">
+                          {blogs.map(item => (
+                            <tr key={item.ID} className={`transition-colors ${item.IsPinned ? 'bg-[#FFF5F6]' : 'hover:bg-[#FFF9FA]'}`}>
+                              <td className="px-4 py-3.5 font-semibold text-[#241115] max-w-sm" title={item.Title}>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {item.IsPinned && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#B80F2E] text-white text-[9px] font-bold uppercase shrink-0">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pin
+                                    </span>
+                                  )}
+                                  <span className="truncate">{item.Title}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3.5 text-[#5C4146] text-xs truncate max-w-xs">{item.AuthorEmail}</td>
+                              <td className="px-4 py-3.5 text-xs font-semibold text-[#B80F2E]">
+                                <span className="flex flex-wrap gap-1 max-w-44">
+                                  {(item.Tags || "").split(',').filter(Boolean).slice(0, 3).map((t, idx) => (
+                                    <span key={idx} className="bg-rose-50 border border-rose-100 px-1.5 py-0.5 rounded-md">#{t.trim()}</span>
+                                  ))}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5 text-center">{renderStatusPill(item.Status)}</td>
+                              <td className="px-4 py-3.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleTogglePin('blogs', item.ID, item.Title, item.IsPinned)}
+                                    className={`p-2 rounded-lg cursor-pointer transition-colors ${
+                                      item.IsPinned
+                                        ? 'bg-[#B80F2E] text-white'
+                                        : 'text-[#8A6970] hover:text-[#B80F2E] hover:bg-rose-50'
+                                    }`}
+                                    title={item.IsPinned ? 'Unpin post' : 'Pin post to top'}
+                                  >
+                                    <Pin className={`w-4 h-4 ${item.IsPinned ? 'fill-current' : ''}`} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openModal('blogs', item)}
+                                    className="p-2 text-[#694D53] hover:text-[#9E0D28] hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                    title="Edit post"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete('blogs', item.ID)}
+                                    className="p-2 text-[#9E7880] hover:text-[#B80F2E] hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                    title="Delete post"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* REFERENCES TAB VIEW */}
+                {activeTab === 'references' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-rose-100">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#241115] font-serif">Reference Material Assets</h3>
+                        <p className="text-xs text-[#694D53]">Pin or edit LaTeX templates, Ivy lists, and catalog guides.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openModal('references')}
+                        className="px-4 py-2.5 bg-gradient-to-r from-[#8B0E24] to-[#B80F2E] hover:brightness-110 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add Reference</span>
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-[#241115]">
+                        <thead className="bg-[#FFF7F8] text-[10px] font-bold uppercase tracking-wider text-[#8A6970] border-b border-rose-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left">Document Title</th>
+                            <th className="px-4 py-3 text-left">Creator</th>
+                            <th className="px-4 py-3 text-left">Category</th>
+                            <th className="px-4 py-3 text-center">Status</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-rose-100/70">
+                          {refs.map(item => (
+                            <tr key={item.ID} className={`transition-colors ${item.IsPinned ? 'bg-[#FFF5F6]' : 'hover:bg-[#FFF9FA]'}`}>
+                              <td className="px-4 py-3.5 font-semibold text-[#241115] max-w-sm" title={item.Title}>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {item.IsPinned && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#B80F2E] text-white text-[9px] font-bold uppercase shrink-0">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pin
+                                    </span>
+                                  )}
+                                  <span className="truncate">{item.Title}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3.5 text-[#5C4146] text-xs font-medium">{item.Author}</td>
+                              <td className="px-4 py-3.5 text-xs font-bold uppercase text-[#B80F2E]">
+                                <span className="bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md">{item.Category}</span>
+                              </td>
+                              <td className="px-4 py-3.5 text-center">{renderStatusPill(item.Status)}</td>
+                              <td className="px-4 py-3.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleTogglePin('reference_materials', item.ID, item.Title, item.IsPinned)}
+                                    className={`p-2 rounded-lg cursor-pointer transition-colors ${
+                                      item.IsPinned
+                                        ? 'bg-[#B80F2E] text-white'
+                                        : 'text-[#8A6970] hover:text-[#B80F2E] hover:bg-rose-50'
+                                    }`}
+                                    title={item.IsPinned ? 'Unpin reference' : 'Pin reference to top'}
+                                  >
+                                    <Pin className={`w-4 h-4 ${item.IsPinned ? 'fill-current' : ''}`} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openModal('references', item)}
+                                    className="p-2 text-[#694D53] hover:text-[#9E0D28] hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                    title="Edit reference"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete('reference_materials', item.ID)}
+                                    className="p-2 text-[#9E7880] hover:text-[#B80F2E] hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                    title="Delete reference"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* LABS TAB VIEW */}
+                {activeTab === 'labs' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-rose-100">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#241115] font-serif">Career Laboratory Index</h3>
+                        <p className="text-xs text-[#694D53]">Pin, edit, or approve student-authored portfolio submissions.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openModal('labs')}
+                        className="px-4 py-2.5 bg-gradient-to-r from-[#8B0E24] to-[#B80F2E] hover:brightness-110 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add Submission</span>
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-[#241115]">
+                        <thead className="bg-[#FFF7F8] text-[10px] font-bold uppercase tracking-wider text-[#8A6970] border-b border-rose-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left">Project Title</th>
+                            <th className="px-4 py-3 text-left">Student</th>
+                            <th className="px-4 py-3 text-left">Mentor</th>
+                            <th className="px-4 py-3 text-left">Discipline</th>
+                            <th className="px-4 py-3 text-center">Status</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-rose-100/70">
+                          {labs.map(item => (
+                            <tr key={item.ID} className={`transition-colors ${item.IsPinned ? 'bg-[#FFF5F6]' : 'hover:bg-[#FFF9FA]'}`}>
+                              <td className="px-4 py-3.5 font-semibold text-[#241115] max-w-xs" title={item.Title}>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {item.IsPinned && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#B80F2E] text-white text-[9px] font-bold uppercase shrink-0">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pin
+                                    </span>
+                                  )}
+                                  <span className="truncate">{item.Title}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3.5 text-[#5C4146] text-xs font-medium">{item.Student}</td>
+                              <td className="px-4 py-3.5 text-[#5C4146] text-xs font-medium">{item.Mentor}</td>
+                              <td className="px-4 py-3.5 text-xs font-bold uppercase text-[#B80F2E]">
+                                <span className="bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md">{item.Category}</span>
+                              </td>
+                              <td className="px-4 py-3.5 text-center">{renderStatusPill(item.Status)}</td>
+                              <td className="px-4 py-3.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleTogglePin('career_labs', item.ID, item.Title, item.IsPinned)}
+                                    className={`p-2 rounded-lg cursor-pointer transition-colors ${
+                                      item.IsPinned
+                                        ? 'bg-[#B80F2E] text-white'
+                                        : 'text-[#8A6970] hover:text-[#B80F2E] hover:bg-rose-50'
+                                    }`}
+                                    title={item.IsPinned ? 'Unpin project' : 'Pin project to top'}
+                                  >
+                                    <Pin className={`w-4 h-4 ${item.IsPinned ? 'fill-current' : ''}`} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openModal('labs', item)}
+                                    className="p-2 text-[#694D53] hover:text-[#9E0D28] hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                    title="Edit portfolio"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete('career_labs', item.ID)}
+                                    className="p-2 text-[#9E7880] hover:text-[#B80F2E] hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                    title="Delete portfolio"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* USERS TAB VIEW */}
+                {activeTab === 'users' && (
+                  <div className="space-y-4">
+                    <div className="pb-4 border-b border-rose-100 text-left">
+                      <h3 className="text-lg font-semibold text-[#241115] font-serif">Credential Clearance & User Roles</h3>
+                      <p className="text-xs text-[#694D53]">Edit role clearance level to allow access to this Staff admin console.</p>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-[#241115]">
+                        <thead className="bg-[#FFF7F8] text-[10px] font-bold uppercase tracking-wider text-[#8A6970] border-b border-rose-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left">User Name</th>
+                            <th className="px-4 py-3 text-left">Email Address</th>
+                            <th className="px-4 py-3 text-left">Current Clearance</th>
+                            <th className="px-4 py-3 text-right">Admin Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-rose-100/70">
+                          {users.map(u => {
+                            const isSelf = u.Email.toLowerCase() === user.email.toLowerCase();
+                            return (
+                              <tr key={u.Email} className="hover:bg-[#FFF9FA] transition-colors">
+                                <td className="px-4 py-3.5 font-semibold text-[#241115]">{u.Name}</td>
+                                <td className="px-4 py-3.5 text-[#694D53] text-xs font-medium">{u.Email}</td>
+                                <td className="px-4 py-3.5 text-xs font-semibold text-[#9E0D28]">
+                                  <select
+                                    value={u.Role}
+                                    disabled={isSelf}
+                                    onChange={(e) => handleRoleChange(u.Email, e.target.value as UserRole)}
+                                    className="px-2.5 py-1.5 bg-[#FFF7F8] border border-rose-200 rounded-xl text-xs font-semibold text-[#8B0E24] focus:outline-none focus:ring-2 focus:ring-[#B80F2E]/25 disabled:opacity-50"
+                                  >
+                                    <option value="Student">Student</option>
+                                    <option value="Editor">Editor (Counselor/Faculty)</option>
+                                    <option value="Admin">Admin (Full override)</option>
+                                  </select>
+                                </td>
+                                <td className="px-4 py-3.5 text-right">
+                                  {!isSelf ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteUser(u.Email)}
+                                      className="px-3 py-1.5 text-[#B80F2E] border border-rose-200 hover:bg-rose-50 rounded-xl text-[11px] font-bold uppercase transition-all cursor-pointer"
+                                    >
+                                      Purge User
+                                    </button>
+                                  ) : (
+                                    <span className="text-[10px] text-[#9E6E77] uppercase italic font-bold">
+                                      Acting Account
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* COUNSELLORS TAB VIEW */}
+                {activeTab === 'counselors' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-rose-100">
+                      <div className="text-left">
+                        <h3 className="text-lg font-semibold text-[#241115] font-serif">Career Counsellor Profiles</h3>
+                        <p className="text-xs text-[#694D53]">Add, edit, or delete career counsellors appearing on the homepage.</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={handleResetCache}
+                          className="px-3.5 py-2.5 bg-[#FFF5F6] hover:bg-rose-100 border border-rose-200 text-[#8B0E24] rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all"
+                          title="Clear local browser cache for counselor records and reset fallback cache."
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Reset Cache</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openModal('counselors')}
+                          className="px-4 py-2.5 bg-gradient-to-r from-[#8B0E24] to-[#B80F2E] hover:brightness-110 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Add Counsellor</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-[#241115]">
+                        <thead className="bg-[#FFF7F8] text-[10px] font-bold uppercase tracking-wider text-[#8A6970] border-b border-rose-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left w-16">Photo</th>
+                            <th className="px-4 py-3 text-left">Name</th>
+                            <th className="px-4 py-3 text-left">Qualifications</th>
+                            <th className="px-4 py-3 text-left">Contact Detail</th>
+                            <th className="px-4 py-3 text-center">Status</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-rose-100/70 text-left">
+                          {counselors.map(item => (
+                            <tr key={item.ID} className="hover:bg-[#FFF9FA] transition-colors">
+                              <td className="px-4 py-3">
+                                <div className="w-10 h-10 rounded-full overflow-hidden bg-rose-50 border border-rose-200 shrink-0">
+                                  {item.ImageURL ? (
+                                    <img src={item.ImageURL} alt={item.Name} className="w-full h-full object-cover object-top" referrerPolicy="no-referrer" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[#C85A6D]">
+                                      <User className="w-4 h-4" />
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3.5 font-semibold text-[#241115] max-w-xs truncate" title={item.Name}>{item.Name}</td>
+                              <td className="px-4 py-3.5 text-[#5C4146] text-xs max-w-xs truncate" title={item.Qualifications}>{item.Qualifications}</td>
+                              <td className="px-4 py-3.5 text-[#694D53] text-xs">{item.Contact}</td>
+                              <td className="px-4 py-3.5 text-center">{renderStatusPill(item.Status)}</td>
+                              <td className="px-4 py-3.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => openModal('counselors', item)}
+                                    className="p-2 text-[#694D53] hover:text-[#9E0D28] hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                    title="Edit counsellor"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete('counselors', item.ID)}
+                                    className="p-2 text-[#9E7880] hover:text-[#B80F2E] hover:bg-rose-50 rounded-lg cursor-pointer transition-colors"
+                                    title="Delete counsellor"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-
       </div>
 
       {/* 4. UNIFIED MODAL FOR ADD/EDIT DIALOGS */}
@@ -624,7 +850,12 @@ export default function Staff({ user }: StaffProps) {
           type={modalType}
           item={editingItem}
           onClose={() => { setModalOpen(false); setUploadProgress(''); }}
-          onSaved={() => { setModalOpen(false); setUploadProgress(''); loadAll(); }}
+          onSaved={() => {
+            setModalOpen(false);
+            setUploadProgress('');
+            onNotify?.('Changes saved successfully!', 'success');
+            loadAll();
+          }}
           uploadProgress={uploadProgress}
           setUploadProgress={setUploadProgress}
           currentUserEmail={user.email}
@@ -634,7 +865,6 @@ export default function Staff({ user }: StaffProps) {
           labs={labs}
         />
       )}
-
     </div>
   );
 }
@@ -656,13 +886,13 @@ interface ModalProps {
   labs: CareerLab[];
 }
 
-function ContentFormModal({ 
-  type, 
-  item, 
-  onClose, 
-  onSaved, 
-  uploadProgress, 
-  setUploadProgress, 
+function ContentFormModal({
+  type,
+  item,
+  onClose,
+  onSaved,
+  uploadProgress,
+  setUploadProgress,
   currentUserEmail,
   courses,
   blogs,
@@ -671,8 +901,7 @@ function ContentFormModal({
 }: ModalProps) {
   const isEdit = !!item;
   const isCounselor = type === 'counselors';
-  
-  // Field values
+
   const [title, setTitle] = useState(isCounselor ? (item?.Name || '') : (item?.Title || ''));
   const [desc, setDesc] = useState(isCounselor ? (item?.Intro || '') : (item?.Description || ''));
   const [instructor, setInstructor] = useState(isCounselor ? (item?.Qualifications || '') : (item?.Instructor || ''));
@@ -686,16 +915,14 @@ function ContentFormModal({
   const [pdfLink, setPdfLink] = useState(item?.PDFLink || '');
   const [content, setContent] = useState(item?.Content || '');
   const [status, setStatus] = useState<'Draft' | 'Published'>(item?.Status || 'Draft');
+  const [isPinned, setIsPinned] = useState<boolean>(Boolean(item?.IsPinned));
   const [tags, setTags] = useState(item?.Tags || '');
   const [featuredImageURL, setFeaturedImageURL] = useState(item?.FeaturedImageURL || '');
 
-  // Auto-suggest category states
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   const richEditorRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on click outside
   useEffect(() => {
     const clickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -706,7 +933,6 @@ function ContentFormModal({
     return () => document.removeEventListener('mousedown', clickOutside);
   }, []);
 
-  // Compute all unique existing categories across types, highlighting the active type's categories first
   const getExistingCategories = (): string[] => {
     let rawCategories: string[] = [];
     if (type === 'courses') {
@@ -716,30 +942,27 @@ function ContentFormModal({
     } else if (type === 'labs') {
       rawCategories = labs?.map(l => l.Category) || [];
     }
-    
+
     const currentUnique = Array.from(new Set(rawCategories.map(c => c?.trim()).filter(Boolean)));
-    
-    // Cross-pollination categories from other tabs
+
     let otherCategories: string[] = [];
     if (type !== 'courses' && courses) otherCategories.push(...courses.map(c => c.Category));
     if (type !== 'references' && references) otherCategories.push(...references.map(r => r.Category));
     if (type !== 'labs' && labs) otherCategories.push(...labs.map(l => l.Category));
-    
+
     const otherUnique = Array.from(new Set(otherCategories.map(c => c?.trim()).filter(c => c && !currentUnique.includes(c))));
-    
+
     return [...currentUnique, ...otherUnique];
   };
 
   const existingCategories = getExistingCategories();
 
-  // Initialize the editor with content on mount so we don't wipe it out on re-renders
   useEffect(() => {
     if (richEditorRef.current) {
       richEditorRef.current.innerHTML = content;
     }
   }, []);
 
-  // Exec Editor Formatting Commands safely
   const formatText = (command: string, value?: string) => {
     richEditorRef.current?.focus();
     document.execCommand(command, false, value || '');
@@ -751,7 +974,6 @@ function ContentFormModal({
     }
   };
 
-  // Upload document file safely to Supabase storage
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'thumb' | 'pdf' | 'featured') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -770,12 +992,13 @@ function ContentFormModal({
     }
   };
 
-  // Submit and save action
   const handleSaveSubmit = async () => {
     if (!title.trim()) {
       alert(isCounselor ? "Counsellor Name is a mandatory field." : "Title is a mandatory field.");
       return;
     }
+
+    const finalContent = richEditorRef.current ? richEditorRef.current.innerHTML : content;
 
     try {
       if (type === 'courses') {
@@ -789,23 +1012,25 @@ function ContentFormModal({
           ThumbnailURL: thumbnailURL.trim(),
           YouTubeURL: youtubeURL.trim(),
           PDFLink: pdfLink.trim(),
-          Content: content,
+          Content: finalContent,
           Status: status,
+          IsPinned: isPinned,
           CreatedDate: item?.CreatedDate
         });
       } else if (type === 'blogs') {
-        if (!content.trim()) {
+        if (!finalContent.trim()) {
           alert("Content body is mandatory.");
           return;
         }
         await saveBlogPost({
           ID: item?.ID,
           Title: title.trim(),
-          Content: content,
+          Content: finalContent,
           FeaturedImageURL: featuredImageURL.trim(),
           PDFLink: pdfLink.trim(),
           Tags: tags.trim(),
           Status: status,
+          IsPinned: isPinned,
           CreatedDate: item?.CreatedDate
         }, currentUserEmail);
       } else if (type === 'references') {
@@ -818,8 +1043,9 @@ function ContentFormModal({
           ThumbnailURL: thumbnailURL.trim(),
           YouTubeURL: youtubeURL.trim(),
           PDFLink: pdfLink.trim(),
-          Content: content,
+          Content: finalContent,
           Status: status,
+          IsPinned: isPinned,
           CreatedDate: item?.CreatedDate
         });
       } else if (type === 'labs') {
@@ -837,8 +1063,9 @@ function ContentFormModal({
           ThumbnailURL: thumbnailURL.trim(),
           YouTubeURL: youtubeURL.trim(),
           PDFLink: pdfLink.trim(),
-          Content: content,
+          Content: finalContent,
           Status: status,
+          IsPinned: isPinned,
           CreatedDate: item?.CreatedDate
         });
       } else if (type === 'counselors') {
@@ -855,7 +1082,6 @@ function ContentFormModal({
         });
       }
 
-      alert("Changes saved and written successfully!");
       onSaved();
     } catch (err: any) {
       alert("Save failed, verify permissions: " + err.message);
@@ -863,64 +1089,68 @@ function ContentFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl border border-rose-100 max-w-2xl w-full max-h-[90vh] flex flex-col justify-between overflow-hidden">
-        
-        {/* Modal Top line */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-          <div>
-            <h3 className="text-base font-extrabold uppercase text-[#B80F2E] tracking-wider text-left">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#24060C]/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl shadow-2xl border border-rose-200 max-w-2xl w-full max-h-[92vh] flex flex-col justify-between overflow-hidden">
+        {/* Modal Header */}
+        <div className="px-5 sm:px-6 py-4 border-b border-rose-100 flex items-center justify-between bg-[#FFF8F9]">
+          <div className="text-left">
+            <h3 className="text-base font-bold text-[#8B0E24] tracking-tight">
               {isEdit ? 'Modify Resource Post' : 'Add New Resource Post'}
             </h3>
-            <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest">{type} catalog</span>
+            <span className="text-[11px] text-[#8A6970] font-semibold uppercase tracking-widest">
+              {type} catalog
+            </span>
           </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all cursor-pointer">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 text-[#8A6970] hover:text-[#B80F2E] hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal content body */}
-        <div className="p-6 overflow-y-auto space-y-4 text-left">
-          
-          {uploadProgress && (
-            <div className="sticky top-0 bg-rose-500 text-white font-extrabold text-xs uppercase tracking-widest text-center px-4 py-2 rounded-xl mb-4 shadow">
-              {uploadProgress}
-            </div>
-          )}
+        {/* Upload progress notice */}
+        {uploadProgress && (
+          <div className="px-6 py-2.5 bg-rose-50 border-b border-rose-100 text-xs font-semibold text-[#9E0D28] text-left">
+            {uploadProgress}
+          </div>
+        )}
 
+        {/* Modal Body */}
+        <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 text-left">
           {/* Title / Name */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">
-              {isCounselor ? 'Counsellor Name' : 'Title'} <span className="text-red-700">*</span>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">
+              {isCounselor ? 'Counsellor Full Name' : 'Resource Title'} <span className="text-[#B80F2E]">*</span>
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={isCounselor ? "e.g. Ms. Shalini Sinha..." : "Aptitude Cv Guide, Liberal Arts syllabus..."}
-              className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E]"
+              placeholder={isCounselor ? 'e.g. Ms. Ananya Sharma' : 'Enter a clear, descriptive title...'}
+              className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-sm font-medium text-[#241115] focus:outline-none focus:ring-2 focus:ring-[#B80F2E]/20 focus:border-[#B80F2E]"
             />
           </div>
 
-          {/* Type Specific fields */}
           {type === 'courses' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Instructor</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Instructor</label>
                 <input
                   type="text"
                   value={instructor}
                   onChange={(e) => setInstructor(e.target.value)}
-                  placeholder="Mr. Raj Meheta..."
-                  className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none"
+                  placeholder="Counselor or faculty name..."
+                  className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E]"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">School Tier Grade</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">School Tier Grade</label>
                 <select
                   value={grade}
                   onChange={(e) => setGrade(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none"
+                  className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E] bg-white"
                 >
                   <option value="">— select grade tier —</option>
                   <option value="Class 7">Class 7</option>
@@ -935,124 +1165,126 @@ function ContentFormModal({
           )}
 
           {type === 'references' && (
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Created By Author</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Created By Author</label>
               <input
                 type="text"
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Counselor Panel, Ms. Shalini..."
-                className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none"
+                placeholder="Counselor Panel..."
+                className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E]"
               />
             </div>
           )}
 
           {type === 'labs' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Student <span className="text-red-700">*</span></label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">
+                  Student <span className="text-[#B80F2E]">*</span>
+                </label>
                 <input
                   type="text"
                   value={student}
                   onChange={(e) => setStudent(e.target.value)}
-                  placeholder="Suraj..."
-                  className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none"
+                  placeholder="Student full name..."
+                  className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E]"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Mentor Adviser</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Mentor Adviser</label>
                 <input
                   type="text"
                   value={mentor}
                   onChange={(e) => setMentor(e.target.value)}
-                  placeholder="Ms. Shasini..."
-                  className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none"
+                  placeholder="Faculty mentor..."
+                  className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E]"
                 />
               </div>
             </div>
           )}
 
           {type === 'counselors' && (
-            <div className="space-y-4 text-left">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Brief Biography / Introduction</label>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Brief Biography / Introduction</label>
                 <textarea
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
                   placeholder="A brief introduction highlighting their advisory style and experience..."
                   rows={3}
-                  className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E]"
+                  className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E]"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Academic Qualifications</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Academic Qualifications</label>
                   <input
                     type="text"
                     value={instructor}
                     onChange={(e) => setInstructor(e.target.value)}
-                    placeholder="e.g. M.Sc in Counseling Psychology, UCLA..."
-                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E]"
+                    placeholder="e.g. M.Sc in Counseling Psychology..."
+                    className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E]"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Advisory Focus / Specialties</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Advisory Focus / Specialties</label>
                   <input
                     type="text"
                     value={mentor}
                     onChange={(e) => setMentor(e.target.value)}
                     placeholder="e.g. Liberal Arts, STEM profile building..."
-                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E]"
+                    className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Contact Email</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Contact Email</label>
                   <input
                     type="email"
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
-                    placeholder="e.g. shalini@hyd.silveroaks.co.in"
-                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#B80F2E]"
+                    placeholder="e.g. advisor@hyd.silveroaks.co.in"
+                    className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E]"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-1.5">
-                    <Image className="w-3.5 h-3.5 text-[#B80F2E]" /> 
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#241115] uppercase tracking-wider flex items-center gap-1.5">
+                    <Image className="w-3.5 h-3.5 text-[#B80F2E]" />
                     <span>Profile Photo File</span>
                   </label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="file" 
-                      accept="image/*" 
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="file"
+                      accept="image/*"
                       onChange={(e) => handleFileUpload(e, 'thumb')}
                       className="flex-1 py-1 text-xs"
                     />
-                    {thumbnailURL && <span className="text-emerald-700 font-extrabold text-[10px] self-center shrink-0">Photo Attached ✓</span>}
+                    {thumbnailURL && <span className="text-[#B80F2E] font-bold text-[10px] shrink-0">Attached</span>}
                   </div>
-                  <input 
+                  <input
                     type="text"
-                    value={thumbnailURL} 
+                    value={thumbnailURL}
                     onChange={(e) => setThumbnailURL(e.target.value)}
-                    placeholder="Or paste image URL bypass..."
-                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-[10px] font-semibold focus:outline-none mt-1"
+                    placeholder="Or paste image URL..."
+                    className="w-full px-3 py-2 border border-rose-200 rounded-xl text-[11px] font-medium focus:outline-none focus:border-[#B80F2E]"
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Description brief & category with autocomplete suggestions dropdown */}
+          {/* Description & Category with Autocomplete */}
           {type !== 'blogs' && type !== 'counselors' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1 relative" ref={dropdownRef}>
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center justify-between">
+              <div className="space-y-1.5 relative" ref={dropdownRef}>
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider flex items-center justify-between">
                   <span>Category Discipline</span>
                   {existingCategories.length > 0 && (
-                    <span className="text-[10px] text-[#B80F2E] font-black uppercase tracking-wider">
+                    <span className="text-[10px] text-[#B80F2E] font-bold">
                       ({existingCategories.length} existing)
                     </span>
                   )}
@@ -1066,14 +1298,14 @@ function ContentFormModal({
                       setShowCategoryDropdown(true);
                     }}
                     onFocus={() => setShowCategoryDropdown(true)}
-                    placeholder="e.g. CV Prep, Resume CV..."
-                    className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none pr-8"
+                    placeholder="e.g. CV Prep, Stream Advice..."
+                    className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E] pr-8"
                   />
                   {existingCategories.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setShowCategoryDropdown((prev) => !prev)}
-                      className="absolute right-0 top-0 bottom-0 px-2.5 text-gray-400 hover:text-[#B80F2E] transition-colors focus:outline-none cursor-pointer flex items-center justify-center border-l border-gray-100"
+                      className="absolute right-0 top-0 bottom-0 px-2.5 text-[#9E6E77] hover:text-[#B80F2E] cursor-pointer flex items-center justify-center border-l border-rose-100"
                     >
                       <svg className={`w-3.5 h-3.5 transform transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
@@ -1082,231 +1314,256 @@ function ContentFormModal({
                   )}
                 </div>
 
-                {/* Dropdown Suggestions */}
                 {showCategoryDropdown && existingCategories.length > 0 && (
-                  <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-rose-100 rounded-xl shadow-lg py-1.5 text-xs font-semibold text-left">
+                  <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-rose-200 rounded-xl shadow-lg py-1 text-xs font-medium text-left">
                     {(() => {
-                      const filtered = existingCategories.filter(cat => 
+                      const matched = existingCategories.filter(cat =>
                         cat.toLowerCase().includes(category.toLowerCase())
                       );
-
-                      if (filtered.length === 0) {
+                      if (matched.length === 0) {
                         return (
-                          <div className="px-3.5 py-2.5 text-gray-400 italic">
-                            No match. Press Tab to keep custom category
+                          <div className="px-3.5 py-2.5 text-[#8A6970] italic">
+                            No match. Keep typing for a custom category.
                           </div>
                         );
                       }
-
-                      return filtered.map((cat) => (
-                        <button
-                          key={cat}
-                          type="button"
-                          onClick={() => {
-                            setCategory(cat);
-                            setShowCategoryDropdown(false);
-                          }}
-                          className="w-full text-left px-3.5 py-2.5 hover:bg-rose-50 hover:text-[#B80F2E] transition-colors flex items-center justify-between cursor-pointer border-b last:border-b-0 border-gray-50/50"
-                        >
-                          <span>{cat}</span>
-                          {(() => {
-                            const isCurrentType = 
-                              type === 'courses' ? courses?.some(c => c.Category === cat) :
-                              type === 'references' ? references?.some(r => r.Category === cat) :
-                              type === 'labs' ? labs?.some(l => l.Category === cat) : false;
-                            return isCurrentType ? (
-                              <span className="text-[9px] bg-rose-50 text-[#B80F2E] px-1.5 py-0.5 rounded font-black uppercase tracking-wider border border-rose-100/50">
-                                {type}
-                              </span>
-                            ) : (
-                              <span className="text-[9px] bg-gray-50 text-gray-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider border border-gray-100/50">
-                                other
-                              </span>
-                            );
-                          })()}
-                        </button>
-                      ));
+                      return matched.map((cat) => {
+                        const isCurrentType =
+                          type === 'courses' ? courses?.some(c => c.Category === cat) :
+                          type === 'references' ? references?.some(r => r.Category === cat) :
+                          type === 'labs' ? labs?.some(l => l.Category === cat) : false;
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => {
+                              setCategory(cat);
+                              setShowCategoryDropdown(false);
+                            }}
+                            className="w-full text-left px-3.5 py-2.5 hover:bg-rose-50 hover:text-[#B80F2E] transition-colors flex items-center justify-between cursor-pointer border-b last:border-b-0 border-rose-50"
+                          >
+                            <span>{cat}</span>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                              isCurrentType ? 'bg-rose-50 text-[#B80F2E]' : 'bg-rose-50/50 text-[#9E7880]'
+                            }`}>
+                              {isCurrentType ? type : 'other'}
+                            </span>
+                          </button>
+                        );
+                      });
                     })()}
                   </div>
                 )}
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Brief description</label>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Brief Description</label>
                 <input
                   type="text"
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
-                  placeholder="A transient summary of contents..."
-                  className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none"
+                  placeholder="A concise summary of contents..."
+                  className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E]"
                 />
               </div>
             </div>
           )}
 
-          {/* Category-specific fields for blog post */}
+          {/* Blog-specific fields */}
           {type === 'blogs' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest font-mono">Topic tags</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Topic Tags</label>
                 <input
                   type="text"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
-                  placeholder="comma-separated list (e.g. ivy, resume, stream)"
-                  className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none"
+                  placeholder="comma-separated (e.g. ivy, resume, stream)"
+                  className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E]"
                 />
               </div>
-              <div className="space-y-1 text-left flex flex-col justify-end">
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-1"><Image className="w-3.5 h-3.5" /> Featured Image</label>
-                <div className="flex gap-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider flex items-center gap-1.5">
+                  <Image className="w-3.5 h-3.5 text-[#B80F2E]" />
+                  <span>Featured Image</span>
+                </label>
+                <div className="flex gap-2 items-center">
                   <input
                     type="file"
                     accept="image/*"
                     onChange={(e) => handleFileUpload(e, 'featured')}
-                    className="flex-1 py-1.5 border border-gray-200 rounded-xl text-xs font-semibold"
+                    className="flex-1 py-1.5 border border-rose-200 rounded-xl text-xs px-2"
                   />
-                  {featuredImageURL && <span className="text-emerald-700 font-extrabold text-[10px] self-center">Has File!</span>}
+                  {featuredImageURL && <span className="text-[#B80F2E] font-bold text-[10px] shrink-0">Attached</span>}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Standard Media Asset Upload fields */}
+          {/* Media Asset Upload fields */}
           {type !== 'blogs' && type !== 'counselors' && (
-            <div className="border border-rose-50 rounded-2xl p-4 bg-gray-50/50 gap-4 grid grid-cols-1 sm:grid-cols-2">
-              
-              {/* Thumbnail image */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-1.5"><Image className="w-3.5 h-3.5 text-rose-800" /> Cover Thumbnail</label>
-                <input 
-                  type="file" 
-                  accept="image/*" 
+            <div className="border border-rose-100 rounded-2xl p-4 bg-[#FFF8F9] gap-4 grid grid-cols-1 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider flex items-center gap-1.5">
+                  <Image className="w-3.5 h-3.5 text-[#B80F2E]" />
+                  <span>Cover Thumbnail</span>
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
                   onChange={(e) => handleFileUpload(e, 'thumb')}
-                  className="w-full py-1 text-xs border-r"
+                  className="w-full py-1 text-xs"
                 />
-                <input 
+                <input
                   type="text"
-                  value={thumbnailURL} 
+                  value={thumbnailURL}
                   onChange={(e) => setThumbnailURL(e.target.value)}
-                  placeholder="URL link bypass..."
-                  className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-[10px] font-semibold focus:outline-none mt-1 bg-white"
+                  placeholder="Or paste image URL..."
+                  className="w-full px-3 py-2 border border-rose-200 rounded-xl text-[11px] font-medium focus:outline-none focus:border-[#B80F2E] bg-white"
                 />
               </div>
 
-              {/* YouTube video */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">YouTube Video URL</label>
-                <input 
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">YouTube Video URL</label>
+                <input
                   type="text"
-                  value={youtubeURL} 
+                  value={youtubeURL}
                   onChange={(e) => setYoutubeURL(e.target.value)}
                   placeholder="https://www.youtube.com/watch?..."
-                  className="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none"
+                  className="w-full px-3.5 py-2 border border-rose-200 rounded-xl text-xs font-medium text-[#241115] focus:outline-none focus:border-[#B80F2E] bg-white"
                 />
-                <p className="text-[10px] text-gray-400 font-medium">Bypass empty if no media exists.</p>
+                <p className="text-[10px] text-[#8A6970]">Leave empty if no video lecture exists.</p>
               </div>
-
             </div>
           )}
 
-          {/* Unified PDF Document Attachment */}
+          {/* PDF Attachment */}
           {type !== 'counselors' && (
-            <div className="space-y-1 border border-gray-200 rounded-2xl p-4 bg-zinc-50/50 text-left">
-              <label className="text-xs font-bold text-gray-900 uppercase tracking-widest flex items-center gap-2">
-                <FileText className="w-4 h-4 text-rose-800 animate-pulse" />
-                <span>Drive PDF Attachment</span>
+            <div className="space-y-2 border border-rose-100 rounded-2xl p-4 bg-[#FFF8F9]">
+              <label className="text-xs font-bold text-[#241115] uppercase tracking-wider flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#B80F2E]" />
+                <span>Drive / PDF Attachment</span>
               </label>
               <div className="flex flex-col sm:flex-row gap-3">
-                <input 
-                  type="file" 
-                  accept="application/pdf" 
+                <input
+                  type="file"
+                  accept="application/pdf"
                   onChange={(e) => handleFileUpload(e, 'pdf')}
-                  className="flex-1 py-1.5 rounded-lg text-xs"
+                  className="flex-1 py-1.5 text-xs"
                 />
-                <input 
+                <input
                   type="text"
-                  value={pdfLink} 
+                  value={pdfLink}
                   onChange={(e) => setPdfLink(e.target.value)}
-                  placeholder="Google Drive link or raw CDN URL..."
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-[10px] font-bold focus:outline-none bg-white"
+                  placeholder="Google Drive link or raw PDF URL..."
+                  className="flex-1 px-3 py-2 border border-rose-200 rounded-xl text-[11px] font-medium focus:outline-none focus:border-[#B80F2E] bg-white"
                 />
               </div>
-              <p className="text-[10px] text-gray-400 font-medium mt-1">Accepts native PDF documents or linked Drive directories.</p>
+              <p className="text-[10px] text-[#8A6970]">Accepts native PDF documents or linked Google Drive files.</p>
             </div>
           )}
 
-          {/* Clean Rich Text Body Editor */}
+          {/* Rich Text Body Editor */}
           {type !== 'counselors' && (
-            <div className="space-y-1 text-left">
-              <label className="text-xs font-bold text-[#B80F2E] uppercase tracking-widest">Lesson Content / Publication Body</label>
-              
-              {/* Formatting utility row */}
-              <div className="flex flex-wrap gap-1 bg-gray-50 border border-gray-200 p-1.5 rounded-t-xl overflow-x-auto">
-                <button onClick={() => formatText('bold')} className="p-1.5 hover:bg-gray-200 rounded" title="Bold text"><Bold className="w-3.5 h-3.5" /></button>
-                <button onClick={() => formatText('italic')} className="p-1.5 hover:bg-gray-200 rounded" title="Italic text"><Italic className="w-3.5 h-3.5" /></button>
-                <button onClick={() => formatText('formatBlock', '<h2>')} className="p-1.5 hover:bg-gray-200 rounded text-xs font-bold" title="H2 Section">H2</button>
-                <button onClick={() => formatText('formatBlock', '<h3>')} className="p-1.5 hover:bg-gray-200 rounded text-xs font-bold" title="H3 Sub-section">H3</button>
-                <button onClick={() => formatText('insertUnorderedList')} className="p-1.5 hover:bg-gray-200 rounded" title="Bullet list"><ListIcon className="w-3.5 h-3.5" /></button>
-                <button onClick={() => formatText('insertOrderedList')} className="p-1.5 hover:bg-gray-200 rounded" title="Numbered list"><ListOrdered className="w-3.5 h-3.5" /></button>
-                <button onClick={() => formatText('formatBlock', '<blockquote>')} className="p-1.5 hover:bg-gray-200 rounded" title="Quote block"><Quote className="w-3.5 h-3.5" /></button>
-                <button 
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#8B0E24] uppercase tracking-wider">
+                Lesson Content / Publication Body
+              </label>
+
+              <div className="flex flex-wrap gap-1 bg-[#FFF6F7] border border-rose-200 p-1.5 rounded-t-xl overflow-x-auto">
+                <button type="button" onClick={() => formatText('bold')} className="p-1.5 hover:bg-rose-100 text-[#4A2C32] rounded cursor-pointer" title="Bold"><Bold className="w-3.5 h-3.5" /></button>
+                <button type="button" onClick={() => formatText('italic')} className="p-1.5 hover:bg-rose-100 text-[#4A2C32] rounded cursor-pointer" title="Italic"><Italic className="w-3.5 h-3.5" /></button>
+                <button type="button" onClick={() => formatText('formatBlock', '<h2>')} className="p-1.5 hover:bg-rose-100 text-[#4A2C32] rounded text-xs font-bold cursor-pointer" title="H2 Section">H2</button>
+                <button type="button" onClick={() => formatText('formatBlock', '<h3>')} className="p-1.5 hover:bg-rose-100 text-[#4A2C32] rounded text-xs font-bold cursor-pointer" title="H3 Sub-section">H3</button>
+                <button type="button" onClick={() => formatText('insertUnorderedList')} className="p-1.5 hover:bg-rose-100 text-[#4A2C32] rounded cursor-pointer" title="Bullet list"><ListIcon className="w-3.5 h-3.5" /></button>
+                <button type="button" onClick={() => formatText('insertOrderedList')} className="p-1.5 hover:bg-rose-100 text-[#4A2C32] rounded cursor-pointer" title="Numbered list"><ListOrdered className="w-3.5 h-3.5" /></button>
+                <button type="button" onClick={() => formatText('formatBlock', '<blockquote>')} className="p-1.5 hover:bg-rose-100 text-[#4A2C32] rounded cursor-pointer" title="Quote block"><Quote className="w-3.5 h-3.5" /></button>
+                <button
+                  type="button"
                   onClick={() => {
-                    const url = prompt("Link destination URI Address (e.g. hpps://...):");
+                    const url = prompt("Link destination URL (e.g. https://...):");
                     if (url) formatText('createLink', url);
-                  }} 
-                  className="p-1.5 hover:bg-gray-200 rounded" 
+                  }}
+                  className="p-1.5 hover:bg-rose-100 text-[#4A2C32] rounded cursor-pointer"
                   title="Hyperlink"
                 >
                   <Link2 className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Editable drafting canvas */}
               <div
                 ref={richEditorRef}
                 contentEditable
                 suppressContentEditableWarning
                 onBlur={handleEditorUpdate}
-                placeholder="Draft your interactive narrative guidelines here..."
-                className="w-full min-h-44 bg-white border-x border-b border-gray-200 rounded-b-xl px-4 py-3 text-xs sm:text-sm font-semibold outline-none focus:ring-1 focus:ring-gray-300 overflow-y-auto max-h-60"
+                className="w-full min-h-40 bg-white border-x border-b border-rose-200 rounded-b-xl px-4 py-3 text-xs sm:text-sm text-[#241115] outline-none focus:ring-2 focus:ring-[#B80F2E]/15 overflow-y-auto max-h-60"
               />
             </div>
           )}
 
-          {/* Status draft or publish checkboxes */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-900 uppercase tracking-widest">Post Clearance State</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as 'Draft' | 'Published')}
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none"
-            >
-              <option value="Draft">Draft (Internal/Admins only)</option>
-              <option value="Published">Published (Public to student catalog)</option>
-            </select>
-          </div>
+          {/* Status & Pin Post row */}
+          <div className={`grid grid-cols-1 ${type !== 'counselors' ? 'sm:grid-cols-2' : ''} gap-4`}>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Post Clearance State</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as 'Draft' | 'Published')}
+                className="w-full px-3.5 py-2.5 border border-rose-200 rounded-xl text-xs font-semibold text-[#241115] focus:outline-none focus:border-[#B80F2E] bg-white"
+              >
+                <option value="Draft">Draft (Internal/Admins only)</option>
+                <option value="Published">Published (Public to student catalog)</option>
+              </select>
+            </div>
 
+            {type !== 'counselors' && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#241115] uppercase tracking-wider">Featured Priority</label>
+                <button
+                  type="button"
+                  onClick={() => setIsPinned(!isPinned)}
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                    isPinned
+                      ? 'bg-[#B80F2E] text-white border-[#B80F2E]'
+                      : 'bg-[#FFF8F9] text-[#8B0E24] border-rose-200 hover:border-[#B80F2E]'
+                  }`}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current' : ''}`} />
+                    <span>{isPinned ? 'Pinned to Top' : 'Pin Post to Top'}</span>
+                  </span>
+                  <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                    isPinned ? 'bg-white/20 text-white' : 'bg-white text-[#9E0D28]'
+                  }`}>
+                    {isPinned ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Modal Footer lines */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3 bg-gray-50/50">
-          <button 
+        {/* Modal Footer */}
+        <div className="px-5 sm:px-6 py-4 border-t border-rose-100 flex items-center justify-end gap-3 bg-[#FFF8F9]">
+          <button
+            type="button"
             onClick={onClose}
-            className="px-4 py-2 border border-gray-250 text-gray-700 rounded-lg text-xs font-bold uppercase transition"
+            className="px-4 py-2.5 border border-rose-200 bg-white text-[#694D53] hover:text-[#8B0E24] hover:bg-rose-50 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
           >
             Cancel
           </button>
-          <button 
+          <button
+            type="button"
             onClick={handleSaveSubmit}
-            className="px-5 py-2 bg-gradient-to-r from-[#8F0A22] to-[#B80F2E] text-white rounded-lg text-xs font-bold uppercase hover:brightness-105 transition"
+            className="px-5 py-2.5 bg-gradient-to-r from-[#8B0E24] to-[#B80F2E] text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:brightness-110 transition inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
-            💾 Commit Changes
+            <Save className="w-3.5 h-3.5" />
+            <span>Commit Changes</span>
           </button>
         </div>
-
       </div>
     </div>
   );
 }
+
 export function FileDownLoader() { return null; }
 export function ArrowRightCircle() { return null; }

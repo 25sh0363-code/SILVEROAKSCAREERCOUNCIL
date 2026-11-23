@@ -4,7 +4,16 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { Course, BlogPost, ReferenceMaterial, CareerLab, DbUser, AppUser, UserRole, Counselor } from '../types';
+import {
+  Course,
+  BlogPost,
+  ReferenceMaterial,
+  CareerLab,
+  DbUser,
+  UserRole,
+  Counselor,
+  PinnableTable
+} from '../types';
 
 // Exact original credentials provided in the user's source code
 export const SUPABASE_URL = "https://wicihqhrjgcikcyurbtd.supabase.co";
@@ -40,16 +49,109 @@ export function isAllowedEmail(email: string): boolean {
 }
 
 // -------------------------------------------------------------
+// PINNED POSTS PERSISTENCE (Supabase is_pinned + resilient local sync)
+// -------------------------------------------------------------
+const PIN_STORAGE_KEY = 'socc_pinned_items_v1';
+
+type PinOverrideMap = Record<string, boolean>;
+
+function readPinMap(): PinOverrideMap {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(PIN_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writePinMap(map: PinOverrideMap) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(map));
+  } catch (err) {
+    console.warn("Unable to save pinned items locally:", err);
+  }
+}
+
+function pinKey(table: PinnableTable, id: string): string {
+  return `${table}:${id}`;
+}
+
+export function resolvePinnedState(table: PinnableTable, id: string, dbValue?: boolean | null): boolean {
+  const map = readPinMap();
+  const key = pinKey(table, id);
+  if (key in map) {
+    return Boolean(map[key]);
+  }
+  return Boolean(dbValue);
+}
+
+export function clearLocalPinOverrides() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(PIN_STORAGE_KEY);
+  window.dispatchEvent(new CustomEvent('pins-updated'));
+}
+
+export async function togglePinRecord(
+  table: PinnableTable,
+  id: string,
+  nextPinned: boolean
+): Promise<boolean> {
+  // 1. Persist immediately in local registry for instant UI responsiveness and schema resilience
+  const map = readPinMap();
+  map[pinKey(table, id)] = nextPinned;
+  writePinMap(map);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('pins-updated', { detail: { table, id, isPinned: nextPinned } }));
+  }
+
+  // 2. Attempt cloud persistence in Supabase (silently ignores if is_pinned column is not yet added)
+  try {
+    const { error } = await supabase
+      .from(table)
+      .update({ is_pinned: nextPinned })
+      .eq('id', id);
+
+    if (error) {
+      const msg = (error.message || '').toLowerCase();
+      const isMissingCol =
+        msg.includes('is_pinned') ||
+        msg.includes('column') ||
+        msg.includes('schema cache') ||
+        error.code === '42703' ||
+        error.code === 'PGRST204';
+      if (!isMissingCol) {
+        console.warn(`Supabase pin sync warning for ${table}:`, error.message);
+      }
+    }
+  } catch (err) {
+    console.warn(`Supabase pin sync network warning for ${table}:`, err);
+  }
+
+  return nextPinned;
+}
+
+export function sortPinnedFirst<T extends { IsPinned?: boolean; CreatedDate?: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const pinDiff = (b.IsPinned ? 1 : 0) - (a.IsPinned ? 1 : 0);
+    if (pinDiff !== 0) return pinDiff;
+    const dateA = a.CreatedDate ? new Date(a.CreatedDate).getTime() : 0;
+    const dateB = b.CreatedDate ? new Date(b.CreatedDate).getTime() : 0;
+    return dateB - dateA;
+  });
+}
+
+// -------------------------------------------------------------
 // HIGH-FIDELITY FALLBACK DATA (For local preview resilience)
 // -------------------------------------------------------------
 const MOCK_COURSES: Course[] = [];
-
 const MOCK_POSTS: BlogPost[] = [];
-
 const MOCK_REFS: ReferenceMaterial[] = [];
-
 const MOCK_LABS: CareerLab[] = [];
-
 const MOCK_COUNSELORS: Counselor[] = [];
 
 const MOCK_USERS: DbUser[] = [
@@ -65,18 +167,18 @@ async function safeDbCall<T>(
     const { data, error } = await queryPromise;
     if (error) {
       console.warn("Supabase query error, fallback to mock data:", error.message || error);
-      
+
       const errMsg = (error.message || String(error)).toLowerCase();
-      const isMissingTable = 
-        errMsg.includes("could not find the table") || 
-        errMsg.includes("relation") || 
-        errMsg.includes("does not exist") || 
-        errMsg.includes("schema cache") || 
-        error.code === "42P01" || 
+      const isMissingTable =
+        errMsg.includes("could not find the table") ||
+        errMsg.includes("relation") ||
+        errMsg.includes("does not exist") ||
+        errMsg.includes("schema cache") ||
+        error.code === "42P01" ||
         error.code === "PGRST116";
 
       if (typeof window !== 'undefined' && !isMissingTable) {
-        window.dispatchEvent(new CustomEvent('supabase-error', { 
+        window.dispatchEvent(new CustomEvent('supabase-error', {
           detail: error.message || String(error)
         }));
       }
@@ -88,16 +190,16 @@ async function safeDbCall<T>(
     return data as T[];
   } catch (err: any) {
     console.error("Supabase network error, fallback to mock data:", err);
-    
+
     const errMsg = (err?.message || String(err)).toLowerCase();
-    const isMissingTable = 
-      errMsg.includes("could not find the table") || 
-      errMsg.includes("relation") || 
-      errMsg.includes("does not exist") || 
+    const isMissingTable =
+      errMsg.includes("could not find the table") ||
+      errMsg.includes("relation") ||
+      errMsg.includes("does not exist") ||
       errMsg.includes("schema cache");
 
     if (typeof window !== 'undefined' && !isMissingTable) {
-      window.dispatchEvent(new CustomEvent('supabase-error', { 
+      window.dispatchEvent(new CustomEvent('supabase-error', {
         detail: err?.message || String(err)
       }));
     }
@@ -106,7 +208,7 @@ async function safeDbCall<T>(
 }
 
 // -------------------------------------------------------------
-// CORE DB API HANDLERS (Identical logic to vanilla source)
+// CORE DB API HANDLERS (Identical logic to vanilla source + pin sorting)
 // -------------------------------------------------------------
 
 export async function fetchAllCourses(isPublishedOnly = true): Promise<Course[]> {
@@ -118,18 +220,20 @@ export async function fetchAllCourses(isPublishedOnly = true): Promise<Course[]>
     query.order('created_date', { ascending: false }),
     MOCK_COURSES
   );
-  return result.map(toCourse);
+  return sortPinnedFirst(result.map(toCourse));
 }
 
 export async function fetchCourseById(id: string): Promise<Course | null> {
   try {
     const { data, error } = await supabase.from('courses').select('*').eq('id', id).maybeSingle();
     if (error || !data) {
-      return MOCK_COURSES.find(c => c.ID === id) || null;
+      const fallback = MOCK_COURSES.find(c => c.ID === id) || null;
+      return fallback ? { ...fallback, IsPinned: resolvePinnedState('courses', fallback.ID, fallback.IsPinned) } : null;
     }
     return toCourse(data);
   } catch {
-    return MOCK_COURSES.find(c => c.ID === id) || null;
+    const fallback = MOCK_COURSES.find(c => c.ID === id) || null;
+    return fallback ? { ...fallback, IsPinned: resolvePinnedState('courses', fallback.ID, fallback.IsPinned) } : null;
   }
 }
 
@@ -142,18 +246,20 @@ export async function fetchAllBlogs(isPublishedOnly = true): Promise<BlogPost[]>
     query.order('created_date', { ascending: false }),
     MOCK_POSTS
   );
-  return result.map(toBlogPost);
+  return sortPinnedFirst(result.map(toBlogPost));
 }
 
 export async function fetchBlogById(id: string): Promise<BlogPost | null> {
   try {
     const { data, error } = await supabase.from('blogs').select('*').eq('id', id).maybeSingle();
     if (error || !data) {
-      return MOCK_POSTS.find(p => p.ID === id) || null;
+      const fallback = MOCK_POSTS.find(p => p.ID === id) || null;
+      return fallback ? { ...fallback, IsPinned: resolvePinnedState('blogs', fallback.ID, fallback.IsPinned) } : null;
     }
     return toBlogPost(data);
   } catch {
-    return MOCK_POSTS.find(p => p.ID === id) || null;
+    const fallback = MOCK_POSTS.find(p => p.ID === id) || null;
+    return fallback ? { ...fallback, IsPinned: resolvePinnedState('blogs', fallback.ID, fallback.IsPinned) } : null;
   }
 }
 
@@ -166,18 +272,20 @@ export async function fetchAllReferences(isPublishedOnly = true): Promise<Refere
     query.order('created_date', { ascending: false }),
     MOCK_REFS
   );
-  return result.map(toReference);
+  return sortPinnedFirst(result.map(toReference));
 }
 
 export async function fetchReferenceById(id: string): Promise<ReferenceMaterial | null> {
   try {
     const { data, error } = await supabase.from('reference_materials').select('*').eq('id', id).maybeSingle();
     if (error || !data) {
-      return MOCK_REFS.find(r => r.ID === id) || null;
+      const fallback = MOCK_REFS.find(r => r.ID === id) || null;
+      return fallback ? { ...fallback, IsPinned: resolvePinnedState('reference_materials', fallback.ID, fallback.IsPinned) } : null;
     }
     return toReference(data);
   } catch {
-    return MOCK_REFS.find(r => r.ID === id) || null;
+    const fallback = MOCK_REFS.find(r => r.ID === id) || null;
+    return fallback ? { ...fallback, IsPinned: resolvePinnedState('reference_materials', fallback.ID, fallback.IsPinned) } : null;
   }
 }
 
@@ -190,18 +298,20 @@ export async function fetchAllCareerLabs(isPublishedOnly = true): Promise<Career
     query.order('created_date', { ascending: false }),
     MOCK_LABS
   );
-  return result.map(toCareerLab);
+  return sortPinnedFirst(result.map(toCareerLab));
 }
 
 export async function fetchCareerLabById(id: string): Promise<CareerLab | null> {
   try {
     const { data, error } = await supabase.from('career_labs').select('*').eq('id', id).maybeSingle();
     if (error || !data) {
-      return MOCK_LABS.find(l => l.ID === id) || null;
+      const fallback = MOCK_LABS.find(l => l.ID === id) || null;
+      return fallback ? { ...fallback, IsPinned: resolvePinnedState('career_labs', fallback.ID, fallback.IsPinned) } : null;
     }
     return toCareerLab(data);
   } catch {
-    return MOCK_LABS.find(l => l.ID === id) || null;
+    const fallback = MOCK_LABS.find(l => l.ID === id) || null;
+    return fallback ? { ...fallback, IsPinned: resolvePinnedState('career_labs', fallback.ID, fallback.IsPinned) } : null;
   }
 }
 
@@ -223,7 +333,7 @@ export async function fetchAllCounselors(isPublishedOnly = true): Promise<Counse
       }
     }
   }
-  
+
   // Try to clean them up in the actual database silently in background
   try {
     supabase.from('counselors').delete().in('id', ['c1', 'c2']).then(() => {});
@@ -231,7 +341,7 @@ export async function fetchAllCounselors(isPublishedOnly = true): Promise<Counse
 
   const mergedFallback = [...localList];
 
-  const finalFallback = isPublishedOnly 
+  const finalFallback = isPublishedOnly
     ? mergedFallback.filter(c => c.Status === 'Published')
     : mergedFallback;
 
@@ -297,7 +407,7 @@ export async function saveCounselor(payload: Partial<Counselor>): Promise<string
       CreatedDate: row.created_date,
       UpdatedDate: row.updated_date
     };
-    
+
     const existingIndex = localList.findIndex(c => c.ID === id);
     if (existingIndex >= 0) {
       localList[existingIndex] = counselor;
@@ -316,10 +426,10 @@ export async function deleteCounselor(id: string): Promise<boolean> {
     const { error } = await supabase.from('counselors').delete().eq('id', id);
     if (error) {
       const errMsg = (error.message || '').toLowerCase();
-      isMissingTable = 
-        errMsg.includes("could not find the table") || 
-        errMsg.includes("relation") || 
-        errMsg.includes("does not exist") || 
+      isMissingTable =
+        errMsg.includes("could not find the table") ||
+        errMsg.includes("relation") ||
+        errMsg.includes("does not exist") ||
         errMsg.includes("schema cache");
 
       if (!isMissingTable) {
@@ -327,20 +437,18 @@ export async function deleteCounselor(id: string): Promise<boolean> {
       }
     }
   } catch (err: any) {
-    // If it's a real database error (not missing table), rethrow it so the user can see it!
     const errMsg = (err?.message || '').toLowerCase();
-    const isMissingTableError = 
-      errMsg.includes("could not find the table") || 
-      errMsg.includes("relation") || 
-      errMsg.includes("does not exist") || 
+    const isMissingTableError =
+      errMsg.includes("could not find the table") ||
+      errMsg.includes("relation") ||
+      errMsg.includes("does not exist") ||
       errMsg.includes("schema cache");
-      
+
     if (!isMissingTableError) {
       throw err;
     }
   }
 
-  // Always delete from localStorage fallback
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem('local_counselors');
     if (stored) {
@@ -410,7 +518,7 @@ export async function ensureUser(email: string, name: string): Promise<DbUser> {
 }
 
 // -------------------------------------------------------------
-// SAVE & UPSERT OPERATIONS (Backend stays preserved)
+// SAVE & UPSERT OPERATIONS (Backend stays preserved + safe pin sync)
 // -------------------------------------------------------------
 
 export async function saveCourse(payload: Partial<Course>): Promise<string> {
@@ -434,6 +542,9 @@ export async function saveCourse(payload: Partial<Course>): Promise<string> {
   if (error || !data) {
     throw new Error(error?.message || "Failed to save course in Supabase");
   }
+  if (payload.IsPinned !== undefined) {
+    await togglePinRecord('courses', data.id, Boolean(payload.IsPinned));
+  }
   return data.id;
 }
 
@@ -454,6 +565,9 @@ export async function saveBlogPost(payload: Partial<BlogPost>, authorEmail: stri
   const { data, error } = await supabase.from('blogs').upsert([row], { onConflict: 'id' }).select('*').single();
   if (error || !data) {
     throw new Error(error?.message || "Failed to save post in Supabase");
+  }
+  if (payload.IsPinned !== undefined) {
+    await togglePinRecord('blogs', data.id, Boolean(payload.IsPinned));
   }
   return data.id;
 }
@@ -477,6 +591,9 @@ export async function saveReference(payload: Partial<ReferenceMaterial>): Promis
   const { data, error } = await supabase.from('reference_materials').upsert([row], { onConflict: 'id' }).select('*').single();
   if (error || !data) {
     throw new Error(error?.message || "Failed to save reference in Supabase");
+  }
+  if (payload.IsPinned !== undefined) {
+    await togglePinRecord('reference_materials', data.id, Boolean(payload.IsPinned));
   }
   return data.id;
 }
@@ -502,12 +619,22 @@ export async function saveCareerLab(payload: Partial<CareerLab>): Promise<string
   if (error || !data) {
     throw new Error(error?.message || "Failed to save career lab in Supabase");
   }
+  if (payload.IsPinned !== undefined) {
+    await togglePinRecord('career_labs', data.id, Boolean(payload.IsPinned));
+  }
   return data.id;
 }
 
-export async function deleteRecord(table: 'courses' | 'blogs' | 'reference_materials' | 'career_labs', id: string): Promise<boolean> {
+export async function deleteRecord(table: PinnableTable, id: string): Promise<boolean> {
   const { error } = await supabase.from(table).delete().eq('id', id);
   if (error) throw new Error(error.message);
+  // Clean up local pin entry if present
+  const map = readPinMap();
+  const key = pinKey(table, id);
+  if (key in map) {
+    delete map[key];
+    writePinMap(map);
+  }
   return true;
 }
 
@@ -519,14 +646,12 @@ export async function updateUserRole(email: string, role: UserRole): Promise<boo
 
 export async function deleteUserAndBlogs(email: string): Promise<boolean> {
   const safeEmail = String(email || '').toLowerCase().trim();
-  // Delete user authored posts
   const { data: posts, error: fetchErr } = await supabase.from('blogs').select('id').eq('author_email', safeEmail);
   if (!fetchErr && posts) {
     for (const p of posts) {
       await deleteRecord('blogs', p.id);
     }
   }
-  // Delete user
   const { error } = await supabase.from('users').delete().eq('email', safeEmail);
   if (error) throw new Error(error.message);
   return true;
@@ -540,7 +665,7 @@ export async function uploadFileToSupabase(file: File, folderLabel: string): Pro
   const folder = folderLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const path = `${folder}/${Date.now()}-${safeName}`;
 
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from(SUPABASE_STORAGE_BUCKET)
     .upload(path, file, { upsert: true, contentType: file.type });
 
@@ -575,6 +700,7 @@ function toCourse(row: any): Course {
     PDFLink: row.pdf_link,
     Content: row.content,
     Status: row.status,
+    IsPinned: resolvePinnedState('courses', row.id, row.is_pinned),
     CreatedDate: row.created_date,
     UpdatedDate: row.updated_date,
   };
@@ -590,6 +716,7 @@ function toBlogPost(row: any): BlogPost {
     AuthorEmail: row.author_email,
     Tags: row.tags,
     Status: row.status,
+    IsPinned: resolvePinnedState('blogs', row.id, row.is_pinned),
     CreatedDate: row.created_date,
     UpdatedDate: row.updated_date,
   };
@@ -607,6 +734,7 @@ function toReference(row: any): ReferenceMaterial {
     PDFLink: row.pdf_link,
     Content: row.content,
     Status: row.status,
+    IsPinned: resolvePinnedState('reference_materials', row.id, row.is_pinned),
     CreatedDate: row.created_date,
     UpdatedDate: row.updated_date,
   };
@@ -625,6 +753,7 @@ function toCareerLab(row: any): CareerLab {
     PDFLink: row.pdf_link,
     Content: row.content,
     Status: row.status,
+    IsPinned: resolvePinnedState('career_labs', row.id, row.is_pinned),
     CreatedDate: row.created_date,
     UpdatedDate: row.updated_date,
   };
@@ -670,11 +799,9 @@ export function getYoutubeEmbedId(url: string): string {
 // Helper to convert drive links to safe preview/view links that open in any browser/iframe context
 export function getPdfDownloadUrl(url: string): string {
   if (!url) return "";
-  
-  // Clean if it contains HTML or quotes
+
   let cleaned = url.replace(/['"<>]/g, "").trim();
-  
-  // Decode double URL encoding if present
+
   try {
     if (cleaned.includes('%')) {
       cleaned = decodeURIComponent(cleaned);
@@ -683,7 +810,6 @@ export function getPdfDownloadUrl(url: string): string {
     console.error("Failed to decode URL", cleaned);
   }
 
-  // Handle Google Drive links
   let m = cleaned.match(/\/d\/([a-zA-Z0-9_-]+)/);
   if (m) {
     return `https://drive.google.com/file/d/${m[1]}/view?usp=drivesdk`;
@@ -692,6 +818,6 @@ export function getPdfDownloadUrl(url: string): string {
   if (m) {
     return `https://drive.google.com/file/d/${m[1]}/view?usp=drivesdk`;
   }
-  
+
   return cleaned;
 }

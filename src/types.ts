@@ -12,6 +12,8 @@ export interface AppUser {
   isAdmin: boolean;
 }
 
+export type PinnableTable = 'courses' | 'blogs' | 'reference_materials' | 'career_labs';
+
 export interface Course {
   ID: string;
   Title: string;
@@ -24,6 +26,7 @@ export interface Course {
   PDFLink: string;
   Content: string;
   Status: 'Draft' | 'Published';
+  IsPinned?: boolean;
   CreatedDate: string;
   UpdatedDate: string;
 }
@@ -37,6 +40,7 @@ export interface BlogPost {
   AuthorEmail: string;
   Tags: string; // Comma-separated (e.g. "resume, academic, interview")
   Status: 'Draft' | 'Published';
+  IsPinned?: boolean;
   CreatedDate: string;
   UpdatedDate: string;
 }
@@ -52,6 +56,7 @@ export interface ReferenceMaterial {
   PDFLink: string;
   Content: string;
   Status: 'Draft' | 'Published';
+  IsPinned?: boolean;
   CreatedDate: string;
   UpdatedDate: string;
 }
@@ -68,6 +73,7 @@ export interface CareerLab {
   PDFLink: string;
   Content: string;
   Status: 'Draft' | 'Published';
+  IsPinned?: boolean;
   CreatedDate: string;
   UpdatedDate: string;
 }
