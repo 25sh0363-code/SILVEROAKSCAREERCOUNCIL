@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, FileDown, User, Calendar, Pin, PlayCircle } from 'lucide-react';
+import { motion } from 'motion/react';
 import { AppUser, Course, BlogPost, ReferenceMaterial, CareerLab, PinnableTable } from '../types';
 import {
   fetchCourseById,
@@ -90,8 +91,8 @@ export default function ItemDetail({
     return (
       <div className="max-w-4xl mx-auto px-4 py-24 text-center">
         <div className="spinner" />
-        <p className="text-neutral-500 font-semibold uppercase tracking-wider text-xs mt-3">
-          Loading document...
+        <p className="text-neutral-400 font-semibold uppercase tracking-wider text-xs mt-3">
+          Loading...
         </p>
       </div>
     );
@@ -108,21 +109,20 @@ export default function ItemDetail({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-semibold text-neutral-700 hover:text-[#C8102E] hover:border-[#C8102E]/40 transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-neutral-200 text-xs font-bold text-neutral-700 hover:text-[#C8102E] hover:border-red-200 transition-colors cursor-pointer shadow-2xs"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         <span>{backLabel}</span>
       </button>
 
-      {/* Admin/Editor-only editorial pin control */}
       {user?.isAdmin && (
         <button
           type="button"
           onClick={() => handleTogglePin(table, itemId, title, isPinned)}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer shadow-2xs ${
             isPinned
               ? 'bg-[#C8102E] text-white border-[#C8102E] hover:bg-[#9E0B24]'
-              : 'bg-white text-[#C8102E] border-[#C8102E]/30 hover:bg-red-50'
+              : 'bg-white text-[#C8102E] border-red-200 hover:bg-red-50'
           }`}
         >
           <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current' : ''}`} />
@@ -135,16 +135,16 @@ export default function ItemDetail({
   const renderPinnedBanner = (isPinned?: boolean) => {
     if (!isPinned) return null;
     return (
-      <div className="mb-6 rounded-xl bg-red-50 border border-red-200 border-l-4 border-l-[#C8102E] px-4 py-3 flex items-center gap-3">
-        <span className="w-7 h-7 rounded-lg bg-[#C8102E] text-white flex items-center justify-center shrink-0">
-          <Pin className="w-3.5 h-3.5 fill-current" />
+      <div className="mb-6 rounded-2xl bg-gradient-to-r from-[#C8102E] to-[#9E0B24] text-white px-5 py-3.5 flex items-center gap-3.5 shadow-md">
+        <span className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+          <Pin className="w-4 h-4 fill-current" />
         </span>
         <div className="text-left">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-[#C8102E]">
-            Pinned · Important Student Notice
+          <p className="text-[11px] font-bold uppercase tracking-wider text-red-100">
+            Pinned · Important for Students
           </p>
-          <p className="text-xs text-neutral-700">
-            Highlighted by the Silver Oaks Career Council for priority reading.
+          <p className="text-xs text-white/90">
+            Highlighted by Silver Oaks Career Lab mentors for priority reading.
           </p>
         </div>
       </div>
@@ -152,13 +152,13 @@ export default function ItemDetail({
   };
 
   const renderPdfCard = (pdfLink: string, heading: string, subtext: string) => (
-    <div className="bg-white border border-neutral-200 border-l-4 border-l-[#C8102E] rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="bg-white border border-red-200/80 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 shadow-xs">
       <div className="text-left flex items-start gap-3.5">
-        <div className="w-10 h-10 rounded-xl bg-red-50 text-[#C8102E] border border-red-100 flex items-center justify-center shrink-0">
-          <FileDown className="w-4 h-4" />
+        <div className="w-11 h-11 rounded-2xl bg-red-50 text-[#C8102E] border border-red-100 flex items-center justify-center shrink-0">
+          <FileDown className="w-5 h-5" />
         </div>
         <div>
-          <h4 className="font-semibold text-[#141416] text-sm leading-tight">{heading}</h4>
+          <h4 className="font-display font-bold text-[#111114] text-sm leading-tight">{heading}</h4>
           <p className="text-xs text-neutral-500 mt-1">{subtext}</p>
         </div>
       </div>
@@ -166,7 +166,7 @@ export default function ItemDetail({
         href={getPdfDownloadUrl(pdfLink)}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-full sm:w-auto justify-center px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+        className="w-full sm:w-auto justify-center px-5 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white font-bold rounded-full text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
       >
         <FileDown className="w-3.5 h-3.5" />
         <span>
@@ -179,12 +179,12 @@ export default function ItemDetail({
   );
 
   const renderVideoFrame = (embedId: string, label: string, frameTitle: string) => (
-    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden p-3 sm:p-4 mb-8">
-      <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#C8102E] mb-2.5 px-1">
+    <div className="bg-white rounded-3xl border border-neutral-200 overflow-hidden p-3 sm:p-4 mb-8 shadow-xs">
+      <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#C8102E] mb-2.5 px-1.5">
         <PlayCircle className="w-3.5 h-3.5" />
         <span>{label}</span>
       </div>
-      <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-neutral-950">
+      <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-neutral-950">
         <iframe
           src={`https://www.youtube.com/embed/${embedId}`}
           title={frameTitle}
@@ -196,27 +196,32 @@ export default function ItemDetail({
     </div>
   );
 
-  // Course Details Render
+  // Course Details
   if (type === 'course' && course) {
     const embedId = getYoutubeEmbedId(course.YouTubeURL);
     return (
       <div className="bg-[#FAFAFA] min-h-screen">
-        <article className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left">
+        <motion.article
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left"
+        >
           {renderTopBar('Back to Courses', 'courses', course.ID, course.Title, course.IsPinned)}
           {renderPinnedBanner(course.IsPinned)}
 
-          <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 mb-8 space-y-4">
+          <div className="bg-white rounded-3xl border border-neutral-200 p-6 sm:p-9 mb-8 space-y-4">
             <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
-              <span className="px-2.5 py-0.5 rounded-md bg-red-50 text-[#C8102E] border border-red-100">
-                {course.Category || 'General'}
+              <span className="px-3 py-1 rounded-full bg-red-50 text-[#C8102E] border border-red-100">
+                {course.Category || 'Course'}
               </span>
               {course.Grade && (
-                <span className="px-2.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
+                <span className="px-3 py-1 rounded-full bg-neutral-100 text-neutral-700">
                   {course.Grade}
                 </span>
               )}
             </div>
-            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#141416] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-display font-bold text-[#111114] tracking-tight leading-tight">
               {course.Title}
             </h1>
             {course.Description && (
@@ -225,7 +230,7 @@ export default function ItemDetail({
             <div className="flex items-center flex-wrap gap-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
               <span className="inline-flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-[#C8102E]" />
-                Instructor: <strong className="text-[#141416] font-semibold">{course.Instructor}</strong>
+                Mentor: <strong className="text-[#111114] font-semibold">{course.Instructor}</strong>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-[#C8102E]" />
@@ -234,17 +239,17 @@ export default function ItemDetail({
             </div>
           </div>
 
-          {embedId && renderVideoFrame(embedId, 'Video Lecture', 'Course Lecture')}
+          {embedId && renderVideoFrame(embedId, 'Video Session', 'Course Video')}
           {course.PDFLink && renderPdfCard(
             course.PDFLink,
-            'Syllabus PDF Material',
-            'Complementary worksheets, outlines, and task lists ready to download.'
+            'Course Worksheet & PDF',
+            'Download the accompanying slides, outlines, and exercises.'
           )}
 
           {course.Content && (
-            <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-10 text-left">
-              <h3 className="text-xl font-serif font-semibold text-[#141416] mb-6 pb-3 border-b border-neutral-100">
-                Course Syllabus &amp; Readings
+            <div className="bg-white rounded-3xl border border-neutral-200 p-6 sm:p-10 text-left">
+              <h3 className="text-xl font-display font-bold text-[#111114] mb-6 pb-3 border-b border-neutral-100">
+                Overview &amp; Notes
               </h3>
               <div
                 className="rich-content"
@@ -252,90 +257,95 @@ export default function ItemDetail({
               />
             </div>
           )}
-        </article>
+        </motion.article>
       </div>
     );
   }
 
-  // BlogPost Details Render
+  // Blog Details
   if (type === 'blog-item' && blog) {
     return (
       <div className="bg-[#FAFAFA] min-h-screen">
-        <article className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left">
-          {renderTopBar('Back to Editorial', 'blogs', blog.ID, blog.Title, blog.IsPinned)}
+        <motion.article
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left"
+        >
+          {renderTopBar('Back to Stories', 'blogs', blog.ID, blog.Title, blog.IsPinned)}
           {renderPinnedBanner(blog.IsPinned)}
 
-          <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 mb-8 space-y-4">
+          <div className="bg-white rounded-3xl border border-neutral-200 p-6 sm:p-9 mb-8 space-y-4">
             <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
               {(blog.Tags || '').split(',').filter(Boolean).map((t, idx) => (
-                <span key={idx} className="px-2.5 py-0.5 rounded-md bg-red-50 text-[#C8102E] border border-red-100">
+                <span key={idx} className="px-3 py-1 rounded-full bg-red-50 text-[#C8102E] border border-red-100">
                   #{t.trim()}
                 </span>
               ))}
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#141416] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-display font-bold text-[#111114] tracking-tight leading-tight">
               {blog.Title}
             </h1>
 
             <div className="flex items-center flex-wrap gap-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
               <span className="inline-flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-[#C8102E]" />
-                Counselor Faculty ({blog.AuthorEmail.split('@')[0]})
+                By <strong className="text-[#111114]">{blog.AuthorEmail.split('@')[0]}</strong>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-[#C8102E]" />
-                Published {new Date(blog.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                {new Date(blog.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
           </div>
 
           {blog.FeaturedImageURL && (
-            <div className="aspect-video w-full rounded-2xl overflow-hidden border border-neutral-200 mb-8 bg-neutral-100">
-              <img
-                src={blog.FeaturedImageURL}
-                alt=""
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
+            <div className="aspect-video w-full rounded-3xl overflow-hidden border border-neutral-200 mb-8 bg-neutral-100">
+              <img src={blog.FeaturedImageURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             </div>
           )}
 
           {blog.PDFLink && renderPdfCard(
             blog.PDFLink,
-            'Supplemental PDF Brief',
-            'Official checklist guidelines available for offline reference.'
+            'Attached PDF Guide',
+            'Download the checklist or companion document.'
           )}
 
           {blog.Content && (
-            <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-10 text-left">
+            <div className="bg-white rounded-3xl border border-neutral-200 p-6 sm:p-10 text-left">
               <div
                 className="rich-content"
                 dangerouslySetInnerHTML={{ __html: renderContentToHtml(blog.Content) }}
               />
             </div>
           )}
-        </article>
+        </motion.article>
       </div>
     );
   }
 
-  // Reference Details Render
+  // Reference Details
   if (type === 'reference-item' && reference) {
     const embedId = getYoutubeEmbedId(reference.YouTubeURL);
     return (
       <div className="bg-[#FAFAFA] min-h-screen">
-        <article className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left">
-          {renderTopBar('Back to Library', 'reference_materials', reference.ID, reference.Title, reference.IsPinned)}
+        <motion.article
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left"
+        >
+          {renderTopBar('Back to Resources', 'reference_materials', reference.ID, reference.Title, reference.IsPinned)}
           {renderPinnedBanner(reference.IsPinned)}
 
-          <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 mb-8 space-y-4">
+          <div className="bg-white rounded-3xl border border-neutral-200 p-6 sm:p-9 mb-8 space-y-4">
             <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
-              <span className="px-2.5 py-0.5 rounded-md bg-red-50 text-[#C8102E] border border-red-100">
-                {reference.Category || 'Templates'}
+              <span className="px-3 py-1 rounded-full bg-red-50 text-[#C8102E] border border-red-100">
+                {reference.Category || 'Template'}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#141416] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-display font-bold text-[#111114] tracking-tight leading-tight">
               {reference.Title}
             </h1>
             {reference.Description && (
@@ -344,7 +354,7 @@ export default function ItemDetail({
             <div className="flex items-center flex-wrap gap-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
               <span className="inline-flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-[#C8102E]" />
-                Compiled by <strong className="text-[#141416] font-semibold">{reference.Author}</strong>
+                Curated by <strong className="text-[#111114] font-semibold">{reference.Author}</strong>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-[#C8102E]" />
@@ -353,17 +363,17 @@ export default function ItemDetail({
             </div>
           </div>
 
-          {embedId && renderVideoFrame(embedId, 'Briefing Video', 'Reference Lecture')}
+          {embedId && renderVideoFrame(embedId, 'Walkthrough Video', 'Resource Video')}
           {reference.PDFLink && renderPdfCard(
             reference.PDFLink,
-            'Reference Document PDF',
-            'Standard CV outlines and tracking spreadsheets ready to download.'
+            'Download Template / PDF',
+            'Ready-to-use Career Lab document available offline.'
           )}
 
           {reference.Content && (
-            <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-10 text-left">
-              <h3 className="text-xl font-serif font-semibold text-[#141416] mb-6 pb-3 border-b border-neutral-100">
-                Official Document Details
+            <div className="bg-white rounded-3xl border border-neutral-200 p-6 sm:p-10 text-left">
+              <h3 className="text-xl font-display font-bold text-[#111114] mb-6 pb-3 border-b border-neutral-100">
+                Resource Guide
               </h3>
               <div
                 className="rich-content"
@@ -371,30 +381,35 @@ export default function ItemDetail({
               />
             </div>
           )}
-        </article>
+        </motion.article>
       </div>
     );
   }
 
-  // CareerLab Details Render
+  // CareerLab Details
   if (type === 'lab-item' && lab) {
     const embedId = getYoutubeEmbedId(lab.YouTubeURL);
     return (
       <div className="bg-[#FAFAFA] min-h-screen">
-        <article className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left">
+        <motion.article
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left"
+        >
           {renderTopBar('Back to Career Lab', 'career_labs', lab.ID, lab.Title, lab.IsPinned)}
           {renderPinnedBanner(lab.IsPinned)}
 
-          <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 mb-8 space-y-4">
+          <div className="bg-white rounded-3xl border border-neutral-200 p-6 sm:p-9 mb-8 space-y-4">
             <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
-              <span className="px-2.5 py-0.5 rounded-md bg-red-50 text-[#C8102E] border border-red-100">
-                {lab.Category || 'Research'}
+              <span className="px-3 py-1 rounded-full bg-red-50 text-[#C8102E] border border-red-100">
+                {lab.Category || 'Lab Project'}
               </span>
-              <span className="px-2.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
+              <span className="px-3 py-1 rounded-full bg-neutral-100 text-neutral-700">
                 Student: {lab.Student}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#141416] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-display font-bold text-[#111114] tracking-tight leading-tight">
               {lab.Title}
             </h1>
             {lab.Description && (
@@ -403,26 +418,26 @@ export default function ItemDetail({
             <div className="flex items-center flex-wrap gap-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
               <span className="inline-flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5 text-[#C8102E]" />
-                Mentor: <strong className="text-[#141416] font-semibold">{lab.Mentor}</strong>
+                Mentor: <strong className="text-[#111114] font-semibold">{lab.Mentor}</strong>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-[#C8102E]" />
-                Submitted {new Date(lab.UpdatedDate || lab.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                Published {new Date(lab.UpdatedDate || lab.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
           </div>
 
-          {embedId && renderVideoFrame(embedId, 'Project Video', 'Career Lab Lecture')}
+          {embedId && renderVideoFrame(embedId, 'Project Showcase Video', 'Career Lab Video')}
           {lab.PDFLink && renderPdfCard(
             lab.PDFLink,
-            'Research Paper PDF',
-            'Full research brief, data sheets, and analytical appendices.'
+            'Project Paper & PDF',
+            'Read or download the full Career Lab project report and findings.'
           )}
 
           {lab.Content && (
-            <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-10 text-left">
-              <h3 className="text-xl font-serif font-semibold text-[#141416] mb-6 pb-3 border-b border-neutral-100">
-                Research Thesis &amp; Findings
+            <div className="bg-white rounded-3xl border border-neutral-200 p-6 sm:p-10 text-left">
+              <h3 className="text-xl font-display font-bold text-[#111114] mb-6 pb-3 border-b border-neutral-100">
+                Project Write-Up &amp; Findings
               </h3>
               <div
                 className="rich-content"
@@ -430,23 +445,23 @@ export default function ItemDetail({
               />
             </div>
           )}
-        </article>
+        </motion.article>
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-24 text-center">
-      <h3 className="font-serif text-xl text-[#141416]">Resource not found</h3>
+      <h3 className="font-display text-xl font-bold text-[#111114]">Item not found</h3>
       <p className="text-neutral-500 text-xs sm:text-sm mt-1.5">
-        The requested document could not be located in the archive.
+        This Career Lab page could not be found.
       </p>
       <button
         type="button"
         onClick={onBack}
-        className="mt-5 px-5 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+        className="mt-5 px-5 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-full text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
       >
-        Return to Previous Page
+        Go Back
       </button>
     </div>
   );

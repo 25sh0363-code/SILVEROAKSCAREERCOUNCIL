@@ -68,7 +68,7 @@ interface StaffProps {
 type StaffTab = 'courses' | 'blogs' | 'references' | 'labs' | 'users' | 'counselors';
 
 export default function Staff({ user, onNotify }: StaffProps) {
-  const [activeTab, setActiveTab] = useState<StaffTab>('courses');
+  const [activeTab, setActiveTab] = useState<StaffTab>('labs');
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -130,7 +130,7 @@ export default function Staff({ user, onNotify }: StaffProps) {
     }
   };
 
-  // Editorial Pin as Important for Students
+  // Pin as Important for Students
   const handleTogglePin = async (
     table: PinnableTable,
     id: string,
@@ -156,14 +156,14 @@ export default function Staff({ user, onNotify }: StaffProps) {
   };
 
   const handleDelete = async (type: 'courses' | 'blogs' | 'reference_materials' | 'career_labs' | 'counselors', id: string) => {
-    if (!confirm("Are you absolutely sure you want to delete this resource? This action stands irreversible from the database.")) return;
+    if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) return;
     try {
       if (type === 'counselors') {
         await deleteCounselor(id);
       } else {
         await deleteRecord(type, id);
       }
-      onNotify?.("Successfully removed record", "success");
+      onNotify?.("Item deleted successfully", "success");
       loadAll();
     } catch (err: any) {
       alert("Failed to remove item: " + err.message);
@@ -171,32 +171,32 @@ export default function Staff({ user, onNotify }: StaffProps) {
   };
 
   const handleResetCache = () => {
-    if (!confirm("This will clear all local offline data from your browser cache, including any unsaved drafts. Are you sure you want to reset offline data?")) return;
+    if (!confirm("This will clear local offline cache data from your browser. Continue?")) return;
     localStorage.removeItem('local_counselors');
     localStorage.removeItem('local_courses');
     localStorage.removeItem('local_blogs');
     localStorage.removeItem('local_reference_materials');
     localStorage.removeItem('local_career_labs');
-    onNotify?.("Local offline caches cleared. Re-fetching from database...", "success");
+    onNotify?.("Local offline caches cleared. Refreshing...", "success");
     loadAll();
   };
 
   const handleRoleChange = async (email: string, targetRole: UserRole) => {
-    if (!confirm(`Are you sure you want to alter the clearance level of ${email} to ${targetRole}?`)) return;
+    if (!confirm(`Change role of ${email} to ${targetRole}?`)) return;
     try {
       await updateUserRole(email, targetRole);
-      onNotify?.("Role changes published successfully!", "success");
+      onNotify?.("Role updated successfully!", "success");
       loadAll();
     } catch (err: any) {
-      alert("Clearance update failed: " + err.message);
+      alert("Role update failed: " + err.message);
     }
   };
 
   const handleDeleteUser = async (email: string) => {
-    if (!confirm(`CRITICAL WARNING:\nPurging user ${email} will permanently remove their credential rows AND they will lose custody of all blogs they authored. Proceed?`)) return;
+    if (!confirm(`WARNING: Deleting ${email} will permanently remove their user record and any stories they authored. Proceed?`)) return;
     try {
       await deleteUserAndBlogs(email);
-      onNotify?.("Purged user and matching data.", "success");
+      onNotify?.("User removed successfully.", "success");
       loadAll();
     } catch (err: any) {
       alert("Operation failed: " + err.message);
@@ -210,10 +210,10 @@ export default function Staff({ user, onNotify }: StaffProps) {
   };
 
   const kpiCards = [
-    { label: 'Courses', val: stats.courses, tab: 'courses' as StaffTab, icon: BookOpen },
-    { label: 'Editorial', val: stats.blogs, tab: 'blogs' as StaffTab, icon: Newspaper },
-    { label: 'References', val: stats.references, tab: 'references' as StaffTab, icon: Library },
     { label: 'Career Labs', val: stats.labs, tab: 'labs' as StaffTab, icon: FlaskConical },
+    { label: 'Courses', val: stats.courses, tab: 'courses' as StaffTab, icon: BookOpen },
+    { label: 'Stories', val: stats.blogs, tab: 'blogs' as StaffTab, icon: Newspaper },
+    { label: 'Resources', val: stats.references, tab: 'references' as StaffTab, icon: Library },
     { label: 'Counsellors', val: stats.counselors, tab: 'counselors' as StaffTab, icon: GraduationCap },
     { label: 'Users', val: stats.users, tab: 'users' as StaffTab, icon: Users },
   ];
@@ -231,25 +231,26 @@ export default function Staff({ user, onNotify }: StaffProps) {
   );
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-[#141416]">
-      {/* Crisp White Executive Header */}
-      <section className="bg-white border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 text-left">
-          <div className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#C8102E] mb-2">
+    <div className="min-h-screen bg-[#FAFAFA] text-[#111114]">
+      {/* Studio Header */}
+      <section className="relative bg-white border-b border-neutral-200/80 overflow-hidden">
+        <div className="absolute inset-0 bg-lab-dots opacity-40 pointer-events-none" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-9 sm:py-12 text-left">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-100 text-[#C8102E] text-[11px] font-bold uppercase tracking-wider mb-3">
             <Settings2 className="w-3.5 h-3.5" />
-            <span>Staff Administration</span>
+            <span>Career Lab Studio</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-serif font-semibold tracking-tight text-[#141416]">
-            Workspace Library Dashboard
+          <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight text-[#111114]">
+            Manage Silver Oaks Career Lab
           </h1>
-          <p className="text-neutral-600 text-sm mt-2 max-w-2xl leading-relaxed">
-            Publish resources, pin important notices to the top for students, manage counselor profiles, and assign faculty roles.
+          <p className="text-neutral-600 text-sm sm:text-base mt-2 max-w-2xl leading-relaxed">
+            Publish projects and courses, pin important posts to the top for students, manage counsellors, and update user roles.
           </p>
         </div>
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 text-left">
-        {/* KPI Selector Tiles */}
+        {/* KPI Selector Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 mb-8">
           {kpiCards.map(item => {
             const Icon = item.icon;
@@ -259,19 +260,19 @@ export default function Staff({ user, onNotify }: StaffProps) {
                 key={item.label}
                 type="button"
                 onClick={() => setActiveTab(item.tab)}
-                className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${
+                className={`p-4 rounded-2xl border text-left cursor-pointer transition-all ${
                   active
-                    ? 'bg-[#C8102E] text-white border-[#C8102E] shadow-md'
-                    : 'bg-white text-[#141416] border-neutral-200 hover:border-[#C8102E]/40'
+                    ? 'bg-[#C8102E] text-white border-[#C8102E] shadow-lg shadow-red-600/20'
+                    : 'bg-white text-[#111114] border-neutral-200 hover:border-red-200'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${
                     active ? 'bg-white/15 text-white' : 'bg-red-50 text-[#C8102E]'
                   }`}>
                     <Icon className="w-4 h-4" />
                   </span>
-                  <span className={`text-2xl font-serif font-semibold ${active ? 'text-white' : 'text-[#141416]'}`}>
+                  <span className={`text-2xl font-display font-bold ${active ? 'text-white' : 'text-[#111114]'}`}>
                     {item.val}
                   </span>
                 </div>
@@ -285,26 +286,26 @@ export default function Staff({ user, onNotify }: StaffProps) {
           })}
         </div>
 
-        {/* Main Board */}
-        <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        {/* Workspace Card */}
+        <div className="bg-white rounded-3xl border border-neutral-200 overflow-hidden shadow-xs">
           {/* Tabs */}
           <div className="flex border-b border-neutral-200 bg-[#FAFAFA] overflow-x-auto scrollbar-none">
             {[
-              { id: 'courses', label: 'Manage Courses' },
-              { id: 'blogs', label: 'Counselor Editorial' },
-              { id: 'references', label: 'Reference Files' },
               { id: 'labs', label: 'Career Labs' },
+              { id: 'courses', label: 'Courses' },
+              { id: 'blogs', label: 'Stories' },
+              { id: 'references', label: 'Resources' },
               { id: 'counselors', label: 'Counsellors' },
-              { id: 'users', label: 'User Roles' },
+              { id: 'users', label: 'Users' },
             ].map(tab => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id as StaffTab)}
-                className={`px-4 sm:px-5 py-3.5 border-b-2 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-5 py-4 border-b-2 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-[#C8102E] text-[#C8102E] bg-white'
-                    : 'border-transparent text-neutral-500 hover:text-[#141416]'
+                    : 'border-transparent text-neutral-500 hover:text-[#111114]'
                 }`}
               >
                 {tab.label}
@@ -316,24 +317,114 @@ export default function Staff({ user, onNotify }: StaffProps) {
             {loading ? (
               <div className="py-24 text-center">
                 <div className="spinner" />
-                <p className="text-neutral-500 font-semibold uppercase tracking-widest text-xs mt-3">
+                <p className="text-neutral-400 font-semibold uppercase tracking-widest text-xs mt-3">
                   Loading records...
                 </p>
               </div>
             ) : (
               <div>
+                {/* LABS TAB */}
+                {activeTab === 'labs' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-neutral-100">
+                      <div>
+                        <h3 className="text-lg font-bold text-[#111114] font-display">Career Lab Projects</h3>
+                        <p className="text-xs text-neutral-500">Pin important student projects or publish new showcases.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openModal('labs')}
+                        className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add Project</span>
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-[#111114]">
+                        <thead className="bg-[#FAFAFA] text-[10px] font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-200">
+                          <tr>
+                            <th className="px-4 py-3 text-left">Project Title</th>
+                            <th className="px-4 py-3 text-left">Student</th>
+                            <th className="px-4 py-3 text-left">Mentor</th>
+                            <th className="px-4 py-3 text-left">Discipline</th>
+                            <th className="px-4 py-3 text-center">Status</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100">
+                          {labs.map(item => (
+                            <tr key={item.ID} className={`transition-colors ${item.IsPinned ? 'bg-red-50/40' : 'hover:bg-[#FAFAFA]'}`}>
+                              <td className="px-4 py-3.5 font-semibold text-[#111114] max-w-xs" title={item.Title}>
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {item.IsPinned && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#C8102E] text-white text-[9px] font-bold uppercase shrink-0">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Important
+                                    </span>
+                                  )}
+                                  <span className="truncate">{item.Title}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3.5 text-neutral-600 text-xs font-medium">{item.Student}</td>
+                              <td className="px-4 py-3.5 text-neutral-600 text-xs font-medium">{item.Mentor}</td>
+                              <td className="px-4 py-3.5 text-xs font-bold uppercase text-[#C8102E]">
+                                <span className="bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-full">{item.Category}</span>
+                              </td>
+                              <td className="px-4 py-3.5 text-center">{renderStatusPill(item.Status)}</td>
+                              <td className="px-4 py-3.5 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleTogglePin('career_labs', item.ID, item.Title, item.IsPinned)}
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold cursor-pointer transition-colors ${
+                                      item.IsPinned
+                                        ? 'bg-[#C8102E] text-white hover:bg-[#9E0B24]'
+                                        : 'text-neutral-500 hover:text-[#C8102E] hover:bg-red-50 border border-neutral-200'
+                                    }`}
+                                    title={item.IsPinned ? 'Unpin project' : 'Pin as important for students'}
+                                  >
+                                    <Pin className={`w-3.5 h-3.5 ${item.IsPinned ? 'fill-current' : ''}`} />
+                                    <span className="hidden sm:inline">{item.IsPinned ? 'Pinned' : 'Pin'}</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openModal('labs', item)}
+                                    className="p-2 text-neutral-500 hover:text-[#111114] hover:bg-neutral-100 rounded-full cursor-pointer transition-colors"
+                                    title="Edit project"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete('career_labs', item.ID)}
+                                    className="p-2 text-neutral-400 hover:text-[#C8102E] hover:bg-red-50 rounded-full cursor-pointer transition-colors"
+                                    title="Delete project"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 {/* COURSES TAB */}
                 {activeTab === 'courses' && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-neutral-100">
                       <div>
-                        <h3 className="text-lg font-semibold text-[#141416] font-serif">Academic Course Modules</h3>
-                        <p className="text-xs text-neutral-500">Pin important courses to highlight them at the top for students.</p>
+                        <h3 className="text-lg font-bold text-[#111114] font-display">Courses &amp; Workshops</h3>
+                        <p className="text-xs text-neutral-500">Pin important courses to feature them at the top for students.</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => openModal('courses')}
-                        className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
+                        className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
                       >
                         <Plus className="w-4 h-4" />
                         <span>Add Course</span>
@@ -341,11 +432,11 @@ export default function Staff({ user, onNotify }: StaffProps) {
                     </div>
 
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-[#141416]">
+                      <table className="w-full text-sm text-[#111114]">
                         <thead className="bg-[#FAFAFA] text-[10px] font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-200">
                           <tr>
                             <th className="px-4 py-3 text-left">Title</th>
-                            <th className="px-4 py-3 text-left">Instructor</th>
+                            <th className="px-4 py-3 text-left">Mentor</th>
                             <th className="px-4 py-3 text-left">Category</th>
                             <th className="px-4 py-3 text-left">Grade</th>
                             <th className="px-4 py-3 text-center">Status</th>
@@ -355,10 +446,10 @@ export default function Staff({ user, onNotify }: StaffProps) {
                         <tbody className="divide-y divide-neutral-100">
                           {courses.map(item => (
                             <tr key={item.ID} className={`transition-colors ${item.IsPinned ? 'bg-red-50/40' : 'hover:bg-[#FAFAFA]'}`}>
-                              <td className="px-4 py-3.5 font-semibold text-[#141416] max-w-xs" title={item.Title}>
+                              <td className="px-4 py-3.5 font-semibold text-[#111114] max-w-xs" title={item.Title}>
                                 <div className="flex items-center gap-2 min-w-0">
                                   {item.IsPinned && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#C8102E] text-white text-[9px] font-bold uppercase shrink-0">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#C8102E] text-white text-[9px] font-bold uppercase shrink-0">
                                       <Pin className="w-2.5 h-2.5 fill-current" /> Important
                                     </span>
                                   )}
@@ -367,10 +458,10 @@ export default function Staff({ user, onNotify }: StaffProps) {
                               </td>
                               <td className="px-4 py-3.5 text-neutral-600 text-xs font-medium">{item.Instructor}</td>
                               <td className="px-4 py-3.5 text-xs font-bold uppercase text-[#C8102E]">
-                                <span className="bg-red-50 border border-red-100 px-2 py-0.5 rounded-md">{item.Category}</span>
+                                <span className="bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-full">{item.Category}</span>
                               </td>
                               <td className="px-4 py-3.5 text-xs font-semibold text-neutral-600">
-                                <span className="bg-neutral-100 px-2.5 py-0.5 rounded-md">{item.Grade}</span>
+                                <span className="bg-neutral-100 px-2.5 py-0.5 rounded-full">{item.Grade}</span>
                               </td>
                               <td className="px-4 py-3.5 text-center">{renderStatusPill(item.Status)}</td>
                               <td className="px-4 py-3.5 text-right">
@@ -378,12 +469,12 @@ export default function Staff({ user, onNotify }: StaffProps) {
                                   <button
                                     type="button"
                                     onClick={() => handleTogglePin('courses', item.ID, item.Title, item.IsPinned)}
-                                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-colors ${
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold cursor-pointer transition-colors ${
                                       item.IsPinned
                                         ? 'bg-[#C8102E] text-white hover:bg-[#9E0B24]'
                                         : 'text-neutral-500 hover:text-[#C8102E] hover:bg-red-50 border border-neutral-200'
                                     }`}
-                                    title={item.IsPinned ? 'Unpin notice' : 'Pin as important for students'}
+                                    title={item.IsPinned ? 'Unpin course' : 'Pin as important for students'}
                                   >
                                     <Pin className={`w-3.5 h-3.5 ${item.IsPinned ? 'fill-current' : ''}`} />
                                     <span className="hidden sm:inline">{item.IsPinned ? 'Pinned' : 'Pin'}</span>
@@ -391,7 +482,7 @@ export default function Staff({ user, onNotify }: StaffProps) {
                                   <button
                                     type="button"
                                     onClick={() => openModal('courses', item)}
-                                    className="p-2 text-neutral-500 hover:text-[#141416] hover:bg-neutral-100 rounded-lg cursor-pointer transition-colors"
+                                    className="p-2 text-neutral-500 hover:text-[#111114] hover:bg-neutral-100 rounded-full cursor-pointer transition-colors"
                                     title="Edit course"
                                   >
                                     <Edit2 className="w-4 h-4" />
@@ -399,7 +490,7 @@ export default function Staff({ user, onNotify }: StaffProps) {
                                   <button
                                     type="button"
                                     onClick={() => handleDelete('courses', item.ID)}
-                                    className="p-2 text-neutral-400 hover:text-[#C8102E] hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
+                                    className="p-2 text-neutral-400 hover:text-[#C8102E] hover:bg-red-50 rounded-full cursor-pointer transition-colors"
                                     title="Delete course"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -414,26 +505,26 @@ export default function Staff({ user, onNotify }: StaffProps) {
                   </div>
                 )}
 
-                {/* BLOGS TAB */}
+                {/* STORIES / BLOGS TAB */}
                 {activeTab === 'blogs' && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-neutral-100">
                       <div>
-                        <h3 className="text-lg font-semibold text-[#141416] font-serif">Counselor Publications</h3>
-                        <p className="text-xs text-neutral-500">Draft, pin important notices, or publish guidance articles.</p>
+                        <h3 className="text-lg font-bold text-[#111114] font-display">Stories &amp; Updates</h3>
+                        <p className="text-xs text-neutral-500">Draft, pin important notices, or publish career guidance posts.</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => openModal('blogs')}
-                        className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
+                        className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
                       >
                         <Plus className="w-4 h-4" />
-                        <span>Create Post</span>
+                        <span>New Story</span>
                       </button>
                     </div>
 
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-[#141416]">
+                      <table className="w-full text-sm text-[#111114]">
                         <thead className="bg-[#FAFAFA] text-[10px] font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-200">
                           <tr>
                             <th className="px-4 py-3 text-left">Post Title</th>
@@ -446,10 +537,10 @@ export default function Staff({ user, onNotify }: StaffProps) {
                         <tbody className="divide-y divide-neutral-100">
                           {blogs.map(item => (
                             <tr key={item.ID} className={`transition-colors ${item.IsPinned ? 'bg-red-50/40' : 'hover:bg-[#FAFAFA]'}`}>
-                              <td className="px-4 py-3.5 font-semibold text-[#141416] max-w-sm" title={item.Title}>
+                              <td className="px-4 py-3.5 font-semibold text-[#111114] max-w-sm" title={item.Title}>
                                 <div className="flex items-center gap-2 min-w-0">
                                   {item.IsPinned && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#C8102E] text-white text-[9px] font-bold uppercase shrink-0">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#C8102E] text-white text-[9px] font-bold uppercase shrink-0">
                                       <Pin className="w-2.5 h-2.5 fill-current" /> Important
                                     </span>
                                   )}
@@ -460,7 +551,7 @@ export default function Staff({ user, onNotify }: StaffProps) {
                               <td className="px-4 py-3.5 text-xs font-semibold text-[#C8102E]">
                                 <span className="flex flex-wrap gap-1 max-w-44">
                                   {(item.Tags || "").split(',').filter(Boolean).slice(0, 3).map((t, idx) => (
-                                    <span key={idx} className="bg-red-50 border border-red-100 px-1.5 py-0.5 rounded-md">#{t.trim()}</span>
+                                    <span key={idx} className="bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">#{t.trim()}</span>
                                   ))}
                                 </span>
                               </td>
@@ -470,12 +561,12 @@ export default function Staff({ user, onNotify }: StaffProps) {
                                   <button
                                     type="button"
                                     onClick={() => handleTogglePin('blogs', item.ID, item.Title, item.IsPinned)}
-                                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-colors ${
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold cursor-pointer transition-colors ${
                                       item.IsPinned
                                         ? 'bg-[#C8102E] text-white hover:bg-[#9E0B24]'
                                         : 'text-neutral-500 hover:text-[#C8102E] hover:bg-red-50 border border-neutral-200'
                                     }`}
-                                    title={item.IsPinned ? 'Unpin post' : 'Pin as important for students'}
+                                    title={item.IsPinned ? 'Unpin story' : 'Pin as important for students'}
                                   >
                                     <Pin className={`w-3.5 h-3.5 ${item.IsPinned ? 'fill-current' : ''}`} />
                                     <span className="hidden sm:inline">{item.IsPinned ? 'Pinned' : 'Pin'}</span>
@@ -483,16 +574,16 @@ export default function Staff({ user, onNotify }: StaffProps) {
                                   <button
                                     type="button"
                                     onClick={() => openModal('blogs', item)}
-                                    className="p-2 text-neutral-500 hover:text-[#141416] hover:bg-neutral-100 rounded-lg cursor-pointer transition-colors"
-                                    title="Edit post"
+                                    className="p-2 text-neutral-500 hover:text-[#111114] hover:bg-neutral-100 rounded-full cursor-pointer transition-colors"
+                                    title="Edit story"
                                   >
                                     <Edit2 className="w-4 h-4" />
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => handleDelete('blogs', item.ID)}
-                                    className="p-2 text-neutral-400 hover:text-[#C8102E] hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
-                                    title="Delete post"
+                                    className="p-2 text-neutral-400 hover:text-[#C8102E] hover:bg-red-50 rounded-full cursor-pointer transition-colors"
+                                    title="Delete story"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -506,26 +597,26 @@ export default function Staff({ user, onNotify }: StaffProps) {
                   </div>
                 )}
 
-                {/* REFERENCES TAB */}
+                {/* RESOURCES TAB */}
                 {activeTab === 'references' && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-neutral-100">
                       <div>
-                        <h3 className="text-lg font-semibold text-[#141416] font-serif">Reference Material Assets</h3>
-                        <p className="text-xs text-neutral-500">Pin essential templates and handbooks so students find them first.</p>
+                        <h3 className="text-lg font-bold text-[#111114] font-display">Templates &amp; Resources</h3>
+                        <p className="text-xs text-neutral-500">Pin essential templates and PDFs so students spot them immediately.</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => openModal('references')}
-                        className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
+                        className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
                       >
                         <Plus className="w-4 h-4" />
-                        <span>Add Reference</span>
+                        <span>Add Resource</span>
                       </button>
                     </div>
 
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-[#141416]">
+                      <table className="w-full text-sm text-[#111114]">
                         <thead className="bg-[#FAFAFA] text-[10px] font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-200">
                           <tr>
                             <th className="px-4 py-3 text-left">Document Title</th>
@@ -538,10 +629,10 @@ export default function Staff({ user, onNotify }: StaffProps) {
                         <tbody className="divide-y divide-neutral-100">
                           {refs.map(item => (
                             <tr key={item.ID} className={`transition-colors ${item.IsPinned ? 'bg-red-50/40' : 'hover:bg-[#FAFAFA]'}`}>
-                              <td className="px-4 py-3.5 font-semibold text-[#141416] max-w-sm" title={item.Title}>
+                              <td className="px-4 py-3.5 font-semibold text-[#111114] max-w-sm" title={item.Title}>
                                 <div className="flex items-center gap-2 min-w-0">
                                   {item.IsPinned && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#C8102E] text-white text-[9px] font-bold uppercase shrink-0">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#C8102E] text-white text-[9px] font-bold uppercase shrink-0">
                                       <Pin className="w-2.5 h-2.5 fill-current" /> Important
                                     </span>
                                   )}
@@ -550,7 +641,7 @@ export default function Staff({ user, onNotify }: StaffProps) {
                               </td>
                               <td className="px-4 py-3.5 text-neutral-600 text-xs font-medium">{item.Author}</td>
                               <td className="px-4 py-3.5 text-xs font-bold uppercase text-[#C8102E]">
-                                <span className="bg-red-50 border border-red-100 px-2 py-0.5 rounded-md">{item.Category}</span>
+                                <span className="bg-red-50 border border-red-100 px-2.5 py-0.5 rounded-full">{item.Category}</span>
                               </td>
                               <td className="px-4 py-3.5 text-center">{renderStatusPill(item.Status)}</td>
                               <td className="px-4 py-3.5 text-right">
@@ -558,12 +649,12 @@ export default function Staff({ user, onNotify }: StaffProps) {
                                   <button
                                     type="button"
                                     onClick={() => handleTogglePin('reference_materials', item.ID, item.Title, item.IsPinned)}
-                                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-colors ${
+                                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-bold cursor-pointer transition-colors ${
                                       item.IsPinned
                                         ? 'bg-[#C8102E] text-white hover:bg-[#9E0B24]'
                                         : 'text-neutral-500 hover:text-[#C8102E] hover:bg-red-50 border border-neutral-200'
                                     }`}
-                                    title={item.IsPinned ? 'Unpin document' : 'Pin as important for students'}
+                                    title={item.IsPinned ? 'Unpin resource' : 'Pin as important for students'}
                                   >
                                     <Pin className={`w-3.5 h-3.5 ${item.IsPinned ? 'fill-current' : ''}`} />
                                     <span className="hidden sm:inline">{item.IsPinned ? 'Pinned' : 'Pin'}</span>
@@ -571,16 +662,16 @@ export default function Staff({ user, onNotify }: StaffProps) {
                                   <button
                                     type="button"
                                     onClick={() => openModal('references', item)}
-                                    className="p-2 text-neutral-500 hover:text-[#141416] hover:bg-neutral-100 rounded-lg cursor-pointer transition-colors"
-                                    title="Edit reference"
+                                    className="p-2 text-neutral-500 hover:text-[#111114] hover:bg-neutral-100 rounded-full cursor-pointer transition-colors"
+                                    title="Edit resource"
                                   >
                                     <Edit2 className="w-4 h-4" />
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => handleDelete('reference_materials', item.ID)}
-                                    className="p-2 text-neutral-400 hover:text-[#C8102E] hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
-                                    title="Delete reference"
+                                    className="p-2 text-neutral-400 hover:text-[#C8102E] hover:bg-red-50 rounded-full cursor-pointer transition-colors"
+                                    title="Delete resource"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -588,157 +679,6 @@ export default function Staff({ user, onNotify }: StaffProps) {
                               </td>
                             </tr>
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* LABS TAB */}
-                {activeTab === 'labs' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-neutral-100">
-                      <div>
-                        <h3 className="text-lg font-semibold text-[#141416] font-serif">Career Laboratory Index</h3>
-                        <p className="text-xs text-neutral-500">Pin exemplary student research or edit submissions.</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => openModal('labs')}
-                        className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>Add Submission</span>
-                      </button>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-[#141416]">
-                        <thead className="bg-[#FAFAFA] text-[10px] font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-200">
-                          <tr>
-                            <th className="px-4 py-3 text-left">Project Title</th>
-                            <th className="px-4 py-3 text-left">Student</th>
-                            <th className="px-4 py-3 text-left">Mentor</th>
-                            <th className="px-4 py-3 text-left">Discipline</th>
-                            <th className="px-4 py-3 text-center">Status</th>
-                            <th className="px-4 py-3 text-right">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-neutral-100">
-                          {labs.map(item => (
-                            <tr key={item.ID} className={`transition-colors ${item.IsPinned ? 'bg-red-50/40' : 'hover:bg-[#FAFAFA]'}`}>
-                              <td className="px-4 py-3.5 font-semibold text-[#141416] max-w-xs" title={item.Title}>
-                                <div className="flex items-center gap-2 min-w-0">
-                                  {item.IsPinned && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#C8102E] text-white text-[9px] font-bold uppercase shrink-0">
-                                      <Pin className="w-2.5 h-2.5 fill-current" /> Important
-                                    </span>
-                                  )}
-                                  <span className="truncate">{item.Title}</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-3.5 text-neutral-600 text-xs font-medium">{item.Student}</td>
-                              <td className="px-4 py-3.5 text-neutral-600 text-xs font-medium">{item.Mentor}</td>
-                              <td className="px-4 py-3.5 text-xs font-bold uppercase text-[#C8102E]">
-                                <span className="bg-red-50 border border-red-100 px-2 py-0.5 rounded-md">{item.Category}</span>
-                              </td>
-                              <td className="px-4 py-3.5 text-center">{renderStatusPill(item.Status)}</td>
-                              <td className="px-4 py-3.5 text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleTogglePin('career_labs', item.ID, item.Title, item.IsPinned)}
-                                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-colors ${
-                                      item.IsPinned
-                                        ? 'bg-[#C8102E] text-white hover:bg-[#9E0B24]'
-                                        : 'text-neutral-500 hover:text-[#C8102E] hover:bg-red-50 border border-neutral-200'
-                                    }`}
-                                    title={item.IsPinned ? 'Unpin project' : 'Pin as important for students'}
-                                  >
-                                    <Pin className={`w-3.5 h-3.5 ${item.IsPinned ? 'fill-current' : ''}`} />
-                                    <span className="hidden sm:inline">{item.IsPinned ? 'Pinned' : 'Pin'}</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => openModal('labs', item)}
-                                    className="p-2 text-neutral-500 hover:text-[#141416] hover:bg-neutral-100 rounded-lg cursor-pointer transition-colors"
-                                    title="Edit portfolio"
-                                  >
-                                    <Edit2 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDelete('career_labs', item.ID)}
-                                    className="p-2 text-neutral-400 hover:text-[#C8102E] hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
-                                    title="Delete portfolio"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* USERS TAB */}
-                {activeTab === 'users' && (
-                  <div className="space-y-4">
-                    <div className="pb-4 border-b border-neutral-100 text-left">
-                      <h3 className="text-lg font-semibold text-[#141416] font-serif">Credential Clearance &amp; User Roles</h3>
-                      <p className="text-xs text-neutral-500">Assign Editor or Admin clearance to grant access to this Staff console.</p>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-[#141416]">
-                        <thead className="bg-[#FAFAFA] text-[10px] font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-200">
-                          <tr>
-                            <th className="px-4 py-3 text-left">User Name</th>
-                            <th className="px-4 py-3 text-left">Email Address</th>
-                            <th className="px-4 py-3 text-left">Current Clearance</th>
-                            <th className="px-4 py-3 text-right">Admin Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-neutral-100">
-                          {users.map(u => {
-                            const isSelf = u.Email.toLowerCase() === user.email.toLowerCase();
-                            return (
-                              <tr key={u.Email} className="hover:bg-[#FAFAFA] transition-colors">
-                                <td className="px-4 py-3.5 font-semibold text-[#141416]">{u.Name}</td>
-                                <td className="px-4 py-3.5 text-neutral-600 text-xs font-medium">{u.Email}</td>
-                                <td className="px-4 py-3.5 text-xs font-semibold">
-                                  <select
-                                    value={u.Role}
-                                    disabled={isSelf}
-                                    onChange={(e) => handleRoleChange(u.Email, e.target.value as UserRole)}
-                                    className="px-2.5 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs font-semibold text-[#141416] focus:outline-none focus:border-[#C8102E] disabled:opacity-50"
-                                  >
-                                    <option value="Student">Student</option>
-                                    <option value="Editor">Editor (Counselor/Faculty)</option>
-                                    <option value="Admin">Admin (Full override)</option>
-                                  </select>
-                                </td>
-                                <td className="px-4 py-3.5 text-right">
-                                  {!isSelf ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteUser(u.Email)}
-                                      className="px-3 py-1.5 text-[#C8102E] border border-red-200 hover:bg-red-50 rounded-lg text-[11px] font-bold uppercase transition-colors cursor-pointer"
-                                    >
-                                      Purge User
-                                    </button>
-                                  ) : (
-                                    <span className="text-[10px] text-neutral-400 uppercase italic font-bold">
-                                      Acting Account
-                                    </span>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
                         </tbody>
                       </table>
                     </div>
@@ -750,15 +690,14 @@ export default function Staff({ user, onNotify }: StaffProps) {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-4 pb-4 border-b border-neutral-100">
                       <div className="text-left">
-                        <h3 className="text-lg font-semibold text-[#141416] font-serif">Career Counsellor Profiles</h3>
-                        <p className="text-xs text-neutral-500">Add, edit, or delete career counsellors appearing across the portal.</p>
+                        <h3 className="text-lg font-bold text-[#111114] font-display">Career Counsellors</h3>
+                        <p className="text-xs text-neutral-500">Add, edit, or remove counsellor profiles across Career Lab.</p>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <button
                           type="button"
                           onClick={handleResetCache}
-                          className="px-3.5 py-2.5 bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-700 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
-                          title="Clear local browser cache for counselor records and reset fallback cache."
+                          className="px-4 py-2.5 bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-700 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           <span>Reset Cache</span>
@@ -766,7 +705,7 @@ export default function Staff({ user, onNotify }: StaffProps) {
                         <button
                           type="button"
                           onClick={() => openModal('counselors')}
-                          className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
+                          className="px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-colors"
                         >
                           <Plus className="w-4 h-4" />
                           <span>Add Counsellor</span>
@@ -775,13 +714,13 @@ export default function Staff({ user, onNotify }: StaffProps) {
                     </div>
 
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-[#141416]">
+                      <table className="w-full text-sm text-[#111114]">
                         <thead className="bg-[#FAFAFA] text-[10px] font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-200">
                           <tr>
                             <th className="px-4 py-3 text-left w-16">Photo</th>
                             <th className="px-4 py-3 text-left">Name</th>
                             <th className="px-4 py-3 text-left">Qualifications</th>
-                            <th className="px-4 py-3 text-left">Contact Detail</th>
+                            <th className="px-4 py-3 text-left">Email</th>
                             <th className="px-4 py-3 text-center">Status</th>
                             <th className="px-4 py-3 text-right">Actions</th>
                           </tr>
@@ -800,7 +739,7 @@ export default function Staff({ user, onNotify }: StaffProps) {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-4 py-3.5 font-semibold text-[#141416] max-w-xs truncate" title={item.Name}>{item.Name}</td>
+                              <td className="px-4 py-3.5 font-semibold text-[#111114] max-w-xs truncate" title={item.Name}>{item.Name}</td>
                               <td className="px-4 py-3.5 text-neutral-600 text-xs max-w-xs truncate" title={item.Qualifications}>{item.Qualifications}</td>
                               <td className="px-4 py-3.5 text-neutral-600 text-xs">{item.Contact}</td>
                               <td className="px-4 py-3.5 text-center">{renderStatusPill(item.Status)}</td>
@@ -809,7 +748,7 @@ export default function Staff({ user, onNotify }: StaffProps) {
                                   <button
                                     type="button"
                                     onClick={() => openModal('counselors', item)}
-                                    className="p-2 text-neutral-500 hover:text-[#141416] hover:bg-neutral-100 rounded-lg cursor-pointer transition-colors"
+                                    className="p-2 text-neutral-500 hover:text-[#111114] hover:bg-neutral-100 rounded-full cursor-pointer transition-colors"
                                     title="Edit counsellor"
                                   >
                                     <Edit2 className="w-4 h-4" />
@@ -817,7 +756,7 @@ export default function Staff({ user, onNotify }: StaffProps) {
                                   <button
                                     type="button"
                                     onClick={() => handleDelete('counselors', item.ID)}
-                                    className="p-2 text-neutral-400 hover:text-[#C8102E] hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
+                                    className="p-2 text-neutral-400 hover:text-[#C8102E] hover:bg-red-50 rounded-full cursor-pointer transition-colors"
                                     title="Delete counsellor"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -826,6 +765,67 @@ export default function Staff({ user, onNotify }: StaffProps) {
                               </td>
                             </tr>
                           ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* USERS TAB */}
+                {activeTab === 'users' && (
+                  <div className="space-y-4">
+                    <div className="pb-4 border-b border-neutral-100 text-left">
+                      <h3 className="text-lg font-bold text-[#111114] font-display">User Roles &amp; Access</h3>
+                      <p className="text-xs text-neutral-500">Promote mentors or faculty to Editor or Admin to manage Career Lab content.</p>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-[#111114]">
+                        <thead className="bg-[#FAFAFA] text-[10px] font-bold uppercase tracking-wider text-neutral-500 border-b border-neutral-200">
+                          <tr>
+                            <th className="px-4 py-3 text-left">Name</th>
+                            <th className="px-4 py-3 text-left">Email</th>
+                            <th className="px-4 py-3 text-left">Role</th>
+                            <th className="px-4 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100">
+                          {users.map(u => {
+                            const isSelf = u.Email.toLowerCase() === user.email.toLowerCase();
+                            return (
+                              <tr key={u.Email} className="hover:bg-[#FAFAFA] transition-colors">
+                                <td className="px-4 py-3.5 font-semibold text-[#111114]">{u.Name}</td>
+                                <td className="px-4 py-3.5 text-neutral-600 text-xs font-medium">{u.Email}</td>
+                                <td className="px-4 py-3.5 text-xs font-semibold">
+                                  <select
+                                    value={u.Role}
+                                    disabled={isSelf}
+                                    onChange={(e) => handleRoleChange(u.Email, e.target.value as UserRole)}
+                                    className="px-3 py-1.5 bg-white border border-neutral-200 rounded-xl text-xs font-semibold text-[#111114] focus:outline-none focus:border-[#C8102E] disabled:opacity-50"
+                                  >
+                                    <option value="Student">Student</option>
+                                    <option value="Editor">Editor (Counsellor/Faculty)</option>
+                                    <option value="Admin">Admin (Full access)</option>
+                                  </select>
+                                </td>
+                                <td className="px-4 py-3.5 text-right">
+                                  {!isSelf ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteUser(u.Email)}
+                                      className="px-3.5 py-1.5 text-[#C8102E] border border-red-200 hover:bg-red-50 rounded-full text-[11px] font-bold uppercase transition-colors cursor-pointer"
+                                    >
+                                      Remove
+                                    </button>
+                                  ) : (
+                                    <span className="text-[10px] text-neutral-400 uppercase font-bold">
+                                      Your Account
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -977,7 +977,7 @@ function ContentFormModal({
       if (field === 'thumb') setThumbnailURL(url);
       if (field === 'pdf') setPdfLink(url);
       if (field === 'featured') setFeaturedImageURL(url);
-      setUploadProgress('Successfully uploaded!');
+      setUploadProgress('Uploaded!');
       setTimeout(() => setUploadProgress(''), 3000);
     } catch (err: any) {
       alert("Upload failed: " + err.message);
@@ -987,7 +987,7 @@ function ContentFormModal({
 
   const handleSaveSubmit = async () => {
     if (!title.trim()) {
-      alert(isCounselor ? "Counsellor Name is a mandatory field." : "Title is a mandatory field.");
+      alert(isCounselor ? "Counsellor Name is required." : "Title is required.");
       return;
     }
 
@@ -999,7 +999,7 @@ function ContentFormModal({
           ID: item?.ID,
           Title: title.trim(),
           Description: desc.trim(),
-          Instructor: instructor.trim() || 'Council Staff',
+          Instructor: instructor.trim() || 'Career Lab Mentor',
           Category: category.trim() || 'General',
           Grade: grade || 'Class 11',
           ThumbnailURL: thumbnailURL.trim(),
@@ -1012,7 +1012,7 @@ function ContentFormModal({
         });
       } else if (type === 'blogs') {
         if (!finalContent.trim()) {
-          alert("Content body is mandatory.");
+          alert("Story content is required.");
           return;
         }
         await saveBlogPost({
@@ -1031,7 +1031,7 @@ function ContentFormModal({
           ID: item?.ID,
           Title: title.trim(),
           Description: desc.trim(),
-          Author: author.trim() || 'Counselor Team',
+          Author: author.trim() || 'Career Lab Team',
           Category: category.trim() || 'Templates',
           ThumbnailURL: thumbnailURL.trim(),
           YouTubeURL: youtubeURL.trim(),
@@ -1043,7 +1043,7 @@ function ContentFormModal({
         });
       } else if (type === 'labs') {
         if (!student.trim()) {
-          alert("Student name is a mandatory field for Career Lab.");
+          alert("Student name is required for a Career Lab project.");
           return;
         }
         await saveCareerLab({
@@ -1051,8 +1051,8 @@ function ContentFormModal({
           Title: title.trim(),
           Student: student.trim(),
           Description: desc.trim(),
-          Mentor: mentor.trim() || 'Faculty Team',
-          Category: category.trim() || 'Aptitude Research',
+          Mentor: mentor.trim() || 'Faculty Mentor',
+          Category: category.trim() || 'Research',
           ThumbnailURL: thumbnailURL.trim(),
           YouTubeURL: youtubeURL.trim(),
           PDFLink: pdfLink.trim(),
@@ -1082,68 +1082,66 @@ function ContentFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-      <div className="bg-white rounded-2xl shadow-2xl border border-neutral-200 max-w-2xl w-full max-h-[92vh] flex flex-col justify-between overflow-hidden">
-        {/* Modal Header */}
-        <div className="px-5 sm:px-6 py-4 border-b border-neutral-200 flex items-center justify-between bg-[#FAFAFA]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-neutral-950/55 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-3xl shadow-2xl border border-neutral-200 max-w-2xl w-full max-h-[92vh] flex flex-col justify-between overflow-hidden">
+        <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between bg-[#FAFAFA]">
           <div className="text-left">
-            <h3 className="text-base font-bold text-[#141416] tracking-tight">
-              {isEdit ? 'Modify Resource Post' : 'Add New Resource Post'}
+            <h3 className="text-base font-display font-bold text-[#111114] tracking-tight">
+              {isEdit ? 'Edit Career Lab Item' : 'Create Career Lab Item'}
             </h3>
-            <span className="text-[11px] text-[#C8102E] font-semibold uppercase tracking-widest">
-              {type} catalog
+            <span className="text-[11px] text-[#C8102E] font-bold uppercase tracking-widest">
+              {type}
             </span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-neutral-400 hover:text-[#141416] hover:bg-neutral-100 rounded-xl transition-colors cursor-pointer"
+            className="p-2 text-neutral-400 hover:text-[#111114] hover:bg-neutral-200/60 rounded-full transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {uploadProgress && (
-          <div className="px-6 py-2.5 bg-red-50 border-b border-red-100 text-xs font-semibold text-[#C8102E] text-left">
+          <div className="px-6 py-2.5 bg-red-50 border-b border-red-100 text-xs font-bold text-[#C8102E] text-left">
             {uploadProgress}
           </div>
         )}
 
-        {/* Modal Body */}
         <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 text-left">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">
-              {isCounselor ? 'Counsellor Full Name' : 'Resource Title'} <span className="text-[#C8102E]">*</span>
+            <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">
+              {isCounselor ? 'Counsellor Full Name' : 'Title'} <span className="text-[#C8102E]">*</span>
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={isCounselor ? 'e.g. Ms. Ananya Sharma' : 'Enter a clear, descriptive title...'}
-              className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-sm font-medium text-[#141416] focus:outline-none focus:ring-2 focus:ring-[#C8102E]/15 focus:border-[#C8102E]"
+              placeholder={isCounselor ? 'e.g. Ms. Ananya Sharma' : 'Enter a clear title...'}
+              className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-sm font-medium text-[#111114] focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[#C8102E]"
             />
           </div>
 
           {type === 'courses' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Instructor</label>
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Mentor / Instructor</label>
                 <input
                   type="text"
                   value={instructor}
                   onChange={(e) => setInstructor(e.target.value)}
-                  placeholder="Counselor or faculty name..."
-                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E]"
+                  placeholder="Counsellor or faculty name..."
+                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E]"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">School Tier Grade</label>
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Grade</label>
                 <select
                   value={grade}
                   onChange={(e) => setGrade(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E] bg-white"
+                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E] bg-white"
                 >
-                  <option value="">— select grade tier —</option>
+                  <option value="">— select grade —</option>
                   <option value="Class 7">Class 7</option>
                   <option value="Class 8">Class 8</option>
                   <option value="Class 9">Class 9</option>
@@ -1157,13 +1155,13 @@ function ContentFormModal({
 
           {type === 'references' && (
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Created By Author</label>
+              <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Created By</label>
               <input
                 type="text"
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Counselor Panel..."
-                className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E]"
+                placeholder="Career Lab Team..."
+                className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E]"
               />
             </div>
           )}
@@ -1171,7 +1169,7 @@ function ContentFormModal({
           {type === 'labs' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">
                   Student <span className="text-[#C8102E]">*</span>
                 </label>
                 <input
@@ -1179,17 +1177,17 @@ function ContentFormModal({
                   value={student}
                   onChange={(e) => setStudent(e.target.value)}
                   placeholder="Student full name..."
-                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E]"
+                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E]"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Mentor Adviser</label>
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Mentor</label>
                 <input
                   type="text"
                   value={mentor}
                   onChange={(e) => setMentor(e.target.value)}
                   placeholder="Faculty mentor..."
-                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E]"
+                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E]"
                 />
               </div>
             </div>
@@ -1198,62 +1196,57 @@ function ContentFormModal({
           {type === 'counselors' && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Brief Biography / Introduction</label>
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Bio / Intro</label>
                 <textarea
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
-                  placeholder="A brief introduction highlighting their advisory style and experience..."
+                  placeholder="Short introduction about their background and mentoring style..."
                   rows={3}
-                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E]"
+                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E]"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Academic Qualifications</label>
+                  <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Qualifications</label>
                   <input
                     type="text"
                     value={instructor}
                     onChange={(e) => setInstructor(e.target.value)}
                     placeholder="e.g. M.Sc in Counseling Psychology..."
-                    className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E]"
+                    className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Advisory Focus / Specialties</label>
+                  <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Focus / Specialties</label>
                   <input
                     type="text"
                     value={mentor}
                     onChange={(e) => setMentor(e.target.value)}
-                    placeholder="e.g. Liberal Arts, STEM profile building..."
-                    className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E]"
+                    placeholder="e.g. Design, STEM, Global Applications..."
+                    className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Contact Email</label>
+                  <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Contact Email</label>
                   <input
                     type="email"
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
                     placeholder="e.g. advisor@hyd.silveroaks.co.in"
-                    className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E]"
+                    className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E]"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#141416] uppercase tracking-wider flex items-center gap-1.5">
+                  <label className="text-xs font-bold text-[#111114] uppercase tracking-wider flex items-center gap-1.5">
                     <Image className="w-3.5 h-3.5 text-[#C8102E]" />
-                    <span>Profile Photo File</span>
+                    <span>Profile Photo</span>
                   </label>
                   <div className="flex gap-2 items-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileUpload(e, 'thumb')}
-                      className="flex-1 py-1 text-xs"
-                    />
+                    <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'thumb')} className="flex-1 py-1 text-xs" />
                     {thumbnailURL && <span className="text-[#C8102E] font-bold text-[10px] shrink-0">Attached</span>}
                   </div>
                   <input
@@ -1271,12 +1264,10 @@ function ContentFormModal({
           {type !== 'blogs' && type !== 'counselors' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5 relative" ref={dropdownRef}>
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider flex items-center justify-between">
-                  <span>Category Discipline</span>
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider flex items-center justify-between">
+                  <span>Category</span>
                   {existingCategories.length > 0 && (
-                    <span className="text-[10px] text-[#C8102E] font-bold">
-                      ({existingCategories.length} existing)
-                    </span>
+                    <span className="text-[10px] text-[#C8102E] font-bold">({existingCategories.length} existing)</span>
                   )}
                 </label>
                 <div className="relative">
@@ -1288,8 +1279,8 @@ function ContentFormModal({
                       setShowCategoryDropdown(true);
                     }}
                     onFocus={() => setShowCategoryDropdown(true)}
-                    placeholder="e.g. CV Prep, Stream Advice..."
-                    className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E] pr-8"
+                    placeholder="e.g. Robotics, CV Prep, Medicine..."
+                    className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E] pr-8"
                   />
                   {existingCategories.length > 0 && (
                     <button
@@ -1307,9 +1298,7 @@ function ContentFormModal({
                 {showCategoryDropdown && existingCategories.length > 0 && (
                   <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-neutral-200 rounded-xl shadow-lg py-1 text-xs font-medium text-left">
                     {(() => {
-                      const matched = existingCategories.filter(cat =>
-                        cat.toLowerCase().includes(category.toLowerCase())
-                      );
+                      const matched = existingCategories.filter(cat => cat.toLowerCase().includes(category.toLowerCase()));
                       if (matched.length === 0) {
                         return (
                           <div className="px-3.5 py-2.5 text-neutral-500 italic">
@@ -1347,13 +1336,13 @@ function ContentFormModal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Brief Description</label>
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Short Summary</label>
                 <input
                   type="text"
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
-                  placeholder="A concise summary of contents..."
-                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E]"
+                  placeholder="One-line summary..."
+                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E]"
                 />
               </div>
             </div>
@@ -1362,27 +1351,22 @@ function ContentFormModal({
           {type === 'blogs' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Topic Tags</label>
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Topic Tags</label>
                 <input
                   type="text"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
-                  placeholder="comma-separated (e.g. ivy, resume, stream)"
-                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E]"
+                  placeholder="comma-separated (e.g. stem, resume, design)"
+                  className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E]"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider flex items-center gap-1.5">
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider flex items-center gap-1.5">
                   <Image className="w-3.5 h-3.5 text-[#C8102E]" />
-                  <span>Featured Image</span>
+                  <span>Cover Image</span>
                 </label>
                 <div className="flex gap-2 items-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, 'featured')}
-                    className="flex-1 py-1.5 border border-neutral-200 rounded-xl text-xs px-2"
-                  />
+                  <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'featured')} className="flex-1 py-1.5 border border-neutral-200 rounded-xl text-xs px-2" />
                   {featuredImageURL && <span className="text-[#C8102E] font-bold text-[10px] shrink-0">Attached</span>}
                 </div>
               </div>
@@ -1390,18 +1374,13 @@ function ContentFormModal({
           )}
 
           {type !== 'blogs' && type !== 'counselors' && (
-            <div className="border border-neutral-200 rounded-xl p-4 bg-[#FAFAFA] gap-4 grid grid-cols-1 sm:grid-cols-2">
+            <div className="border border-neutral-200 rounded-2xl p-4 bg-[#FAFAFA] gap-4 grid grid-cols-1 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider flex items-center gap-1.5">
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider flex items-center gap-1.5">
                   <Image className="w-3.5 h-3.5 text-[#C8102E]" />
-                  <span>Cover Thumbnail</span>
+                  <span>Cover Image</span>
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileUpload(e, 'thumb')}
-                  className="w-full py-1 text-xs"
-                />
+                <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'thumb')} className="w-full py-1 text-xs" />
                 <input
                   type="text"
                   value={thumbnailURL}
@@ -1412,48 +1391,42 @@ function ContentFormModal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">YouTube Video URL</label>
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">YouTube Video URL</label>
                 <input
                   type="text"
                   value={youtubeURL}
                   onChange={(e) => setYoutubeURL(e.target.value)}
                   placeholder="https://www.youtube.com/watch?..."
-                  className="w-full px-3.5 py-2 border border-neutral-200 rounded-xl text-xs font-medium text-[#141416] focus:outline-none focus:border-[#C8102E] bg-white"
+                  className="w-full px-3.5 py-2 border border-neutral-200 rounded-xl text-xs font-medium text-[#111114] focus:outline-none focus:border-[#C8102E] bg-white"
                 />
-                <p className="text-[10px] text-neutral-500">Leave empty if no video lecture exists.</p>
+                <p className="text-[10px] text-neutral-500">Optional video embed.</p>
               </div>
             </div>
           )}
 
           {type !== 'counselors' && (
-            <div className="space-y-2 border border-neutral-200 rounded-xl p-4 bg-[#FAFAFA]">
-              <label className="text-xs font-bold text-[#141416] uppercase tracking-wider flex items-center gap-2">
+            <div className="space-y-2 border border-neutral-200 rounded-2xl p-4 bg-[#FAFAFA]">
+              <label className="text-xs font-bold text-[#111114] uppercase tracking-wider flex items-center gap-2">
                 <FileText className="w-4 h-4 text-[#C8102E]" />
-                <span>Drive / PDF Attachment</span>
+                <span>PDF / Drive Attachment</span>
               </label>
               <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => handleFileUpload(e, 'pdf')}
-                  className="flex-1 py-1.5 text-xs"
-                />
+                <input type="file" accept="application/pdf" onChange={(e) => handleFileUpload(e, 'pdf')} className="flex-1 py-1.5 text-xs" />
                 <input
                   type="text"
                   value={pdfLink}
                   onChange={(e) => setPdfLink(e.target.value)}
-                  placeholder="Google Drive link or raw PDF URL..."
+                  placeholder="Google Drive link or direct PDF URL..."
                   className="flex-1 px-3 py-2 border border-neutral-200 rounded-xl text-[11px] font-medium focus:outline-none focus:border-[#C8102E] bg-white"
                 />
               </div>
-              <p className="text-[10px] text-neutral-500">Accepts native PDF documents or linked Google Drive files.</p>
             </div>
           )}
 
           {type !== 'counselors' && (
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">
-                Lesson Content / Publication Body
+              <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">
+                Content Body
               </label>
 
               <div className="flex flex-wrap gap-1 bg-[#FAFAFA] border border-neutral-200 p-1.5 rounded-t-xl overflow-x-auto">
@@ -1482,35 +1455,34 @@ function ContentFormModal({
                 contentEditable
                 suppressContentEditableWarning
                 onBlur={handleEditorUpdate}
-                className="w-full min-h-40 bg-white border-x border-b border-neutral-200 rounded-b-xl px-4 py-3 text-xs sm:text-sm text-[#141416] outline-none focus:ring-2 focus:ring-[#C8102E]/15 overflow-y-auto max-h-60"
+                className="w-full min-h-40 bg-white border-x border-b border-neutral-200 rounded-b-xl px-4 py-3 text-xs sm:text-sm text-[#111114] outline-none focus:ring-2 focus:ring-red-100 overflow-y-auto max-h-60"
               />
             </div>
           )}
 
-          {/* Status & Pin as Important */}
           <div className={`grid grid-cols-1 ${type !== 'counselors' ? 'sm:grid-cols-2' : ''} gap-4`}>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Post Clearance State</label>
+              <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Visibility</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as 'Draft' | 'Published')}
-                className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-semibold text-[#141416] focus:outline-none focus:border-[#C8102E] bg-white"
+                className="w-full px-3.5 py-2.5 border border-neutral-200 rounded-xl text-xs font-semibold text-[#111114] focus:outline-none focus:border-[#C8102E] bg-white"
               >
-                <option value="Draft">Draft (Internal/Admins only)</option>
-                <option value="Published">Published (Public to student catalog)</option>
+                <option value="Draft">Draft (Hidden from students)</option>
+                <option value="Published">Published (Visible to students)</option>
               </select>
             </div>
 
             {type !== 'counselors' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[#141416] uppercase tracking-wider">Student Priority Notice</label>
+                <label className="text-xs font-bold text-[#111114] uppercase tracking-wider">Student Notice Priority</label>
                 <button
                   type="button"
                   onClick={() => setIsPinned(!isPinned)}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                  className={`w-full px-3.5 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
                     isPinned
                       ? 'bg-[#C8102E] text-white border-[#C8102E]'
-                      : 'bg-white text-[#141416] border-neutral-200 hover:border-[#C8102E]'
+                      : 'bg-white text-[#111114] border-neutral-200 hover:border-[#C8102E]'
                   }`}
                 >
                   <span className="inline-flex items-center gap-2">
@@ -1528,22 +1500,21 @@ function ContentFormModal({
           </div>
         </div>
 
-        {/* Modal Footer */}
-        <div className="px-5 sm:px-6 py-4 border-t border-neutral-200 flex items-center justify-end gap-3 bg-[#FAFAFA]">
+        <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-end gap-3 bg-[#FAFAFA]">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 border border-neutral-200 bg-white text-neutral-600 hover:text-[#141416] hover:bg-neutral-50 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer"
+            className="px-4 py-2.5 border border-neutral-200 bg-white text-neutral-600 hover:text-[#111114] hover:bg-neutral-50 rounded-full text-xs font-bold uppercase tracking-wider transition cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSaveSubmit}
-            className="px-5 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition inline-flex items-center gap-1.5 cursor-pointer"
+            className="px-5 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-full text-xs font-bold uppercase tracking-wider transition inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Save className="w-3.5 h-3.5" />
-            <span>Commit Changes</span>
+            <span>Save Changes</span>
           </button>
         </div>
       </div>
