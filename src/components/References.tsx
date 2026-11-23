@@ -3,524 +3,367 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search,
-  FileText,
-  Filter,
-  Grid,
-  List,
-  ArrowRight,
+  LayoutGrid,
+  List as ListIcon,
+  Layers,
   Pin,
-  Library,
-  SlidersHorizontal,
-  ChevronDown,
-  ChevronUp,
-  FileDown as FileDownIcon
+  FileText,
+  FileDown,
+  PlayCircle,
+  ArrowRight,
+  X
 } from 'lucide-react';
 import { ReferenceMaterial, CardLayoutPreset } from '../types';
-import { fetchAllReferences, togglePinRecord, sortPinnedFirst } from '../lib/supabase';
+import { fetchAllReferences } from '../lib/supabase';
 
 interface ReferencesProps {
-  setSelectedId: (id: string) => void;
   setCurrentPage: (page: string) => void;
-  onNotify?: (msg: string, type?: 'success' | 'err') => void;
+  setSelectedId: (id: string) => void;
 }
 
-export default function References({ setSelectedId, setCurrentPage, onNotify }: ReferencesProps) {
-  const [layout, setLayout] = useState<CardLayoutPreset>('compact-list');
+export default function References({ setCurrentPage, setSelectedId }: ReferencesProps) {
   const [refs, setRefs] = useState<ReferenceMaterial[]>([]);
-  const [filtered, setFiltered] = useState<ReferenceMaterial[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [layout, setLayout] = useState<CardLayoutPreset>('classic-card');
 
-  // Filters
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [pinnedOnly, setPinnedOnly] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const loadRefs = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchAllReferences(true);
+      setRefs(data);
+    } catch (err) {
+      console.error("Failed to fetch references:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const data = await fetchAllReferences(true);
-        setRefs(data);
-        const cats = Array.from(new Set(data.map(r => r.Category).filter(Boolean)));
-        setCategories(cats);
-      } catch (err) {
-        console.error("Failed to load reference material:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    loadRefs();
+    window.addEventListener('pins-updated', loadRefs);
+    return () => window.removeEventListener('pins-updated', loadRefs);
   }, []);
 
-  useEffect(() => {
-    let result = [...refs];
+  const categories = useMemo(() => {
+    const set = new Set<string>(refs.map(r => r.Category?.trim()).filter(Boolean) as string[]);
+    return ['All', ...Array.from(set)];
+  }, [refs]);
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(r =>
+  const filtered = useMemo(() => {
+    return refs.filter(r => {
+      const q = searchTerm.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
         r.Title.toLowerCase().includes(q) ||
-        r.Description.toLowerCase().includes(q) ||
-        r.Author.toLowerCase().includes(q)
-      );
-    }
+        (r.Description || '').toLowerCase().includes(q) ||
+        (r.Author || '').toLowerCase().includes(q) ||
+        (r.Category || '').toLowerCase().includes(q);
+      const matchesCat = selectedCategory === 'All' || r.Category === selectedCategory;
+      return matchesSearch && matchesCat;
+    });
+  }, [refs, searchTerm, selectedCategory]);
 
-    if (selectedCategory) {
-      result = result.filter(r => r.Category === selectedCategory);
-    }
+  const pinnedCount = useMemo(() => filtered.filter(r => r.IsPinned).length, [filtered]);
 
-    if (pinnedOnly) {
-      result = result.filter(r => r.IsPinned);
-    }
-
-    setFiltered(sortPinnedFirst(result));
-  }, [refs, search, selectedCategory, pinnedOnly]);
-
-  const handleTogglePin = async (e: React.MouseEvent, refItem: ReferenceMaterial) => {
-    e.stopPropagation();
-    const nextPinned = !refItem.IsPinned;
-    setRefs(prev =>
-      sortPinnedFirst(prev.map(item => item.ID === refItem.ID ? { ...item, IsPinned: nextPinned } : item))
-    );
-    await togglePinRecord('reference_materials', refItem.ID, nextPinned);
-    onNotify?.(
-      nextPinned ? `Pinned "${refItem.Title}" to top` : `Unpinned "${refItem.Title}"`,
-      'success'
-    );
-  };
-
-  const resetFilters = () => {
-    setSearch('');
-    setSelectedCategory('');
-    setPinnedOnly(false);
-  };
-
-  const navigateToRef = (id: string) => {
+  const openRef = (id: string) => {
     setSelectedId(id);
     setCurrentPage('reference-item');
   };
 
-  const pinnedCount = refs.filter(r => r.IsPinned).length;
-  const activeFilterCount = (search.trim() ? 1 : 0) + (selectedCategory ? 1 : 0) + (pinnedOnly ? 1 : 0);
+  const hasFilters = Boolean(searchTerm || selectedCategory !== 'All');
 
   return (
-    <div className="flex flex-col min-h-screen text-left bg-[#FFFBFB]">
-      {/* Crimson Header Banner */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#6B081B] via-[#9E0D28] to-[#C21434] text-white py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_65%_70%_at_90%_-15%,rgba(255,255,255,0.16),transparent)] pointer-events-none" />
-        <div className="relative max-w-7xl mx-auto">
-          <div className="inline-flex items-center gap-2 text-rose-100 text-xs font-semibold uppercase tracking-[0.16em] mb-2">
-            <Library className="w-3.5 h-3.5" />
-            <span>Digital Resource Library</span>
+    <div className="min-h-screen bg-[#FAFAFA] text-[#141416] text-left">
+      {/* Crisp White Editorial Page Header */}
+      <section className="bg-white border-b border-neutral-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#C8102E] mb-2">
+                <span className="w-5 h-[2px] bg-[#C8102E] inline-block" />
+                <span>Templates &amp; Handbooks</span>
+              </div>
+              <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-[#141416] tracking-tight">
+                Reference Library
+              </h1>
+              <p className="text-sm text-neutral-600 mt-2 leading-relaxed">
+                Official CV frameworks, recommendation letter guides, university trackers, and downloadable PDF checklists maintained by the council.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
+              <span className="px-3 py-1.5 rounded-full bg-[#FAFAFA] border border-neutral-200 text-neutral-700">
+                {filtered.length} {filtered.length === 1 ? 'Document' : 'Documents'}
+              </span>
+              {pinnedCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-[#C8102E]">
+                  <Pin className="w-3 h-3 fill-current" />
+                  {pinnedCount} Important
+                </span>
+              )}
+            </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-medium tracking-tight text-white">
-            Reference Material & Academic Documents
-          </h1>
-          <p className="text-rose-100/90 text-sm sm:text-base mt-3 max-w-2xl leading-relaxed">
-            Curated reading lists, standardized CV templates, admissions matrices, and official guidance archives for direct download and reference.
-          </p>
         </div>
       </section>
 
-      {/* Main listing shell */}
-      <section className="py-8 sm:py-10 px-4 sm:px-6 lg:px-8 flex-1">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
-          {/* Mobile Search & Quick Filters */}
-          <div className="lg:hidden space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search references..."
-                  className="w-full pl-9 pr-3 py-2.5 border border-rose-200 rounded-xl text-sm text-[#241115] placeholder-[#9E7880] focus:outline-none focus:ring-2 focus:ring-[#B80F2E]/25 focus:border-[#B80F2E] bg-white"
-                />
-                <Search className="w-4 h-4 text-[#B80F2E] absolute left-3 top-3" />
-              </div>
-              <button
-                type="button"
-                onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
-                className="px-3.5 py-2.5 bg-white border border-rose-200 rounded-xl text-xs font-semibold text-[#8B0E24] flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                <span>Topics</span>
-                {activeFilterCount > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-[#B80F2E] text-white text-[10px] font-bold flex items-center justify-center">
-                    {activeFilterCount}
-                  </span>
-                )}
-                {mobileFiltersOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
-              <button
-                type="button"
-                onClick={() => setPinnedOnly(!pinnedOnly)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 border transition-colors cursor-pointer ${
-                  pinnedOnly
-                    ? 'bg-[#B80F2E] text-white border-[#B80F2E]'
-                    : 'bg-white text-[#8B0E24] border-rose-200 hover:bg-rose-50'
-                }`}
-              >
-                <Pin className="w-3 h-3" />
-                <span>Pinned ({pinnedCount})</span>
-              </button>
-              {categories.slice(0, 6).map(cat => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(selectedCategory === cat ? '' : cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium shrink-0 border transition-colors cursor-pointer ${
-                    selectedCategory === cat
-                      ? 'bg-[#B80F2E] text-white border-[#B80F2E]'
-                      : 'bg-white text-[#5C4146] border-rose-100 hover:border-rose-300'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <aside className={`lg:col-span-1 space-y-6 ${mobileFiltersOpen ? 'block' : 'hidden lg:block'}`}>
-            <div className="bg-white rounded-2xl border border-rose-100 p-5 space-y-5 shadow-2xs lg:sticky lg:top-24">
-              <div className="flex items-center justify-between pb-3 border-b border-rose-100">
-                <span className="font-bold text-[#8B0E24] uppercase text-xs tracking-wider flex items-center gap-1.5">
-                  <Filter className="w-3.5 h-3.5 text-[#B80F2E]" />
-                  <span>Topic Filters</span>
-                </span>
-                {activeFilterCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="text-xs font-semibold text-[#B80F2E] hover:underline cursor-pointer"
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
-
-              <div className="space-y-1.5 hidden lg:block">
-                <label className="text-[11px] font-bold text-[#8A6970] uppercase tracking-wider">Resource Name</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search references..."
-                    className="w-full pl-8 pr-3 py-2 border border-rose-200 rounded-xl text-xs text-[#241115] placeholder-[#A5828A] focus:outline-none focus:border-[#B80F2E] focus:ring-2 focus:ring-[#B80F2E]/15 bg-white"
-                  />
-                  <Search className="w-3.5 h-3.5 text-[#B80F2E]/70 absolute left-2.5 top-2.5" />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-[#8A6970] uppercase tracking-wider">Priority</label>
+      {/* Inline Full-Width Filter & Layout Bar */}
+      <section className="bg-white/95 border-b border-neutral-200 sticky top-16 z-20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search templates, checklists, authors..."
+                className="w-full pl-10 pr-9 py-2 bg-[#FAFAFA] border border-neutral-200 rounded-xl text-sm text-[#141416] placeholder:text-neutral-400 focus:outline-none focus:bg-white focus:border-[#C8102E] focus:ring-2 focus:ring-[#C8102E]/15 transition-all"
+              />
+              {searchTerm && (
                 <button
                   type="button"
-                  onClick={() => setPinnedOnly(!pinnedOnly)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                    pinnedOnly
-                      ? 'bg-[#B80F2E] text-white border-[#B80F2E] shadow-xs'
-                      : 'bg-[#FFF7F8] text-[#8B0E24] border-rose-100 hover:border-rose-300'
-                  }`}
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                  aria-label="Clear search"
                 >
-                  <span className="flex items-center gap-2">
-                    <Pin className="w-3.5 h-3.5" />
-                    <span>Pinned Only</span>
-                  </span>
-                  <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
-                    pinnedOnly ? 'bg-white/20 text-white' : 'bg-white text-[#B80F2E]'
-                  }`}>
-                    {pinnedCount}
-                  </span>
+                  <X className="w-4 h-4" />
                 </button>
-              </div>
+              )}
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-[#8A6970] uppercase tracking-wider">Categories</label>
-                <div className="flex flex-col gap-1 pr-1 max-h-64 overflow-y-auto">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCategory('')}
-                    className={`text-left px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
-                      selectedCategory === ''
-                        ? 'font-semibold text-[#9E0D28] bg-rose-50 border border-rose-100'
-                        : 'text-[#5C4146] hover:text-[#9E0D28] hover:bg-rose-50/40'
-                    }`}
-                  >
-                    All Categories
-                  </button>
-                  {categories.map(cat => (
+            <div className="flex items-center justify-between sm:justify-end gap-2">
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('All');
+                  }}
+                  className="text-xs font-semibold text-[#C8102E] hover:underline cursor-pointer mr-2"
+                >
+                  Reset filters
+                </button>
+              )}
+
+              <div className="inline-flex items-center bg-[#FAFAFA] border border-neutral-200 rounded-xl p-1">
+                {[
+                  { id: 'compact-list' as CardLayoutPreset, label: 'List', icon: ListIcon },
+                  { id: 'bento-grid' as CardLayoutPreset, label: 'Bento', icon: Layers },
+                  { id: 'classic-card' as CardLayoutPreset, label: 'Cards', icon: LayoutGrid },
+                ].map(opt => {
+                  const Icon = opt.icon;
+                  const active = layout === opt.id;
+                  return (
                     <button
-                      key={cat}
+                      key={opt.id}
                       type="button"
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`text-left px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
-                        selectedCategory === cat
-                          ? 'font-semibold text-[#9E0D28] bg-rose-50 border border-rose-100'
-                          : 'text-[#5C4146] hover:text-[#9E0D28] hover:bg-rose-50/40'
+                      onClick={() => setLayout(opt.id)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        active
+                          ? 'bg-[#C8102E] text-white shadow-2xs'
+                          : 'text-neutral-600 hover:text-[#141416]'
                       }`}
                     >
-                      {cat}
+                      <Icon className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{opt.label}</span>
                     </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          {/* Right listing screen */}
-          <main className="lg:col-span-3 space-y-5">
-            <div className="flex items-center justify-between flex-wrap gap-3 bg-white px-4 sm:px-5 py-3 border border-rose-100 rounded-2xl shadow-2xs">
-              <div className="text-xs text-[#694D53]">
-                {filtered.length ? (
-                  <span>
-                    Showing <strong className="text-[#8B0E24] font-bold">{filtered.length}</strong> official documents
-                    {pinnedCount > 0 && !pinnedOnly && (
-                      <span className="ml-1.5 text-[#B80F2E] font-medium">· {pinnedCount} pinned</span>
-                    )}
-                  </span>
-                ) : (
-                  <span>No reference material found</span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-1 bg-[#FFF6F7] p-1 rounded-xl border border-rose-100">
-                <button
-                  type="button"
-                  onClick={() => setLayout('compact-list')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    layout === 'compact-list'
-                      ? 'bg-[#B80F2E] text-white shadow-2xs'
-                      : 'text-[#694D53] hover:text-[#9E0D28]'
-                  }`}
-                  title="List View"
-                >
-                  <List className="w-3.5 h-3.5" />
-                  <span>List</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setLayout('bento-grid')}
-                  className={`hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    layout === 'bento-grid'
-                      ? 'bg-[#B80F2E] text-white shadow-2xs'
-                      : 'text-[#694D53] hover:text-[#9E0D28]'
-                  }`}
-                  title="Bento Grid"
-                >
-                  <Grid className="w-3.5 h-3.5" />
-                  <span>Grid</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setLayout('classic-card')}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    layout === 'classic-card'
-                      ? 'bg-[#B80F2E] text-white shadow-2xs'
-                      : 'text-[#694D53] hover:text-[#9E0D28]'
-                  }`}
-                  title="Classic Cards"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Cards</span>
-                </button>
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="py-24 text-center">
-                <div className="spinner" />
-                <p className="text-[#8A6970] font-semibold uppercase tracking-wider text-xs mt-3">
-                  Streaming library catalogs...
-                </p>
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-dashed border-rose-200 p-12 text-center">
-                <h3 className="font-serif text-xl text-[#241115]">No references found</h3>
-                <p className="text-[#694D53] text-xs sm:text-sm mt-1.5 max-w-sm mx-auto">
-                  Try clearing your filters or query terms to view other counselor checklists or resources.
-                </p>
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="mt-5 px-5 py-2.5 bg-[#B80F2E] text-white rounded-xl text-xs font-semibold hover:bg-[#8B0E24] transition-colors cursor-pointer"
-                >
-                  Reset All Filters
-                </button>
-              </div>
-            ) : (
-              <div className={
-                layout === 'compact-list'
-                  ? 'flex flex-col gap-3'
-                  : layout === 'bento-grid'
-                    ? 'grid grid-cols-1 md:grid-cols-6 gap-6'
-                    : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6'
-              }>
-                {filtered.map((r, index) => {
-                  const bentoSpan = index % 3 === 0 ? 'md:col-span-4' : 'md:col-span-2';
-
-                  // PRESET 1: COMPACT LIST
-                  if (layout === 'compact-list') {
-                    return (
-                      <div
-                        key={r.ID}
-                        onClick={() => navigateToRef(r.ID)}
-                        className={`bg-white p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 cursor-pointer transition-all group border ${
-                          r.IsPinned
-                            ? 'border-rose-300 bg-gradient-to-r from-[#FFF7F8] to-white shadow-xs ring-1 ring-rose-100'
-                            : 'border-rose-100 hover:border-rose-300 hover:shadow-sm'
-                        }`}
-                      >
-                        <div className="flex items-center gap-4 text-left flex-1 min-w-0">
-                          {r.ThumbnailURL && (
-                            <div className="w-16 h-12 rounded-xl overflow-hidden bg-rose-50 shrink-0 hidden sm:block border border-rose-100">
-                              <img
-                                src={r.ThumbnailURL}
-                                alt=""
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                referrerPolicy="no-referrer"
-                              />
-                            </div>
-                          )}
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center flex-wrap gap-2 text-[11px] font-semibold mb-1">
-                              {r.IsPinned && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#B80F2E] text-white text-[10px] uppercase">
-                                  <Pin className="w-2.5 h-2.5 fill-current" />
-                                  Pinned
-                                </span>
-                              )}
-                              <span className="text-[#B80F2E] bg-rose-50 px-2 py-0.5 rounded-md uppercase tracking-wider">{r.Category}</span>
-                              {r.PDFLink && <span className="text-[#8A6970]">· PDF</span>}
-                              {r.YouTubeURL && <span className="text-[#8A6970]">· Video</span>}
-                            </div>
-
-                            <h3 className="font-serif font-semibold text-[#241115] text-base sm:text-lg group-hover:text-[#B80F2E] transition-colors truncate">
-                              {r.Title}
-                            </h3>
-                            <p className="text-[#694D53] text-xs line-clamp-1 mt-0.5 pr-2 leading-relaxed">
-                              {r.Description}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between md:justify-end gap-4 border-t md:border-t-0 border-rose-100/80 pt-3 md:pt-0 shrink-0 text-xs text-[#694D53]">
-                          <span className="truncate max-w-[140px]">{r.Author}</span>
-                          <div className="flex items-center gap-2.5">
-                            <button
-                              type="button"
-                              onClick={(e) => handleTogglePin(e, r)}
-                              title={r.IsPinned ? 'Unpin reference' : 'Pin reference to top'}
-                              className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                                r.IsPinned
-                                  ? 'bg-[#B80F2E] text-white border-[#B80F2E]'
-                                  : 'bg-white text-[#8A6970] border-rose-100 hover:border-rose-300 hover:text-[#B80F2E] hover:bg-rose-50'
-                              }`}
-                            >
-                              <Pin className={`w-3.5 h-3.5 ${r.IsPinned ? 'fill-current' : ''}`} />
-                            </button>
-                            <span className="text-[#9E0D28] font-semibold flex items-center gap-1">
-                              Access <ArrowRight className="w-3.5 h-3.5" />
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  // PRESET 2 & 3
-                  const isBento = layout === 'bento-grid';
-                  return (
-                    <div
-                      key={r.ID}
-                      onClick={() => navigateToRef(r.ID)}
-                      className={`bg-white rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 flex flex-col justify-between border ${
-                        r.IsPinned
-                          ? 'border-rose-300 ring-1 ring-rose-100 shadow-sm hover:shadow-lg'
-                          : 'border-rose-100 hover:border-rose-300 hover:shadow-md'
-                      } ${isBento ? bentoSpan : ''}`}
-                    >
-                      <div>
-                        <div className="relative aspect-[16/10] bg-rose-50 overflow-hidden shrink-0">
-                          <img
-                            src={r.ThumbnailURL || (isBento
-                              ? "https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=800&q=80"
-                              : "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=600&q=80")}
-                            alt=""
-                            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#36040D]/30 via-transparent to-transparent" />
-
-                          {r.IsPinned && (
-                            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#B80F2E] text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                              <Pin className="w-3 h-3 fill-current" />
-                              Pinned
-                            </span>
-                          )}
-
-                          <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                            {r.PDFLink && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-white/95 text-[#9E0D28] px-2 py-1 rounded-lg shadow-xs">
-                                <FileDownIcon className="w-3 h-3" />
-                                PDF
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              onClick={(e) => handleTogglePin(e, r)}
-                              title={r.IsPinned ? 'Unpin reference' : 'Pin reference to top'}
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-xs ${
-                                r.IsPinned
-                                  ? 'bg-[#B80F2E] text-white'
-                                  : 'bg-white/95 text-[#694D53] hover:bg-[#B80F2E] hover:text-white'
-                              }`}
-                            >
-                              <Pin className={`w-3.5 h-3.5 ${r.IsPinned ? 'fill-current' : ''}`} />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="p-5">
-                          <div className="text-[11px] font-semibold uppercase tracking-wider mb-2">
-                            <span className="text-[#B80F2E] bg-rose-50 px-2 py-0.5 rounded-md">{r.Category}</span>
-                          </div>
-                          <h3 className="font-serif font-semibold text-lg text-[#241115] group-hover:text-[#B80F2E] transition-colors line-clamp-2 mb-2 leading-snug">
-                            {r.Title}
-                          </h3>
-                          <p className={`text-[#694D53] text-xs leading-relaxed ${isBento ? 'line-clamp-3' : 'line-clamp-2'}`}>
-                            {r.Description}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="px-5 pb-5 pt-0">
-                        <div className="flex items-center justify-between border-t border-rose-100/80 pt-3.5 text-xs text-[#8A6970]">
-                          <span className="truncate max-w-[160px] font-medium">{r.Author}</span>
-                          <span className="text-[#B80F2E] font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                            {isBento ? 'Open document' : 'Open'} <ArrowRight className="w-3.5 h-3.5" />
-                          </span>
-                        </div>
-                      </div>
-                    </div>
                   );
                 })}
               </div>
-            )}
-          </main>
+            </div>
+          </div>
+
+          {categories.length > 1 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+              {categories.map(cat => {
+                const active = selectedCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer border ${
+                      active
+                        ? 'bg-[#C8102E] text-white border-[#C8102E]'
+                        : 'bg-white text-neutral-600 border-neutral-200 hover:border-[#C8102E]/40 hover:text-[#C8102E]'
+                    }`}
+                  >
+                    {cat === 'All' ? 'All Categories' : cat}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        {loading ? (
+          <div className="py-24 text-center">
+            <div className="spinner" />
+            <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500 mt-3">
+              Loading reference documents...
+            </p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center max-w-lg mx-auto">
+            <FileText className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
+            <h3 className="font-serif text-xl font-semibold text-[#141416]">No matching documents</h3>
+            <p className="text-sm text-neutral-500 mt-1">
+              Try a different category or search keyword.
+            </p>
+            {hasFilters && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('All');
+                }}
+                className="mt-5 px-4 py-2 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-lg text-xs font-bold uppercase tracking-wider cursor-pointer"
+              >
+                Show All Documents
+              </button>
+            )}
+          </div>
+        ) : layout === 'compact-list' ? (
+          <div className="bg-white rounded-2xl border border-neutral-200 divide-y divide-neutral-200 overflow-hidden">
+            {filtered.map(item => (
+              <article
+                key={item.ID}
+                onClick={() => openRef(item.ID)}
+                className={`p-5 sm:p-6 hover:bg-[#FAFAFA] transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group ${
+                  item.IsPinned ? 'border-l-4 border-l-[#C8102E] bg-red-50/20' : ''
+                }`}
+              >
+                <div className="flex items-start gap-4 min-w-0 flex-1">
+                  <div className="w-11 h-11 rounded-xl bg-red-50 border border-red-100 text-[#C8102E] flex items-center justify-center shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center flex-wrap gap-2 mb-1">
+                      {item.IsPinned && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#C8102E] text-white text-[10px] font-bold uppercase tracking-wider">
+                          <Pin className="w-2.5 h-2.5 fill-current" />
+                          Pinned · Important
+                        </span>
+                      )}
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#C8102E]">
+                        {item.Category || 'Templates'}
+                      </span>
+                    </div>
+                    <h2 className="font-serif text-lg sm:text-xl font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors leading-snug">
+                      {item.Title}
+                    </h2>
+                    {item.Description && (
+                      <p className="text-xs sm:text-sm text-neutral-600 mt-1 line-clamp-1">
+                        {item.Description}
+                      </p>
+                    )}
+                    <p className="text-xs text-neutral-500 mt-1.5">
+                      Compiled by <span className="font-medium text-neutral-700">{item.Author || 'Counselor Team'}</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+                  {item.YouTubeURL && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-neutral-100 text-neutral-700 text-[11px] font-semibold">
+                      <PlayCircle className="w-3.5 h-3.5" /> Video
+                    </span>
+                  )}
+                  {item.PDFLink && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-50 text-[#C8102E] text-[11px] font-semibold">
+                      <FileDown className="w-3.5 h-3.5" /> PDF
+                    </span>
+                  )}
+                  <ArrowRight className="w-4 h-4 text-neutral-300 group-hover:text-[#C8102E] group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div
+            className={
+              layout === 'bento-grid'
+                ? 'grid grid-cols-1 md:grid-cols-6 gap-5'
+                : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+            }
+          >
+            {filtered.map((item, idx) => {
+              const isWide = layout === 'bento-grid' && (idx === 0 || idx === 3);
+              const span = layout === 'bento-grid' ? (isWide ? 'md:col-span-4' : 'md:col-span-2') : '';
+              return (
+                <article
+                  key={item.ID}
+                  onClick={() => openRef(item.ID)}
+                  className={`${span} bg-white rounded-2xl border overflow-hidden hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between group ${
+                    item.IsPinned
+                      ? 'border-[#C8102E]/45 ring-1 ring-[#C8102E]/15'
+                      : 'border-neutral-200 hover:border-neutral-300'
+                  }`}
+                >
+                  <div>
+                    <div
+                      className={`${
+                        isWide ? 'aspect-[21/9]' : 'aspect-[16/10]'
+                      } bg-neutral-100 relative overflow-hidden border-b border-neutral-100`}
+                    >
+                      {item.ThumbnailURL ? (
+                        <img
+                          src={item.ThumbnailURL}
+                          alt={item.Title}
+                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#7A0A1D] to-[#B80F2E] flex items-center justify-center text-white/90">
+                          <FileText className="w-10 h-10 stroke-[1.4]" />
+                        </div>
+                      )}
+                      {item.IsPinned && (
+                        <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#C8102E] text-white text-[10px] font-bold uppercase tracking-wider shadow-xs">
+                          <Pin className="w-2.5 h-2.5 fill-current" />
+                          Pinned · Important
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-5 sm:p-6">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#C8102E]">
+                        {item.Category || 'Templates'}
+                      </span>
+                      <h2 className={`font-serif font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors mt-1.5 leading-snug line-clamp-2 ${isWide ? 'text-2xl' : 'text-lg'}`}>
+                        {item.Title}
+                      </h2>
+                      {item.Description && (
+                        <p className="text-xs sm:text-sm text-neutral-600 mt-2 line-clamp-2 leading-relaxed">
+                          {item.Description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="px-5 sm:px-6 py-3.5 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
+                    <span className="truncate font-medium">{item.Author || 'Counselor Team'}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {item.PDFLink && (
+                        <span className="inline-flex items-center gap-1 text-[#C8102E] font-semibold">
+                          <FileDown className="w-3.5 h-3.5" /> PDF
+                        </span>
+                      )}
+                      <ArrowRight className="w-4 h-4 text-neutral-300 group-hover:text-[#C8102E] group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

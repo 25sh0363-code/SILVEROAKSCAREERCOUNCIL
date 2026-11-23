@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, FileDown, User, Calendar, Pin, PlayCircle } from 'lucide-react';
-import { Course, BlogPost, ReferenceMaterial, CareerLab, PinnableTable } from '../types';
+import { AppUser, Course, BlogPost, ReferenceMaterial, CareerLab, PinnableTable } from '../types';
 import {
   fetchCourseById,
   fetchBlogById,
@@ -20,6 +20,7 @@ import { renderContentToHtml } from '../lib/renderContent';
 interface DetailProps {
   type: 'course' | 'blog-item' | 'reference-item' | 'lab-item';
   id: string;
+  user?: AppUser | null;
   onBack: () => void;
   setCurrentPage: (page: string) => void;
   setSelectedId: (id: string) => void;
@@ -29,6 +30,7 @@ interface DetailProps {
 export default function ItemDetail({
   type,
   id,
+  user,
   onBack,
   onNotify
 }: DetailProps) {
@@ -70,6 +72,7 @@ export default function ItemDetail({
     title: string,
     currentlyPinned?: boolean
   ) => {
+    if (!user?.isAdmin) return;
     const nextPinned = !currentlyPinned;
     if (table === 'courses' && course) setCourse({ ...course, IsPinned: nextPinned });
     if (table === 'blogs' && blog) setBlog({ ...blog, IsPinned: nextPinned });
@@ -78,7 +81,7 @@ export default function ItemDetail({
 
     await togglePinRecord(table, itemId, nextPinned);
     onNotify?.(
-      nextPinned ? `Pinned "${title}" to top` : `Unpinned "${title}"`,
+      nextPinned ? `Pinned "${title}" as an important student notice` : `Unpinned "${title}"`,
       'success'
     );
   };
@@ -87,8 +90,8 @@ export default function ItemDetail({
     return (
       <div className="max-w-4xl mx-auto px-4 py-24 text-center">
         <div className="spinner" />
-        <p className="text-[#8A6970] font-semibold uppercase tracking-wider text-xs mt-3">
-          Loading details...
+        <p className="text-neutral-500 font-semibold uppercase tracking-wider text-xs mt-3">
+          Loading document...
         </p>
       </div>
     );
@@ -105,43 +108,65 @@ export default function ItemDetail({
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-rose-200 text-xs font-semibold text-[#8B0E24] hover:bg-rose-50 transition-colors cursor-pointer shadow-2xs"
+        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-neutral-200 text-xs font-semibold text-neutral-700 hover:text-[#C8102E] hover:border-[#C8102E]/40 transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         <span>{backLabel}</span>
       </button>
 
-      <button
-        type="button"
-        onClick={() => handleTogglePin(table, itemId, title, isPinned)}
-        className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-2xs ${
-          isPinned
-            ? 'bg-[#B80F2E] text-white border-[#B80F2E]'
-            : 'bg-white text-[#8B0E24] border-rose-200 hover:bg-rose-50'
-        }`}
-      >
-        <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current' : ''}`} />
-        <span>{isPinned ? 'Pinned Post' : 'Pin Post'}</span>
-      </button>
+      {/* Admin/Editor-only editorial pin control */}
+      {user?.isAdmin && (
+        <button
+          type="button"
+          onClick={() => handleTogglePin(table, itemId, title, isPinned)}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+            isPinned
+              ? 'bg-[#C8102E] text-white border-[#C8102E] hover:bg-[#9E0B24]'
+              : 'bg-white text-[#C8102E] border-[#C8102E]/30 hover:bg-red-50'
+          }`}
+        >
+          <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current' : ''}`} />
+          <span>{isPinned ? 'Pinned as Important' : 'Pin as Important'}</span>
+        </button>
+      )}
     </div>
   );
 
+  const renderPinnedBanner = (isPinned?: boolean) => {
+    if (!isPinned) return null;
+    return (
+      <div className="mb-6 rounded-xl bg-red-50 border border-red-200 border-l-4 border-l-[#C8102E] px-4 py-3 flex items-center gap-3">
+        <span className="w-7 h-7 rounded-lg bg-[#C8102E] text-white flex items-center justify-center shrink-0">
+          <Pin className="w-3.5 h-3.5 fill-current" />
+        </span>
+        <div className="text-left">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#C8102E]">
+            Pinned · Important Student Notice
+          </p>
+          <p className="text-xs text-neutral-700">
+            Highlighted by the Silver Oaks Career Council for priority reading.
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   const renderPdfCard = (pdfLink: string, heading: string, subtext: string) => (
-    <div className="bg-gradient-to-r from-[#FFF5F6] to-white border border-rose-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 shadow-2xs">
+    <div className="bg-white border border-neutral-200 border-l-4 border-l-[#C8102E] rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div className="text-left flex items-start gap-3.5">
-        <div className="w-10 h-10 rounded-xl bg-[#B80F2E] text-white flex items-center justify-center shrink-0 shadow-xs">
+        <div className="w-10 h-10 rounded-xl bg-red-50 text-[#C8102E] border border-red-100 flex items-center justify-center shrink-0">
           <FileDown className="w-4 h-4" />
         </div>
         <div>
-          <h4 className="font-semibold text-[#241115] text-sm leading-tight">{heading}</h4>
-          <p className="text-xs text-[#694D53] mt-1">{subtext}</p>
+          <h4 className="font-semibold text-[#141416] text-sm leading-tight">{heading}</h4>
+          <p className="text-xs text-neutral-500 mt-1">{subtext}</p>
         </div>
       </div>
       <a
         href={getPdfDownloadUrl(pdfLink)}
         target="_blank"
         rel="noopener noreferrer"
-        className="w-full sm:w-auto justify-center px-4 py-2.5 bg-gradient-to-r from-[#8B0E24] to-[#B80F2E] hover:brightness-110 text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer shadow-xs"
+        className="w-full sm:w-auto justify-center px-4 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
       >
         <FileDown className="w-3.5 h-3.5" />
         <span>
@@ -154,12 +179,12 @@ export default function ItemDetail({
   );
 
   const renderVideoFrame = (embedId: string, label: string, frameTitle: string) => (
-    <div className="bg-white rounded-2xl border border-rose-100 overflow-hidden p-3 sm:p-4 mb-8 shadow-2xs">
-      <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#B80F2E] mb-2.5 px-1">
+    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden p-3 sm:p-4 mb-8">
+      <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#C8102E] mb-2.5 px-1">
         <PlayCircle className="w-3.5 h-3.5" />
         <span>{label}</span>
       </div>
-      <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-[#241115]">
+      <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-neutral-950">
         <iframe
           src={`https://www.youtube.com/embed/${embedId}`}
           title={frameTitle}
@@ -175,37 +200,35 @@ export default function ItemDetail({
   if (type === 'course' && course) {
     const embedId = getYoutubeEmbedId(course.YouTubeURL);
     return (
-      <div className="bg-[#FFFBFB] min-h-screen">
+      <div className="bg-[#FAFAFA] min-h-screen">
         <article className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left">
           {renderTopBar('Back to Courses', 'courses', course.ID, course.Title, course.IsPinned)}
+          {renderPinnedBanner(course.IsPinned)}
 
-          <div className="bg-white rounded-2xl border border-rose-100 p-6 sm:p-8 mb-8 shadow-2xs space-y-3.5">
+          <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 mb-8 space-y-4">
             <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
-              {course.IsPinned && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#B80F2E] text-white">
-                  <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
-                </span>
-              )}
-              <span className="px-2.5 py-0.5 rounded-md bg-rose-50 text-[#B80F2E] border border-rose-100">
-                {course.Category}
+              <span className="px-2.5 py-0.5 rounded-md bg-red-50 text-[#C8102E] border border-red-100">
+                {course.Category || 'General'}
               </span>
               {course.Grade && (
-                <span className="text-[#8A6970]">· Grade {course.Grade}</span>
+                <span className="px-2.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
+                  {course.Grade}
+                </span>
               )}
             </div>
-            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#241115] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#141416] tracking-tight leading-tight">
               {course.Title}
             </h1>
             {course.Description && (
-              <p className="text-sm text-[#5C4146] leading-relaxed">{course.Description}</p>
+              <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">{course.Description}</p>
             )}
-            <div className="flex items-center flex-wrap gap-4 pt-2 border-t border-rose-100/80 text-xs text-[#8A6970]">
+            <div className="flex items-center flex-wrap gap-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
               <span className="inline-flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#B80F2E]" />
-                Instructor: <strong className="text-[#241115] font-semibold">{course.Instructor}</strong>
+                <User className="w-3.5 h-3.5 text-[#C8102E]" />
+                Instructor: <strong className="text-[#141416] font-semibold">{course.Instructor}</strong>
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#B80F2E]" />
+                <Calendar className="w-3.5 h-3.5 text-[#C8102E]" />
                 Updated {new Date(course.UpdatedDate || course.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
@@ -219,9 +242,9 @@ export default function ItemDetail({
           )}
 
           {course.Content && (
-            <div className="bg-white rounded-2xl border border-rose-100 p-6 sm:p-10 text-left shadow-2xs">
-              <h3 className="text-xl font-serif font-semibold text-[#241115] mb-6 pb-3 border-b border-rose-100">
-                Course Syllabus & Readings
+            <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-10 text-left">
+              <h3 className="text-xl font-serif font-semibold text-[#141416] mb-6 pb-3 border-b border-neutral-100">
+                Course Syllabus &amp; Readings
               </h3>
               <div
                 className="rich-content"
@@ -237,46 +260,43 @@ export default function ItemDetail({
   // BlogPost Details Render
   if (type === 'blog-item' && blog) {
     return (
-      <div className="bg-[#FFFBFB] min-h-screen">
+      <div className="bg-[#FAFAFA] min-h-screen">
         <article className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left">
-          {renderTopBar('Back to Publications', 'blogs', blog.ID, blog.Title, blog.IsPinned)}
+          {renderTopBar('Back to Editorial', 'blogs', blog.ID, blog.Title, blog.IsPinned)}
+          {renderPinnedBanner(blog.IsPinned)}
 
-          <div className="bg-white rounded-2xl border border-rose-100 p-6 sm:p-8 mb-8 shadow-2xs space-y-3.5">
+          <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 mb-8 space-y-4">
             <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
-              {blog.IsPinned && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#B80F2E] text-white">
-                  <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
-                </span>
-              )}
-              {(blog.Tags || "").split(',').filter(Boolean).map((t, idx) => (
-                <span key={idx} className="px-2.5 py-0.5 rounded-md bg-rose-50 text-[#B80F2E] border border-rose-100">
+              {(blog.Tags || '').split(',').filter(Boolean).map((t, idx) => (
+                <span key={idx} className="px-2.5 py-0.5 rounded-md bg-red-50 text-[#C8102E] border border-red-100">
                   #{t.trim()}
                 </span>
               ))}
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#241115] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#141416] tracking-tight leading-tight">
               {blog.Title}
             </h1>
 
-            <div className="flex items-center flex-wrap gap-4 pt-2 border-t border-rose-100/80 text-xs text-[#8A6970]">
+            <div className="flex items-center flex-wrap gap-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
               <span className="inline-flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#B80F2E]" />
+                <User className="w-3.5 h-3.5 text-[#C8102E]" />
                 Counselor Faculty ({blog.AuthorEmail.split('@')[0]})
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#B80F2E]" />
+                <Calendar className="w-3.5 h-3.5 text-[#C8102E]" />
                 Published {new Date(blog.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
           </div>
 
           {blog.FeaturedImageURL && (
-            <div className="aspect-video w-full rounded-2xl overflow-hidden border border-rose-100 mb-8 bg-rose-50 shadow-2xs">
+            <div className="aspect-video w-full rounded-2xl overflow-hidden border border-neutral-200 mb-8 bg-neutral-100">
               <img
                 src={blog.FeaturedImageURL}
                 alt=""
                 className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
               />
             </div>
           )}
@@ -288,7 +308,7 @@ export default function ItemDetail({
           )}
 
           {blog.Content && (
-            <div className="bg-white rounded-2xl border border-rose-100 p-6 sm:p-10 text-left shadow-2xs">
+            <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-10 text-left">
               <div
                 className="rich-content"
                 dangerouslySetInnerHTML={{ __html: renderContentToHtml(blog.Content) }}
@@ -304,34 +324,30 @@ export default function ItemDetail({
   if (type === 'reference-item' && reference) {
     const embedId = getYoutubeEmbedId(reference.YouTubeURL);
     return (
-      <div className="bg-[#FFFBFB] min-h-screen">
+      <div className="bg-[#FAFAFA] min-h-screen">
         <article className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left">
-          {renderTopBar('Back to References', 'reference_materials', reference.ID, reference.Title, reference.IsPinned)}
+          {renderTopBar('Back to Library', 'reference_materials', reference.ID, reference.Title, reference.IsPinned)}
+          {renderPinnedBanner(reference.IsPinned)}
 
-          <div className="bg-white rounded-2xl border border-rose-100 p-6 sm:p-8 mb-8 shadow-2xs space-y-3.5">
+          <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 mb-8 space-y-4">
             <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
-              {reference.IsPinned && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#B80F2E] text-white">
-                  <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
-                </span>
-              )}
-              <span className="px-2.5 py-0.5 rounded-md bg-rose-50 text-[#B80F2E] border border-rose-100">
-                {reference.Category}
+              <span className="px-2.5 py-0.5 rounded-md bg-red-50 text-[#C8102E] border border-red-100">
+                {reference.Category || 'Templates'}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#241115] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#141416] tracking-tight leading-tight">
               {reference.Title}
             </h1>
             {reference.Description && (
-              <p className="text-sm text-[#5C4146] leading-relaxed">{reference.Description}</p>
+              <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">{reference.Description}</p>
             )}
-            <div className="flex items-center flex-wrap gap-4 pt-2 border-t border-rose-100/80 text-xs text-[#8A6970]">
+            <div className="flex items-center flex-wrap gap-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
               <span className="inline-flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#B80F2E]" />
-                Compiled by <strong className="text-[#241115] font-semibold">{reference.Author}</strong>
+                <User className="w-3.5 h-3.5 text-[#C8102E]" />
+                Compiled by <strong className="text-[#141416] font-semibold">{reference.Author}</strong>
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#B80F2E]" />
+                <Calendar className="w-3.5 h-3.5 text-[#C8102E]" />
                 Updated {new Date(reference.UpdatedDate || reference.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
@@ -345,8 +361,8 @@ export default function ItemDetail({
           )}
 
           {reference.Content && (
-            <div className="bg-white rounded-2xl border border-rose-100 p-6 sm:p-10 text-left shadow-2xs">
-              <h3 className="text-xl font-serif font-semibold text-[#241115] mb-6 pb-3 border-b border-rose-100">
+            <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-10 text-left">
+              <h3 className="text-xl font-serif font-semibold text-[#141416] mb-6 pb-3 border-b border-neutral-100">
                 Official Document Details
               </h3>
               <div
@@ -364,35 +380,33 @@ export default function ItemDetail({
   if (type === 'lab-item' && lab) {
     const embedId = getYoutubeEmbedId(lab.YouTubeURL);
     return (
-      <div className="bg-[#FFFBFB] min-h-screen">
+      <div className="bg-[#FAFAFA] min-h-screen">
         <article className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-left">
           {renderTopBar('Back to Career Lab', 'career_labs', lab.ID, lab.Title, lab.IsPinned)}
+          {renderPinnedBanner(lab.IsPinned)}
 
-          <div className="bg-white rounded-2xl border border-rose-100 p-6 sm:p-8 mb-8 shadow-2xs space-y-3.5">
+          <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-8 mb-8 space-y-4">
             <div className="flex items-center flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider">
-              {lab.IsPinned && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#B80F2E] text-white">
-                  <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
-                </span>
-              )}
-              <span className="px-2.5 py-0.5 rounded-md bg-rose-50 text-[#B80F2E] border border-rose-100">
-                {lab.Category}
+              <span className="px-2.5 py-0.5 rounded-md bg-red-50 text-[#C8102E] border border-red-100">
+                {lab.Category || 'Research'}
               </span>
-              <span className="text-[#8A6970]">· Student: {lab.Student}</span>
+              <span className="px-2.5 py-0.5 rounded-md bg-neutral-100 text-neutral-700">
+                Student: {lab.Student}
+              </span>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#241115] tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-serif font-semibold text-[#141416] tracking-tight leading-tight">
               {lab.Title}
             </h1>
             {lab.Description && (
-              <p className="text-sm text-[#5C4146] leading-relaxed">{lab.Description}</p>
+              <p className="text-sm sm:text-base text-neutral-600 leading-relaxed">{lab.Description}</p>
             )}
-            <div className="flex items-center flex-wrap gap-4 pt-2 border-t border-rose-100/80 text-xs text-[#8A6970]">
+            <div className="flex items-center flex-wrap gap-4 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
               <span className="inline-flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#B80F2E]" />
-                Mentor: <strong className="text-[#241115] font-semibold">{lab.Mentor}</strong>
+                <User className="w-3.5 h-3.5 text-[#C8102E]" />
+                Mentor: <strong className="text-[#141416] font-semibold">{lab.Mentor}</strong>
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#B80F2E]" />
+                <Calendar className="w-3.5 h-3.5 text-[#C8102E]" />
                 Submitted {new Date(lab.UpdatedDate || lab.CreatedDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             </div>
@@ -406,9 +420,9 @@ export default function ItemDetail({
           )}
 
           {lab.Content && (
-            <div className="bg-white rounded-2xl border border-rose-100 p-6 sm:p-10 text-left shadow-2xs">
-              <h3 className="text-xl font-serif font-semibold text-[#241115] mb-6 pb-3 border-b border-rose-100">
-                Research Thesis & Findings
+            <div className="bg-white rounded-2xl border border-neutral-200 p-6 sm:p-10 text-left">
+              <h3 className="text-xl font-serif font-semibold text-[#141416] mb-6 pb-3 border-b border-neutral-100">
+                Research Thesis &amp; Findings
               </h3>
               <div
                 className="rich-content"
@@ -423,14 +437,14 @@ export default function ItemDetail({
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-24 text-center">
-      <h3 className="font-serif text-xl text-[#241115]">Resource not found</h3>
-      <p className="text-[#694D53] text-xs sm:text-sm mt-1.5">
+      <h3 className="font-serif text-xl text-[#141416]">Resource not found</h3>
+      <p className="text-neutral-500 text-xs sm:text-sm mt-1.5">
         The requested document could not be located in the archive.
       </p>
       <button
         type="button"
         onClick={onBack}
-        className="mt-5 px-5 py-2.5 bg-[#B80F2E] text-white rounded-xl text-xs font-semibold hover:bg-[#8B0E24] transition-colors cursor-pointer"
+        className="mt-5 px-5 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
       >
         Return to Previous Page
       </button>

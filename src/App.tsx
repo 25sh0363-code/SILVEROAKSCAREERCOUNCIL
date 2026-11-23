@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react';
 import {
   GraduationCap,
   ShieldAlert,
-  Sparkles,
   AlertCircle,
   CheckCircle,
   Search,
@@ -112,7 +111,7 @@ export default function App() {
           google.accounts.id.renderButton(container, {
             theme: "outline",
             size: "large",
-            width: Math.min(300, Math.max(240, window.innerWidth - 96))
+            width: Math.min(320, Math.max(240, window.innerWidth - 96))
           });
         }
       } else {
@@ -231,6 +230,7 @@ export default function App() {
         <ItemDetail
           type="course"
           id={selectedId}
+          user={user}
           onBack={() => setCurrentPage('courses')}
           setCurrentPage={setCurrentPage}
           setSelectedId={setSelectedId}
@@ -243,6 +243,7 @@ export default function App() {
         <ItemDetail
           type="blog-item"
           id={selectedId}
+          user={user}
           onBack={() => setCurrentPage('blog')}
           setCurrentPage={setCurrentPage}
           setSelectedId={setSelectedId}
@@ -255,6 +256,7 @@ export default function App() {
         <ItemDetail
           type="reference-item"
           id={selectedId}
+          user={user}
           onBack={() => setCurrentPage('references')}
           setCurrentPage={setCurrentPage}
           setSelectedId={setSelectedId}
@@ -267,6 +269,7 @@ export default function App() {
         <ItemDetail
           type="lab-item"
           id={selectedId}
+          user={user}
           onBack={() => setCurrentPage('career-lab')}
           setCurrentPage={setCurrentPage}
           setSelectedId={setSelectedId}
@@ -281,7 +284,6 @@ export default function App() {
           <Home
             setCurrentPage={setCurrentPage}
             setSelectedId={setSelectedId}
-            onNotify={addToast}
           />
         );
       case 'courses':
@@ -289,7 +291,6 @@ export default function App() {
           <Courses
             setSelectedId={setSelectedId}
             setCurrentPage={setCurrentPage}
-            onNotify={addToast}
           />
         );
       case 'blog':
@@ -297,7 +298,6 @@ export default function App() {
           <Blog
             setSelectedId={setSelectedId}
             setCurrentPage={setCurrentPage}
-            onNotify={addToast}
           />
         );
       case 'references':
@@ -305,18 +305,18 @@ export default function App() {
           <References
             setSelectedId={setSelectedId}
             setCurrentPage={setCurrentPage}
-            onNotify={addToast}
           />
         );
       case 'career-lab':
+      case 'career-labs':
         return (
           <CareerLabs
             setSelectedId={setSelectedId}
             setCurrentPage={setCurrentPage}
-            onNotify={addToast}
           />
         );
       case 'counselors':
+      case 'counsellors':
         return <Counsellors setCurrentPage={setCurrentPage} />;
       case 'staff':
         return user?.isAdmin
@@ -326,15 +326,15 @@ export default function App() {
       default:
         if (currentPage.startsWith('search')) {
           return (
-            <div className="min-h-screen bg-[#FFFBFB]">
-              <section className="bg-gradient-to-br from-[#6B081B] via-[#9E0D28] to-[#C21434] text-white py-10 sm:py-12 px-4 sm:px-6 lg:px-8">
+            <div className="min-h-screen bg-[#FAFAFA] text-[#141416]">
+              <section className="bg-white border-b border-neutral-200 py-10 sm:py-12 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto text-left">
-                  <span className="text-xs text-rose-100 font-semibold uppercase tracking-[0.16em] inline-flex items-center gap-1.5">
+                  <span className="text-[11px] text-[#C8102E] font-bold uppercase tracking-[0.18em] inline-flex items-center gap-1.5">
                     <Search className="w-3.5 h-3.5" />
-                    <span>Search Queries Index</span>
+                    <span>Archive Search</span>
                   </span>
-                  <h1 className="text-2xl sm:text-4xl font-serif font-medium tracking-tight mt-1.5">
-                    Results for "{searchQuery}"
+                  <h1 className="text-2xl sm:text-4xl font-serif font-semibold tracking-tight text-[#141416] mt-1.5">
+                    Results for &ldquo;{searchQuery}&rdquo;
                   </h1>
                 </div>
               </section>
@@ -343,8 +343,8 @@ export default function App() {
                 {loading ? (
                   <div className="py-24 text-center">
                     <div className="spinner" />
-                    <p className="text-xs text-[#8A6970] font-semibold uppercase tracking-wider mt-3">
-                      Indexing archive files...
+                    <p className="text-xs text-neutral-500 font-semibold uppercase tracking-wider mt-3">
+                      Searching archive...
                     </p>
                   </div>
                 ) : (
@@ -352,8 +352,8 @@ export default function App() {
                     {/* Courses Matching */}
                     {globalResults.courses.length > 0 && (
                       <div className="space-y-4">
-                        <h3 className="text-base font-bold text-[#241115] uppercase tracking-wider flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#B80F2E]" />
+                        <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-[0.16em] flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#C8102E]" />
                           <span>Matching Courses ({globalResults.courses.length})</span>
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -361,21 +361,23 @@ export default function App() {
                             <div
                               key={c.ID}
                               onClick={() => { setSelectedId(c.ID); setCurrentPage('course'); }}
-                              className="bg-white border border-rose-100 hover:border-[#B80F2E] p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group"
+                              className={`bg-white border p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group ${
+                                c.IsPinned ? 'border-[#C8102E]/45 border-l-4 border-l-[#C8102E]' : 'border-neutral-200 hover:border-neutral-300'
+                              }`}
                             >
                               <div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   {c.IsPinned && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#B80F2E] text-white font-bold uppercase px-2 py-0.5 rounded-full">
-                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
+                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#C8102E] text-white font-bold uppercase px-2 py-0.5 rounded">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Important
                                     </span>
                                   )}
-                                  <span className="text-[10px] bg-rose-50 text-[#B80F2E] font-bold uppercase px-2.5 py-0.5 rounded-md tracking-wide">{c.Category}</span>
+                                  <span className="text-[10px] bg-red-50 text-[#C8102E] font-bold uppercase px-2 py-0.5 rounded tracking-wide">{c.Category}</span>
                                 </div>
-                                <h4 className="font-serif font-semibold text-lg text-[#241115] group-hover:text-[#B80F2E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{c.Title}</h4>
-                                <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">{c.Description}</p>
+                                <h4 className="font-serif font-semibold text-lg text-[#141416] group-hover:text-[#C8102E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{c.Title}</h4>
+                                <p className="text-neutral-600 text-xs line-clamp-2 leading-relaxed">{c.Description}</p>
                               </div>
-                              <span className="text-xs text-[#B80F2E] font-semibold mt-4 inline-flex items-center gap-1">
+                              <span className="text-xs text-[#C8102E] font-semibold mt-4 inline-flex items-center gap-1">
                                 Enter course <ArrowRight className="w-3.5 h-3.5" />
                               </span>
                             </div>
@@ -387,32 +389,34 @@ export default function App() {
                     {/* Blogs Matching */}
                     {globalResults.blogs.length > 0 && (
                       <div className="space-y-4">
-                        <h3 className="text-base font-bold text-[#241115] uppercase tracking-wider flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#9E0D28]" />
-                          <span>Guidance Articles ({globalResults.blogs.length})</span>
+                        <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-[0.16em] flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#C8102E]" />
+                          <span>Guidance Editorial ({globalResults.blogs.length})</span>
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                           {globalResults.blogs.map(p => (
                             <div
                               key={p.ID}
                               onClick={() => { setSelectedId(p.ID); setCurrentPage('blog-item'); }}
-                              className="bg-white border border-rose-100 hover:border-[#B80F2E] p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group"
+                              className={`bg-white border p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group ${
+                                p.IsPinned ? 'border-[#C8102E]/45 border-l-4 border-l-[#C8102E]' : 'border-neutral-200 hover:border-neutral-300'
+                              }`}
                             >
                               <div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   {p.IsPinned && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#B80F2E] text-white font-bold uppercase px-2 py-0.5 rounded-full">
-                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
+                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#C8102E] text-white font-bold uppercase px-2 py-0.5 rounded">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Important
                                     </span>
                                   )}
-                                  <span className="text-[10px] bg-rose-50 text-[#B80F2E] font-bold uppercase px-2.5 py-0.5 rounded-md tracking-wide">
+                                  <span className="text-[10px] bg-red-50 text-[#C8102E] font-bold uppercase px-2 py-0.5 rounded tracking-wide">
                                     #{p.Tags ? p.Tags.split(',')[0].trim() : 'General'}
                                   </span>
                                 </div>
-                                <h4 className="font-serif font-semibold text-lg text-[#241115] group-hover:text-[#B80F2E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{p.Title}</h4>
-                                <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">{p.Content.replace(/<[^>]*>/g, '')}</p>
+                                <h4 className="font-serif font-semibold text-lg text-[#141416] group-hover:text-[#C8102E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{p.Title}</h4>
+                                <p className="text-neutral-600 text-xs line-clamp-2 leading-relaxed">{p.Content.replace(/<[^>]*>/g, '')}</p>
                               </div>
-                              <span className="text-xs text-[#B80F2E] font-semibold mt-4 inline-flex items-center gap-1">
+                              <span className="text-xs text-[#C8102E] font-semibold mt-4 inline-flex items-center gap-1">
                                 Read article <ArrowRight className="w-3.5 h-3.5" />
                               </span>
                             </div>
@@ -424,30 +428,32 @@ export default function App() {
                     {/* References Matching */}
                     {globalResults.references.length > 0 && (
                       <div className="space-y-4">
-                        <h3 className="text-base font-bold text-[#241115] uppercase tracking-wider flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#D91E3E]" />
-                          <span>Guides & Reference Documents ({globalResults.references.length})</span>
+                        <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-[0.16em] flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#C8102E]" />
+                          <span>Reference Library ({globalResults.references.length})</span>
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                           {globalResults.references.map(r => (
                             <div
                               key={r.ID}
                               onClick={() => { setSelectedId(r.ID); setCurrentPage('reference-item'); }}
-                              className="bg-white border border-rose-100 hover:border-[#B80F2E] p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group"
+                              className={`bg-white border p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group ${
+                                r.IsPinned ? 'border-[#C8102E]/45 border-l-4 border-l-[#C8102E]' : 'border-neutral-200 hover:border-neutral-300'
+                              }`}
                             >
                               <div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   {r.IsPinned && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#B80F2E] text-white font-bold uppercase px-2 py-0.5 rounded-full">
-                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
+                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#C8102E] text-white font-bold uppercase px-2 py-0.5 rounded">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Important
                                     </span>
                                   )}
-                                  <span className="text-[10px] bg-rose-50 text-[#8B0E24] font-bold uppercase px-2.5 py-0.5 rounded-md tracking-wide">{r.Category}</span>
+                                  <span className="text-[10px] bg-red-50 text-[#C8102E] font-bold uppercase px-2 py-0.5 rounded tracking-wide">{r.Category}</span>
                                 </div>
-                                <h4 className="font-serif font-semibold text-lg text-[#241115] group-hover:text-[#B80F2E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{r.Title}</h4>
-                                <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">{r.Description}</p>
+                                <h4 className="font-serif font-semibold text-lg text-[#141416] group-hover:text-[#C8102E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{r.Title}</h4>
+                                <p className="text-neutral-600 text-xs line-clamp-2 leading-relaxed">{r.Description}</p>
                               </div>
-                              <span className="text-xs text-[#B80F2E] font-semibold mt-4 inline-flex items-center gap-1">
+                              <span className="text-xs text-[#C8102E] font-semibold mt-4 inline-flex items-center gap-1">
                                 View reference <ArrowRight className="w-3.5 h-3.5" />
                               </span>
                             </div>
@@ -459,8 +465,8 @@ export default function App() {
                     {/* Labs Matching */}
                     {globalResults.labs.length > 0 && (
                       <div className="space-y-4">
-                        <h3 className="text-base font-bold text-[#241115] uppercase tracking-wider flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#6B081B]" />
+                        <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-[0.16em] flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#C8102E]" />
                           <span>Student Career Labs ({globalResults.labs.length})</span>
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -468,21 +474,23 @@ export default function App() {
                             <div
                               key={l.ID}
                               onClick={() => { setSelectedId(l.ID); setCurrentPage('lab-item'); }}
-                              className="bg-white border border-rose-100 hover:border-[#B80F2E] p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group"
+                              className={`bg-white border p-5 rounded-2xl cursor-pointer hover:shadow-md transition-all text-left flex flex-col justify-between group ${
+                                l.IsPinned ? 'border-[#C8102E]/45 border-l-4 border-l-[#C8102E]' : 'border-neutral-200 hover:border-neutral-300'
+                              }`}
                             >
                               <div>
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   {l.IsPinned && (
-                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#B80F2E] text-white font-bold uppercase px-2 py-0.5 rounded-full">
-                                      <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
+                                    <span className="inline-flex items-center gap-1 text-[10px] bg-[#C8102E] text-white font-bold uppercase px-2 py-0.5 rounded">
+                                      <Pin className="w-2.5 h-2.5 fill-current" /> Important
                                     </span>
                                   )}
-                                  <span className="text-[10px] bg-rose-50 text-[#8B0E24] font-bold uppercase px-2.5 py-0.5 rounded-md tracking-wide">{l.Category}</span>
+                                  <span className="text-[10px] bg-red-50 text-[#C8102E] font-bold uppercase px-2 py-0.5 rounded tracking-wide">{l.Category}</span>
                                 </div>
-                                <h4 className="font-serif font-semibold text-lg text-[#241115] group-hover:text-[#B80F2E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{l.Title}</h4>
-                                <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">{l.Description}</p>
+                                <h4 className="font-serif font-semibold text-lg text-[#141416] group-hover:text-[#C8102E] line-clamp-1 mt-2.5 mb-1.5 transition-colors">{l.Title}</h4>
+                                <p className="text-neutral-600 text-xs line-clamp-2 leading-relaxed">{l.Description}</p>
                               </div>
-                              <span className="text-xs text-[#B80F2E] font-semibold mt-4 inline-flex items-center gap-1">
+                              <span className="text-xs text-[#C8102E] font-semibold mt-4 inline-flex items-center gap-1">
                                 Open research <ArrowRight className="w-3.5 h-3.5" />
                               </span>
                             </div>
@@ -496,20 +504,20 @@ export default function App() {
                       globalResults.blogs.length === 0 &&
                       globalResults.references.length === 0 &&
                       globalResults.labs.length === 0 && (
-                        <div className="bg-white rounded-2xl border border-rose-100 text-center p-12 sm:p-16 shadow-2xs max-w-xl mx-auto">
-                          <div className="w-14 h-14 rounded-2xl bg-rose-50 text-[#B80F2E] flex items-center justify-center mx-auto mb-4 border border-rose-100">
-                            <FileSearch className="w-7 h-7" />
+                        <div className="bg-white rounded-2xl border border-neutral-200 text-center p-12 sm:p-16 max-w-xl mx-auto">
+                          <div className="w-12 h-12 rounded-xl bg-red-50 text-[#C8102E] flex items-center justify-center mx-auto mb-4 border border-red-100">
+                            <FileSearch className="w-6 h-6" />
                           </div>
-                          <h3 className="text-xl font-semibold text-[#241115] font-serif">
-                            No platform items match your query
+                          <h3 className="text-xl font-semibold text-[#141416] font-serif">
+                            No items match your query
                           </h3>
-                          <p className="text-[#694D53] text-xs sm:text-sm mt-2">
-                            Try searching for alternative topics such as "CV", "LaTeX", "Class 11", or "Science".
+                          <p className="text-neutral-500 text-xs sm:text-sm mt-2">
+                            Try searching for topics such as &ldquo;CV&rdquo;, &ldquo;LaTeX&rdquo;, &ldquo;Class 11&rdquo;, or &ldquo;Science&rdquo;.
                           </p>
                           <button
                             type="button"
                             onClick={() => setCurrentPage('home')}
-                            className="mt-6 px-5 py-2.5 bg-[#B80F2E] hover:bg-[#8B0E24] text-white rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
+                            className="mt-6 px-5 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
                           >
                             Return Home
                           </button>
@@ -526,7 +534,7 @@ export default function App() {
     }
   };
 
-  // Login visual screen — refined red shades & white, balanced on mobile & desktop
+  // Sharp Architectural Split Login Screen (Crimson + Pure White)
   if (!user) {
     const allowedDomains = [
       '@hyd.silveroaks.co.in',
@@ -537,27 +545,22 @@ export default function App() {
     ];
 
     return (
-      <div className="relative min-h-screen bg-gradient-to-br from-[#5C0717] via-[#980D27] to-[#C21434] flex flex-col justify-between overflow-hidden">
-        {/* Ambient radial red highlights */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_95%_5%,rgba(255,255,255,0.18),transparent_48%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_5%_95%,rgba(74,4,17,0.65),transparent_52%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
-
-        {/* Dynamic Toast notifications on Login screen too */}
+      <div className="min-h-screen bg-white flex flex-col lg:flex-row">
+        {/* Toast notifications on Login screen */}
         {toasts.length > 0 && (
           <div className="fixed bottom-6 right-4 sm:right-6 z-[99999] flex flex-col gap-2.5 max-w-sm w-[calc(100vw-2rem)]">
             {toasts.map(t => (
               <div
                 key={t.id}
-                className={`p-4 rounded-2xl border flex items-start gap-3 shadow-2xl animate-slide-in ${
+                className={`p-4 rounded-xl border flex items-start gap-3 shadow-2xl animate-slide-in ${
                   t.type === 'success'
-                    ? 'bg-white border-rose-200 text-[#241115] border-l-4 border-l-[#B80F2E]'
-                    : 'bg-[#FFF0F2] border-rose-300 text-[#7A0B1F] border-l-4 border-l-[#9E0D28]'
+                    ? 'bg-white border-neutral-200 text-[#141416] border-l-4 border-l-[#C8102E]'
+                    : 'bg-red-50 border-red-200 text-[#7A0A1D] border-l-4 border-l-[#C8102E]'
                 }`}
               >
                 {t.type === 'success'
-                  ? <CheckCircle className="w-4 h-4 text-[#B80F2E] shrink-0 mt-0.5" />
-                  : <AlertCircle className="w-4 h-4 text-[#B80F2E] shrink-0 mt-0.5" />
+                  ? <CheckCircle className="w-4 h-4 text-[#C8102E] shrink-0 mt-0.5" />
+                  : <AlertCircle className="w-4 h-4 text-[#C8102E] shrink-0 mt-0.5" />
                 }
                 <span className="text-xs sm:text-sm font-semibold text-left leading-snug">{t.msg}</span>
               </div>
@@ -565,118 +568,126 @@ export default function App() {
           </div>
         )}
 
-        {/* Top Header */}
-        <header className="relative z-10 px-4 sm:px-6 py-5 max-w-7xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo className="h-10 sm:h-12 shadow-lg rounded-xl" />
-            <div className="flex flex-col text-left text-white leading-tight">
-              <span className="font-serif font-semibold text-sm sm:text-base">Silver Oaks Career Council</span>
-              <span className="text-[10px] uppercase tracking-[0.16em] text-rose-200 font-semibold">Resource Center</span>
+        {/* Left Crimson Institutional Panel */}
+        <aside className="lg:w-[52%] bg-gradient-to-br from-[#650616] via-[#8F0B22] to-[#B80F2E] text-white px-6 py-10 sm:px-12 sm:py-14 lg:p-16 flex flex-col justify-between text-left">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Logo className="h-10 sm:h-11 rounded-lg shadow-md" />
+              <div className="leading-tight">
+                <span className="font-serif font-semibold text-base block text-white">
+                  Silver Oaks Career Council
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-red-200">
+                  Internal Resource Center
+                </span>
+              </div>
+            </div>
+            <span className="hidden sm:inline-flex text-[10px] font-bold uppercase tracking-[0.16em] px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white">
+              Campus Portal
+            </span>
+          </div>
+
+          <div className="my-10 lg:my-0 max-w-lg space-y-5">
+            <div className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-red-200">
+              <span className="w-6 h-[2px] bg-white inline-block" />
+              <span>Character Before Competence</span>
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-medium leading-[1.1] tracking-tight text-white">
+              Academic &amp; career guidance built for Silver Oaks students.
+            </h1>
+            <p className="text-red-100/90 text-sm sm:text-base leading-relaxed">
+              Access grade-wise courses, counselor guidance articles, CV templates, and peer Career Lab portfolios using your official school Google account.
+            </p>
+
+            <div className="pt-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-red-200 mb-2.5">
+                Authorized Campus Domains
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {allowedDomains.map(domain => (
+                  <span
+                    key={domain}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 border border-white/15 text-[11px] font-medium text-white"
+                  >
+                    {domain}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-          <span className="text-[10px] text-white font-bold uppercase bg-white/12 border border-white/25 px-3 py-1.5 rounded-full tracking-widest backdrop-blur-xs">
-            Internal Portal
-          </span>
-        </header>
 
-        {/* Center Card Panel */}
-        <main className="relative z-10 max-w-5xl mx-auto px-4 w-full flex-grow flex items-center justify-center py-6 sm:py-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-center w-full bg-white/10 backdrop-blur-md p-5 sm:p-8 lg:p-10 rounded-3xl border border-white/20 shadow-[0_24px_64px_rgba(52,3,13,0.4)]">
-            {/* Editorial Copy Column */}
-            <div className="lg:col-span-6 text-left space-y-5 text-white">
-              <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shadow-sm">
-                <Sparkles className="w-5 h-5 text-rose-100" />
+          <p className="text-[11px] text-red-200/80 uppercase tracking-wider">
+            Silver Oaks International Schools © {new Date().getFullYear()} · Hyderabad · Bengaluru · ODL
+          </p>
+        </aside>
+
+        {/* Right Pure White Sign-In Panel */}
+        <main className="lg:w-[48%] bg-white px-6 py-12 sm:px-12 flex items-center justify-center">
+          <div className="w-full max-w-sm space-y-7 text-center">
+            <div className="space-y-2.5">
+              <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-100 text-[#C8102E] flex items-center justify-center mx-auto">
+                <GraduationCap className="w-6 h-6" />
               </div>
-              <h1 className="text-3xl sm:text-4xl font-serif font-medium tracking-tight leading-[1.12]">
-                Design thinking & stream advice pipelines.
-              </h1>
-              <p className="text-rose-100/90 text-xs sm:text-sm leading-relaxed max-w-md">
-                Sign in with your official Silver Oaks domain credentials to access curated courses, editorial dispatches, peer career labs, and CV templates.
+              <h2 className="text-2xl sm:text-3xl font-serif font-semibold text-[#141416] tracking-tight">
+                Sign in to Portal
+              </h2>
+              <p className="text-sm text-neutral-500">
+                Use your verified Silver Oaks Google Workspace credentials to continue.
               </p>
-
-              {/* Approved Domains */}
-              <div className="pt-1">
-                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-rose-200 block mb-2.5">
-                  Authorized Campus Domains
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {allowedDomains.map(domain => (
-                    <span
-                      key={domain}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-medium text-rose-50"
-                    >
-                      <CheckCircle className="w-3 h-3 text-rose-200 shrink-0" />
-                      {domain}
-                    </span>
-                  ))}
-                </div>
-              </div>
             </div>
 
-            {/* White Sign-In Card */}
-            <div className="lg:col-span-6 bg-white rounded-2xl p-6 sm:p-8 shadow-2xl border border-rose-100 flex flex-col justify-center gap-6 min-h-[340px] sm:min-h-[380px]">
-              <div className="text-center space-y-2.5">
-                <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 text-[#B80F2E] flex items-center justify-center mx-auto">
-                  <GraduationCap className="w-6 h-6" />
+            {loading ? (
+              <div className="py-8 flex flex-col items-center justify-center gap-3">
+                <RefreshCw className="w-7 h-7 text-[#C8102E] animate-spin" />
+                <span className="text-[11px] text-neutral-500 uppercase tracking-widest font-bold">
+                  Verifying credentials...
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="p-3.5 bg-[#FAFAFA] border border-neutral-200 rounded-xl flex items-center justify-center gap-2 text-xs font-medium text-neutral-700">
+                  <Lock className="w-4 h-4 text-[#C8102E] shrink-0" />
+                  <span>Certified School Network · Google SSO</span>
                 </div>
-                <h2 className="text-2xl font-serif font-semibold text-[#241115]">
-                  Internal Sign In
-                </h2>
-                <p className="text-xs sm:text-sm text-[#694D53]">
-                  Authenticate with your designated Silver Oaks Google account.
+
+                {/* Google Identity Sign-In Mount */}
+                <div id="g_login_btn" className="w-full flex justify-center py-1 min-h-[44px]" />
+
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Having trouble signing in? Contact{' '}
+                  <a
+                    href="mailto:careercounselling@hyd.silveroaks.co.in"
+                    className="text-[#C8102E] font-semibold hover:underline"
+                  >
+                    careercounselling@hyd.silveroaks.co.in
+                  </a>
                 </p>
               </div>
-
-              {loading ? (
-                <div className="py-6 flex flex-col items-center justify-center gap-3">
-                  <RefreshCw className="w-8 h-8 text-[#B80F2E] animate-spin" />
-                  <span className="text-[11px] text-[#8A6970] uppercase tracking-widest font-bold">
-                    Verifying credentials...
-                  </span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center gap-5">
-                  <div className="w-full p-3.5 bg-[#FFF6F7] border border-rose-100 rounded-xl text-center flex items-center justify-center gap-2 text-xs font-medium text-[#8B0E24] leading-snug">
-                    <Lock className="w-4 h-4 text-[#B80F2E] shrink-0" />
-                    <span>Certified school network · Google Single Sign-On</span>
-                  </div>
-
-                  {/* Google Button mounting point target */}
-                  <div id="g_login_btn" className="w-full flex justify-center py-1 min-h-[44px]" />
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </main>
-
-        {/* Login Footer */}
-        <footer className="relative z-10 px-4 sm:px-6 py-4 max-w-7xl mx-auto w-full text-center border-t border-white/10">
-          <p className="text-rose-100/85 text-[11px] font-medium tracking-wider uppercase">
-            Silver Oaks School Group © {new Date().getFullYear()} · Hyderabad · Bangalore · ODL · Character Before Competence
-          </p>
-        </footer>
       </div>
     );
   }
 
   // Loaded full React application view
   return (
-    <div className="flex flex-col min-h-screen bg-[#FFFBFB]">
-      {/* Dynamic Toast notifications — positioned safely above mobile bottom nav */}
+    <div className="flex flex-col min-h-screen bg-white">
+      {/* Dynamic Toast notifications — safely above mobile bottom nav */}
       {toasts.length > 0 && (
         <div className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-[99999] flex flex-col gap-2.5 max-w-sm w-[calc(100vw-2rem)]">
           {toasts.map(t => (
             <div
               key={t.id}
-              className={`p-4 rounded-2xl border flex items-start gap-3 shadow-xl transition-all duration-300 animate-slide-in ${
+              className={`p-4 rounded-xl border flex items-start gap-3 shadow-xl transition-all duration-300 animate-slide-in ${
                 t.type === 'success'
-                  ? 'bg-white border-rose-200 text-[#241115] border-l-4 border-l-[#B80F2E]'
-                  : 'bg-[#FFF0F2] border-rose-300 text-[#7A0B1F] border-l-4 border-l-[#8B0E24]'
+                  ? 'bg-white border-neutral-200 text-[#141416] border-l-4 border-l-[#C8102E]'
+                  : 'bg-red-50 border-red-200 text-[#7A0A1D] border-l-4 border-l-[#C8102E]'
               }`}
             >
               {t.type === 'success'
-                ? <CheckCircle className="w-4 h-4 text-[#B80F2E] shrink-0 mt-0.5" />
-                : <AlertCircle className="w-4 h-4 text-[#B80F2E] shrink-0 mt-0.5" />
+                ? <CheckCircle className="w-4 h-4 text-[#C8102E] shrink-0 mt-0.5" />
+                : <AlertCircle className="w-4 h-4 text-[#C8102E] shrink-0 mt-0.5" />
               }
               <span className="text-xs sm:text-sm font-semibold text-left leading-snug">{t.msg}</span>
             </div>
@@ -696,9 +707,9 @@ export default function App() {
 
       {/* Database Connection Status Warning Banner */}
       {supabaseError && (
-        <div className="bg-[#FFF0F2] border-b border-rose-200 py-3.5 px-4 text-center relative z-40">
-          <div className="max-w-4xl mx-auto flex items-center justify-center gap-2.5 text-xs sm:text-sm font-bold text-[#8B0E24] uppercase tracking-wider">
-            <AlertCircle className="w-4 h-4 text-[#B80F2E] shrink-0" />
+        <div className="bg-red-50 border-b border-red-200 py-3 px-4 text-center relative z-40">
+          <div className="max-w-4xl mx-auto flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-[#9E0B24] uppercase tracking-wider">
+            <AlertCircle className="w-4 h-4 text-[#C8102E] shrink-0" />
             <span>database is inactive please contact the the career counsellors</span>
           </div>
         </div>
@@ -717,17 +728,17 @@ export default function App() {
 function ForbiddenErrorPane({ onRedirect }: { onRedirect: () => void }) {
   return (
     <div className="max-w-md mx-auto py-24 px-4 text-center space-y-4">
-      <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-[#B80F2E] flex items-center justify-center mx-auto shadow-xs">
-        <ShieldAlert className="w-8 h-8" />
+      <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 text-[#C8102E] flex items-center justify-center mx-auto">
+        <ShieldAlert className="w-7 h-7" />
       </div>
-      <h2 className="text-2xl font-serif font-semibold text-[#241115]">Clearance Check Failed</h2>
-      <p className="text-[#694D53] text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
+      <h2 className="text-2xl font-serif font-semibold text-[#141416]">Clearance Check Failed</h2>
+      <p className="text-neutral-500 text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
         Access Denied. You need to be assigned as either an Editor or Admin from the counselor panel to view the command workspace.
       </p>
       <button
         type="button"
         onClick={onRedirect}
-        className="px-6 py-2.5 bg-[#B80F2E] hover:bg-[#8B0E24] text-white rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer transition-colors"
+        className="px-6 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer transition-colors"
       >
         Return to Home
       </button>
@@ -739,17 +750,17 @@ function ForbiddenErrorPane({ onRedirect }: { onRedirect: () => void }) {
 function NotFoundErrorPane({ onRedirect }: { onRedirect: () => void }) {
   return (
     <div className="max-w-md mx-auto py-24 px-4 text-center space-y-4">
-      <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 text-[#B80F2E] flex items-center justify-center mx-auto shadow-xs">
-        <FileSearch className="w-8 h-8" />
+      <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 text-[#C8102E] flex items-center justify-center mx-auto">
+        <FileSearch className="w-7 h-7" />
       </div>
-      <h2 className="text-2xl font-serif font-semibold text-[#241115]">Content Missing</h2>
-      <p className="text-[#694D53] text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
+      <h2 className="text-2xl font-serif font-semibold text-[#141416]">Content Missing</h2>
+      <p className="text-neutral-500 text-xs sm:text-sm max-w-sm mx-auto leading-relaxed">
         This page path does not currently exist. Try choosing another category option or link from the navigation menu.
       </p>
       <button
         type="button"
         onClick={onRedirect}
-        className="px-6 py-2.5 bg-[#B80F2E] hover:bg-[#8B0E24] text-white rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer transition-colors"
+        className="px-6 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white rounded-xl font-bold text-xs uppercase tracking-wider cursor-pointer transition-colors"
       >
         Navigate to Home
       </button>

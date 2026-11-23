@@ -3,1059 +3,1082 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   ArrowRight,
+  Pin,
   BookOpen,
-  FolderGit,
-  CheckSquare,
-  ChevronLeft,
-  ChevronRight,
+  FileText,
+  FlaskConical,
+  Newspaper,
   PlayCircle,
   FileDown,
-  GraduationCap,
   Mail,
   User,
-  Pin,
-  Calendar,
-  Sparkles,
-  FileText
+  Award,
+  X
 } from 'lucide-react';
-import { Course, BlogPost, ReferenceMaterial, CareerLab, Counselor, PinnableTable } from '../types';
+import { Course, BlogPost, ReferenceMaterial, CareerLab, Counselor } from '../types';
 import {
   fetchAllCourses,
   fetchAllBlogs,
   fetchAllReferences,
   fetchAllCareerLabs,
-  fetchAllCounselors,
-  togglePinRecord,
-  sortPinnedFirst
+  fetchAllCounselors
 } from '../lib/supabase';
 
 interface HomeProps {
   setCurrentPage: (page: string) => void;
   setSelectedId: (id: string) => void;
-  onNotify?: (msg: string, type?: 'success' | 'err') => void;
 }
 
-interface PinnedHighlight {
+interface SearchHit {
   id: string;
-  table: PinnableTable;
   title: string;
   subtitle: string;
+  type: 'course' | 'blog-item' | 'reference-item' | 'lab-item';
   typeLabel: string;
-  page: string;
-  date?: string;
+  isPinned?: boolean;
 }
 
-export default function Home({ setCurrentPage, setSelectedId, onNotify }: HomeProps) {
-  // Store complete lists for full autocomplete search & pinned highlights
-  const [allCourses, setAllCourses] = useState<Course[]>([]);
-  const [allBlogs, setAllBlogs] = useState<BlogPost[]>([]);
-  const [allRefs, setAllRefs] = useState<ReferenceMaterial[]>([]);
-  const [allLabs, setAllLabs] = useState<CareerLab[]>([]);
+interface PinnedNotice {
+  id: string;
+  title: string;
+  summary: string;
+  meta: string;
+  date: string;
+  type: 'course' | 'blog-item' | 'reference-item' | 'lab-item';
+  typeLabel: string;
+}
+
+function stripHtml(html: string): string {
+  return (html || '').replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function formatShortDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+export default function Home({ setCurrentPage, setSelectedId }: HomeProps) {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [blogs, setBlogs] = useState<BlogPost[]>([]);
+  const [refs, setRefs] = useState<ReferenceMaterial[]>([]);
+  const [labs, setLabs] = useState<CareerLab[]>([]);
   const [counselors, setCounselors] = useState<Counselor[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Search state
+  // Instant search bar state
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
 
-  // Spotlight Horizontal Scroll Refs
-  const courseScrollRef = useRef<HTMLDivElement>(null);
-  const blogScrollRef = useRef<HTMLDivElement>(null);
-  const refScrollRef = useRef<HTMLDivElement>(null);
-  const labScrollRef = useRef<HTMLDivElement>(null);
+  const loadAllData = async () => {
+    setLoading(true);
+    try {
+      const [cList, bList, rList, lList, counsList] = await Promise.all([
+        fetchAllCourses(true),
+        fetchAllBlogs(true),
+        fetchAllReferences(true),
+        fetchAllCareerLabs(true),
+        fetchAllCounselors(true)
+      ]);
+      setCourses(cList);
+      setBlogs(bList);
+      setRefs(rList);
+      setLabs(lList);
+      setCounselors(counsList);
+    } catch (err) {
+      console.error("Failed to fetch homepage data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadFeatured() {
-      try {
-        const [cList, bList, rList, lList, counsList] = await Promise.all([
-          fetchAllCourses(true),
-          fetchAllBlogs(true),
-          fetchAllReferences(true),
-          fetchAllCareerLabs(true),
-          fetchAllCounselors(true)
-        ]);
-        setAllCourses(cList);
-        setAllBlogs(bList);
-        setAllRefs(rList);
-        setAllLabs(lList);
-        setCounselors(counsList.slice(0, 4));
-      } catch (err) {
-        console.error("Failed to load home featured items:", err);
-      }
-    }
-    loadFeatured();
+    loadAllData();
+    const handlePinsUpdated = () => {
+      loadAllData();
+    };
+    window.addEventListener('pins-updated', handlePinsUpdated);
+    return () => window.removeEventListener('pins-updated', handlePinsUpdated);
   }, []);
 
-  // Derived spotlight slices (pinned items automatically float first!)
-  const courses = allCourses.slice(0, 6);
-  const blogs = allBlogs.slice(0, 6);
-  const refs = allRefs.slice(0, 6);
-  const labs = allLabs.slice(0, 6);
+  // Collect all pinned posts across every section as Important Student Notices
+  const pinnedNotices = useMemo<PinnedNotice[]>(() => {
+    const items: PinnedNotice[] = [];
 
-  // Gather all pinned highlights across blogs, courses, references, and labs
-  const pinnedHighlights: PinnedHighlight[] = [
-    ...allBlogs
-      .filter(b => b.IsPinned)
-      .map(b => ({
+    blogs.filter(b => b.IsPinned).forEach(b => {
+      items.push({
         id: b.ID,
-        table: 'blogs' as PinnableTable,
         title: b.Title,
-        subtitle: (b.Content || '').replace(/<[^>]*>/g, '').slice(0, 95) || 'Pinned editorial dispatch',
-        typeLabel: 'Editorial Post',
-        page: 'blog-item',
-        date: b.CreatedDate
-      })),
-    ...allCourses
-      .filter(c => c.IsPinned)
-      .map(c => ({
-        id: c.ID,
-        table: 'courses' as PinnableTable,
-        title: c.Title,
-        subtitle: c.Description || `${c.Category} · ${c.Grade}`,
-        typeLabel: 'Course',
-        page: 'course',
-        date: c.CreatedDate
-      })),
-    ...allRefs
-      .filter(r => r.IsPinned)
-      .map(r => ({
-        id: r.ID,
-        table: 'reference_materials' as PinnableTable,
-        title: r.Title,
-        subtitle: r.Description || r.Category,
-        typeLabel: 'Reference',
-        page: 'reference-item',
-        date: r.CreatedDate
-      })),
-    ...allLabs
-      .filter(l => l.IsPinned)
-      .map(l => ({
-        id: l.ID,
-        table: 'career_labs' as PinnableTable,
-        title: l.Title,
-        subtitle: l.Description || `Student: ${l.Student}`,
-        typeLabel: 'Career Lab',
-        page: 'lab-item',
-        date: l.CreatedDate
-      }))
-  ];
-
-  // Handle outside clicks for autocomplete dropdown
-  useEffect(() => {
-    function handleOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    }
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
-  }, []);
-
-  const handleTogglePin = async (
-    e: React.MouseEvent,
-    table: PinnableTable,
-    id: string,
-    title: string,
-    currentlyPinned?: boolean
-  ) => {
-    e.stopPropagation();
-    const nextPinned = !currentlyPinned;
-    if (table === 'courses') {
-      setAllCourses(prev => sortPinnedFirst(prev.map(i => i.ID === id ? { ...i, IsPinned: nextPinned } : i)));
-    } else if (table === 'blogs') {
-      setAllBlogs(prev => sortPinnedFirst(prev.map(i => i.ID === id ? { ...i, IsPinned: nextPinned } : i)));
-    } else if (table === 'reference_materials') {
-      setAllRefs(prev => sortPinnedFirst(prev.map(i => i.ID === id ? { ...i, IsPinned: nextPinned } : i)));
-    } else if (table === 'career_labs') {
-      setAllLabs(prev => sortPinnedFirst(prev.map(i => i.ID === id ? { ...i, IsPinned: nextPinned } : i)));
-    }
-    await togglePinRecord(table, id, nextPinned);
-    onNotify?.(
-      nextPinned ? `Pinned "${title}" to top` : `Unpinned "${title}"`,
-      'success'
-    );
-  };
-
-  // Real-time search suggestions across ALL records
-  const handleSearchInput = (val: string) => {
-    setQuery(val);
-    if (val.trim().length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-
-    const q = val.toLowerCase();
-    const matches: any[] = [];
-
-    allCourses.forEach(c => {
-      if (c.Title.toLowerCase().includes(q) || c.Description.toLowerCase().includes(q) || c.Category.toLowerCase().includes(q)) {
-        matches.push({ id: c.ID, title: c.Title, type: 'Course', page: 'course', isPinned: c.IsPinned });
-      }
-    });
-    allBlogs.forEach(p => {
-      if (p.Title.toLowerCase().includes(q) || p.Content.toLowerCase().includes(q) || (p.Tags && p.Tags.toLowerCase().includes(q))) {
-        matches.push({ id: p.ID, title: p.Title, type: 'Editorial', page: 'blog-item', isPinned: p.IsPinned });
-      }
-    });
-    allRefs.forEach(r => {
-      if (r.Title.toLowerCase().includes(q) || r.Description.toLowerCase().includes(q) || r.Category.toLowerCase().includes(q)) {
-        matches.push({ id: r.ID, title: r.Title, type: 'Reference', page: 'reference-item', isPinned: r.IsPinned });
-      }
-    });
-    allLabs.forEach(l => {
-      if (l.Title.toLowerCase().includes(q) || l.Description.toLowerCase().includes(q) || l.Student.toLowerCase().includes(q)) {
-        matches.push({ id: l.ID, title: l.Title, type: 'Career Lab', page: 'lab-item', isPinned: l.IsPinned });
-      }
-    });
-
-    setSuggestions(matches.slice(0, 6));
-    setShowSuggestions(matches.length > 0);
-  };
-
-  const handleGlobalSearch = () => {
-    if (!query.trim()) return;
-    setShowSuggestions(false);
-    setCurrentPage(`search?q=${encodeURIComponent(query.trim())}`);
-  };
-
-  const scrollSide = (ref: React.RefObject<HTMLDivElement | null>, direction: 'left' | 'right') => {
-    if (ref.current) {
-      const scrollAmount = 360;
-      ref.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
+        summary: stripHtml(b.Content).slice(0, 140),
+        meta: b.AuthorEmail ? `By ${b.AuthorEmail.split('@')[0]}` : 'Counselor Editorial',
+        date: b.UpdatedDate || b.CreatedDate,
+        type: 'blog-item',
+        typeLabel: 'Editorial'
       });
-    }
+    });
+
+    courses.filter(c => c.IsPinned).forEach(c => {
+      items.push({
+        id: c.ID,
+        title: c.Title,
+        summary: c.Description || stripHtml(c.Content).slice(0, 140),
+        meta: [c.Category, c.Grade].filter(Boolean).join(' · '),
+        date: c.UpdatedDate || c.CreatedDate,
+        type: 'course',
+        typeLabel: 'Course'
+      });
+    });
+
+    refs.filter(r => r.IsPinned).forEach(r => {
+      items.push({
+        id: r.ID,
+        title: r.Title,
+        summary: r.Description || stripHtml(r.Content).slice(0, 140),
+        meta: r.Category || r.Author || 'Reference Library',
+        date: r.UpdatedDate || r.CreatedDate,
+        type: 'reference-item',
+        typeLabel: 'Reference'
+      });
+    });
+
+    labs.filter(l => l.IsPinned).forEach(l => {
+      items.push({
+        id: l.ID,
+        title: l.Title,
+        summary: l.Description || stripHtml(l.Content).slice(0, 140),
+        meta: l.Student ? `Student: ${l.Student}` : l.Category,
+        date: l.UpdatedDate || l.CreatedDate,
+        type: 'lab-item',
+        typeLabel: 'Career Lab'
+      });
+    });
+
+    return items.sort((a, b) => {
+      const tA = a.date ? new Date(a.date).getTime() : 0;
+      const tB = b.date ? new Date(b.date).getTime() : 0;
+      return tB - tA;
+    });
+  }, [courses, blogs, refs, labs]);
+
+  // Live autocomplete hits across entire portal
+  const searchHits = useMemo<SearchHit[]>(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const results: SearchHit[] = [];
+
+    courses.forEach(c => {
+      if (
+        c.Title.toLowerCase().includes(q) ||
+        (c.Description || '').toLowerCase().includes(q) ||
+        (c.Category || '').toLowerCase().includes(q) ||
+        (c.Grade || '').toLowerCase().includes(q)
+      ) {
+        results.push({
+          id: c.ID,
+          title: c.Title,
+          subtitle: [c.Category, c.Grade].filter(Boolean).join(' · '),
+          type: 'course',
+          typeLabel: 'Course',
+          isPinned: c.IsPinned
+        });
+      }
+    });
+
+    blogs.forEach(b => {
+      if (
+        b.Title.toLowerCase().includes(q) ||
+        (b.Content || '').toLowerCase().includes(q) ||
+        (b.Tags || '').toLowerCase().includes(q)
+      ) {
+        results.push({
+          id: b.ID,
+          title: b.Title,
+          subtitle: b.Tags ? b.Tags.split(',').slice(0, 2).map(t => `#${t.trim()}`).join(' ') : 'Editorial',
+          type: 'blog-item',
+          typeLabel: 'Editorial',
+          isPinned: b.IsPinned
+        });
+      }
+    });
+
+    refs.forEach(r => {
+      if (
+        r.Title.toLowerCase().includes(q) ||
+        (r.Description || '').toLowerCase().includes(q) ||
+        (r.Category || '').toLowerCase().includes(q)
+      ) {
+        results.push({
+          id: r.ID,
+          title: r.Title,
+          subtitle: r.Category || r.Author,
+          type: 'reference-item',
+          typeLabel: 'Reference',
+          isPinned: r.IsPinned
+        });
+      }
+    });
+
+    labs.forEach(l => {
+      if (
+        l.Title.toLowerCase().includes(q) ||
+        (l.Description || '').toLowerCase().includes(q) ||
+        (l.Student || '').toLowerCase().includes(q) ||
+        (l.Category || '').toLowerCase().includes(q)
+      ) {
+        results.push({
+          id: l.ID,
+          title: l.Title,
+          subtitle: l.Student ? `${l.Student} · ${l.Category}` : l.Category,
+          type: 'lab-item',
+          typeLabel: 'Career Lab',
+          isPinned: l.IsPinned
+        });
+      }
+    });
+
+    return results
+      .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+      .slice(0, 7);
+  }, [query, courses, blogs, refs, labs]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    setSearchFocused(false);
+    setCurrentPage(`search?q=${encodeURIComponent(trimmed)}`);
   };
 
-  const handleSuggestClick = (item: any) => {
-    setShowSuggestions(false);
-    setSelectedId(item.id);
-    setCurrentPage(item.page);
+  const openDetail = (type: 'course' | 'blog-item' | 'reference-item' | 'lab-item', id: string) => {
+    setSelectedId(id);
+    setCurrentPage(type);
   };
+
+  const leadBlog = blogs[0];
+  const secondaryBlogs = blogs.slice(1, 5);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FFFBFB]">
-      {/* 1. Crimson Editorial Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#5C0717] via-[#9B0D27] to-[#C61535] text-white py-16 sm:py-24 lg:py-28 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_75%_65%_at_80%_-10%,rgba(255,255,255,0.2),transparent)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_100%,rgba(92,7,23,0.7),transparent_55%)] pointer-events-none" />
-        <div
-          className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-20 pointer-events-none"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1920&q=80')`
-          }}
-        />
-
-        <div className="relative z-10 max-w-5xl mx-auto text-left flex flex-col items-start gap-5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/12 border border-white/25 text-rose-50 font-semibold text-[11px] uppercase tracking-[0.16em] backdrop-blur-xs">
-            <Sparkles className="w-3.5 h-3.5 text-rose-200" />
-            <span>Silver Oaks Academic Portal</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-medium tracking-tight leading-[1.08] text-white max-w-4xl">
-            Designed for Direction.
-            <br />
-            <span className="text-rose-200 italic font-normal">Built for Student Futures.</span>
-          </h1>
-
-          <p className="text-rose-50/90 text-sm sm:text-lg max-w-2xl leading-relaxed font-normal">
-            One institutional ecosystem crafted exclusively for Silver Oaks students. Access curated CV templates, research archives, stream guidance, and verified counselor modules.
-          </p>
-
-          {/* Elevated Autocomplete Search Panel */}
-          <div className="w-full max-w-2xl mt-2 relative" ref={dropdownRef}>
-            <div className="flex items-center bg-white rounded-2xl shadow-[0_14px_38px_rgba(68,5,17,0.28)] border border-white/80 overflow-hidden group focus-within:ring-4 focus-within:ring-white/30 transition-all">
-              <div className="pl-4 text-[#9E0D28]/60 group-focus-within:text-[#B80F2E] shrink-0">
-                <Search className="w-5 h-5" />
+    <div className="bg-white text-[#141416] text-left">
+      {/* 1. ARCHITECTURAL CRIMSON HERO */}
+      <section className="relative bg-gradient-to-br from-[#6E091A] via-[#8F0B22] to-[#B80F2E] text-white border-b border-[#5B0715]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+            {/* Left Editorial Column */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-red-100">
+                <span className="w-6 h-[2px] bg-white inline-block" />
+                <span>Silver Oaks International Schools</span>
               </div>
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => handleSearchInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleGlobalSearch()}
-                placeholder="Search resumes, research labs, SAT guides, courses..."
-                className="w-full h-13 sm:h-14 bg-transparent outline-none border-none text-[#241115] placeholder-[#9A7A80] px-3 text-sm font-medium"
-              />
-              <button
-                type="button"
-                onClick={handleGlobalSearch}
-                className="h-11 sm:h-12 m-1 bg-gradient-to-r from-[#8B0E24] to-[#C21434] text-white font-semibold text-xs uppercase tracking-wider px-5 sm:px-6 rounded-xl hover:brightness-110 cursor-pointer transition-all shrink-0 shadow-xs"
-              >
-                Search
-              </button>
-            </div>
 
-            {showSuggestions && (
-              <div className="absolute top-[106%] left-0 w-full bg-white border border-rose-100 rounded-2xl shadow-2xl z-40 overflow-hidden divide-y divide-rose-50 max-h-80 overflow-y-auto">
-                {suggestions.map((item, idx) => (
+              <h1 className="font-serif text-4xl sm:text-5xl lg:text-[3.5rem] font-medium leading-[1.08] tracking-tight text-white">
+                Internal Career &amp; University Guidance Archive
+              </h1>
+
+              <p className="text-sm sm:text-base text-red-50/90 max-w-xl leading-relaxed">
+                Structured curriculum modules, counselor dispatches, CV and application templates, and peer-authored research—curated for Silver Oaks students.
+              </p>
+
+              {/* High-Contrast Pure White Search Bar */}
+              <div className="relative max-w-xl pt-1">
+                <form
+                  onSubmit={handleSearchSubmit}
+                  className="flex items-center bg-white rounded-xl p-1.5 shadow-xl shadow-black/15 ring-1 ring-white/20"
+                >
+                  <Search className="w-4 h-4 text-neutral-400 ml-3 mr-2.5 shrink-0" />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setTimeout(() => setSearchFocused(false), 180)}
+                    placeholder="Search courses, templates, essays, student labs..."
+                    className="w-full py-2.5 text-sm text-[#141416] placeholder:text-neutral-400 focus:outline-none bg-transparent"
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => setQuery('')}
+                      className="p-1.5 text-neutral-400 hover:text-neutral-700 cursor-pointer"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
-                    key={`${item.id}-${idx}`}
-                    type="button"
-                    onClick={() => handleSuggestClick(item)}
-                    className="w-full text-left px-4 py-3.5 hover:bg-[#FFF5F6] flex items-center justify-between gap-3 transition-colors cursor-pointer group"
+                    type="submit"
+                    className="px-4 sm:px-5 py-2.5 bg-[#C8102E] hover:bg-[#9E0B24] text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-colors shrink-0 cursor-pointer"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-rose-50 text-[#B80F2E] border border-rose-100 tracking-wider shrink-0">
-                        {item.type}
-                      </span>
-                      {item.isPinned && (
-                        <Pin className="w-3 h-3 text-[#B80F2E] fill-current shrink-0" />
-                      )}
-                      <span className="text-xs sm:text-sm font-semibold text-[#241115] truncate group-hover:text-[#B80F2E]">
-                        {item.title}
-                      </span>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-rose-300 group-hover:text-[#B80F2E] group-hover:translate-x-0.5 transition-all shrink-0" />
+                    Search
+                  </button>
+                </form>
+
+                {/* Live Autocomplete Panel */}
+                {searchFocused && query.trim().length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-xl border border-neutral-200 shadow-2xl overflow-hidden z-40">
+                    {searchHits.length === 0 ? (
+                      <div className="px-4 py-5 text-xs text-neutral-500 text-center">
+                        No instant matches for &ldquo;{query}&rdquo;. Press Search to inspect full archive.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-neutral-100">
+                        {searchHits.map(hit => (
+                          <button
+                            key={`${hit.type}-${hit.id}`}
+                            type="button"
+                            onMouseDown={() => openDetail(hit.type, hit.id)}
+                            className="w-full px-4 py-3 hover:bg-neutral-50 flex items-center justify-between gap-3 text-left transition-colors cursor-pointer"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                {hit.isPinned && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[#C8102E] text-white text-[9px] font-bold uppercase shrink-0">
+                                    <Pin className="w-2.5 h-2.5 fill-current" />
+                                    Important
+                                  </span>
+                                )}
+                                <p className="text-sm font-semibold text-[#141416] truncate">{hit.title}</p>
+                              </div>
+                              {hit.subtitle && (
+                                <p className="text-xs text-neutral-500 truncate mt-0.5">{hit.subtitle}</p>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-red-50 text-[#C8102E] shrink-0">
+                              {hit.typeLabel}
+                            </span>
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onMouseDown={handleSearchSubmit}
+                          className="w-full px-4 py-2.5 bg-[#FAFAFA] hover:bg-red-50 text-xs font-semibold text-[#C8102E] flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <span>View all results for &ldquo;{query}&rdquo;</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Jump Links */}
+              <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                <span className="text-red-200/90 font-medium mr-1">Explore:</span>
+                {[
+                  { label: 'Courses', page: 'courses' },
+                  { label: 'Editorial', page: 'blog' },
+                  { label: 'Reference Library', page: 'references' },
+                  { label: 'Career Lab', page: 'career-lab' },
+                  { label: 'Counsellors', page: 'counselors' },
+                ].map(item => (
+                  <button
+                    key={item.page}
+                    type="button"
+                    onClick={() => setCurrentPage(item.page)}
+                    className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white hover:text-[#9E0B24] text-white font-medium border border-white/20 transition-colors cursor-pointer"
+                  >
+                    {item.label}
                   </button>
                 ))}
               </div>
-            )}
+            </div>
+
+            {/* Right Column: Live Important Notice Card OR Archive Index */}
+            <div className="lg:col-span-5">
+              {pinnedNotices.length > 0 ? (
+                <div className="bg-white text-[#141416] rounded-2xl p-5 sm:p-6 shadow-2xl shadow-black/20 border border-white/20">
+                  <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-neutral-100">
+                    <div className="flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-lg bg-[#C8102E] text-white flex items-center justify-center">
+                        <Pin className="w-3.5 h-3.5 fill-current" />
+                      </span>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#C8102E]">
+                          Pinned by Counsellors
+                        </p>
+                        <h2 className="text-sm font-bold text-[#141416] leading-tight">
+                          Important Notices for Students
+                        </h2>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-red-50 text-[#C8102E]">
+                      {pinnedNotices.length}
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-neutral-100">
+                    {pinnedNotices.slice(0, 3).map(notice => (
+                      <button
+                        key={`${notice.type}-${notice.id}`}
+                        type="button"
+                        onClick={() => openDetail(notice.type, notice.id)}
+                        className="w-full py-3 first:pt-0 last:pb-0 text-left group cursor-pointer flex items-start justify-between gap-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-[#C8102E]">
+                              {notice.typeLabel}
+                            </span>
+                            {notice.date && (
+                              <span className="text-[11px] text-neutral-400">
+                                · {formatShortDate(notice.date)}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors line-clamp-2 leading-snug">
+                            {notice.title}
+                          </p>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-neutral-300 group-hover:text-[#C8102E] group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white text-[#141416] rounded-2xl p-6 shadow-2xl shadow-black/20">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8102E] mb-4">
+                    Archive Directory
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Focus Courses', count: courses.length, page: 'courses', icon: BookOpen },
+                      { label: 'Editorial Posts', count: blogs.length, page: 'blog', icon: Newspaper },
+                      { label: 'Reference Docs', count: refs.length, page: 'references', icon: FileText },
+                      { label: 'Career Labs', count: labs.length, page: 'career-lab', icon: FlaskConical },
+                    ].map(stat => {
+                      const Icon = stat.icon;
+                      return (
+                        <button
+                          key={stat.page}
+                          type="button"
+                          onClick={() => setCurrentPage(stat.page)}
+                          className="p-4 rounded-xl bg-[#FAFAFA] hover:bg-red-50/70 border border-neutral-200 hover:border-[#C8102E]/30 transition-all text-left group cursor-pointer"
+                        >
+                          <Icon className="w-4 h-4 text-[#C8102E] mb-2.5" />
+                          <div className="text-2xl font-serif font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors">
+                            {loading ? '—' : stat.count}
+                          </div>
+                          <div className="text-xs font-medium text-neutral-600 mt-0.5">
+                            {stat.label}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 2. Pinned Highlights Section (renders automatically whenever posts are pinned) */}
-      {pinnedHighlights.length > 0 && (
-        <section className="py-10 sm:py-12 px-4 sm:px-6 lg:px-8 bg-[#FFF4F6] border-b border-rose-100">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
-              <div className="text-left flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#B80F2E] text-white flex items-center justify-center shadow-sm">
-                  <Pin className="w-5 h-5 fill-current" />
+      {/* 2. PINNED IMPORTANT NOTICES BULLETIN (Shown whenever admins have pinned posts) */}
+      {pinnedNotices.length > 0 && (
+        <section className="bg-[#FAFAFA] border-b border-neutral-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8102E] mb-1">
+                  <Pin className="w-3.5 h-3.5 fill-current" />
+                  <span>Priority Bulletin</span>
                 </div>
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#B80F2E]">
-                    Priority Board
-                  </span>
-                  <h2 className="text-xl sm:text-2xl font-serif font-semibold text-[#241115] leading-tight">
-                    Pinned Dispatches & Resources
-                  </h2>
-                </div>
+                <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-[#141416] tracking-tight">
+                  Pinned Important Notices
+                </h2>
               </div>
-              <span className="text-xs font-semibold text-[#8B0E24] bg-white border border-rose-200 px-3 py-1 rounded-full">
-                {pinnedHighlights.length} Pinned
-              </span>
+              <p className="text-xs text-neutral-500">
+                Highlighted by the Silver Oaks Career Council for immediate student attention.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 text-left">
-              {pinnedHighlights.slice(0, 6).map((item) => (
-                <div
-                  key={`${item.table}-${item.id}`}
-                  onClick={() => {
-                    setSelectedId(item.id);
-                    setCurrentPage(item.page);
-                  }}
-                  className="bg-white rounded-2xl border border-rose-200 hover:border-[#B80F2E] p-5 shadow-xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between relative overflow-hidden"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              {pinnedNotices.map(notice => (
+                <article
+                  key={`bulletin-${notice.type}-${notice.id}`}
+                  onClick={() => openDetail(notice.type, notice.id)}
+                  className="bg-white rounded-xl border border-neutral-200 border-l-4 border-l-[#C8102E] p-5 hover:shadow-md hover:border-neutral-300 transition-all cursor-pointer flex flex-col justify-between group"
                 >
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#8B0E24] via-[#B80F2E] to-[#E11D48]" />
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2.5">
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-[#B80F2E] px-2.5 py-1 rounded-full border border-rose-100">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#C8102E] text-white text-[10px] font-bold uppercase tracking-wider">
                         <Pin className="w-2.5 h-2.5 fill-current" />
-                        {item.typeLabel}
+                        Pinned · {notice.typeLabel}
                       </span>
-                      <button
-                        type="button"
-                        onClick={(e) => handleTogglePin(e, item.table, item.id, item.title, true)}
-                        title="Unpin post"
-                        className="p-1.5 rounded-lg text-[#B80F2E] hover:bg-rose-50 transition-colors cursor-pointer"
-                      >
-                        <Pin className="w-3.5 h-3.5 fill-current" />
-                      </button>
+                      {notice.date && (
+                        <span className="text-[11px] text-neutral-400 font-medium">
+                          {formatShortDate(notice.date)}
+                        </span>
+                      )}
                     </div>
-                    <h3 className="font-serif font-semibold text-base sm:text-lg text-[#241115] group-hover:text-[#B80F2E] transition-colors line-clamp-2 leading-snug">
-                      {item.title}
+                    <h3 className="font-serif text-lg font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors leading-snug line-clamp-2">
+                      {notice.title}
                     </h3>
-                    <p className="text-xs text-[#694D53] line-clamp-2 mt-1.5 leading-relaxed">
-                      {item.subtitle}
-                    </p>
+                    {notice.summary && (
+                      <p className="text-xs text-neutral-600 leading-relaxed mt-2 line-clamp-2">
+                        {notice.summary}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between pt-3.5 mt-4 border-t border-rose-100/70 text-xs">
-                    <span className="text-[#8A6970]">
-                      {item.date ? new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Featured'}
-                    </span>
-                    <span className="text-[#B80F2E] font-semibold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                      Open <ArrowRight className="w-3.5 h-3.5" />
+                  <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs">
+                    <span className="text-neutral-500 truncate">{notice.meta}</span>
+                    <span className="font-semibold text-[#C8102E] inline-flex items-center gap-1 shrink-0">
+                      Open
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* 3. Structured Guided Journey Pathways */}
-      <section className="bg-white py-14 sm:py-16 px-4 sm:px-6 lg:px-8 border-b border-rose-100">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-10 sm:mb-12">
-            <span className="text-xs text-[#B80F2E] font-bold uppercase tracking-[0.16em]">
-              Interactive Pathway Guides
-            </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-semibold tracking-tight text-[#241115] mt-2">
-              Three Core Pipelines for Development
-            </h2>
-            <p className="text-[#694D53] text-sm max-w-xl mx-auto mt-2">
-              Connect directly with designated archives engineered for specific student growth outcomes.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-7 text-left">
+      {/* 3. THREE CORE PATHWAYS */}
+      <section className="border-b border-neutral-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
             {[
               {
-                icon: FolderGit,
-                title: 'Career Discovery',
-                desc: 'Analyze interests, career families, and international standards. Download templates and reference briefs crafted by qualified counseling faculties.',
-                cta: 'Discover References',
-                target: 'references'
+                num: '01',
+                title: 'Focus Courses',
+                desc: 'Grade-wise workshops covering stream selection, profile building, SAT/ACT readiness, and global college applications.',
+                page: 'courses',
+                count: `${courses.length} modules`
               },
               {
-                icon: BookOpen,
-                title: 'Skill & Aptitude Loops',
-                desc: 'Complete structured modules in stream selection, university personal narratives, logical reasoning patterns, and portfolio frameworks.',
-                cta: 'Navigate Courses',
-                target: 'courses'
+                num: '02',
+                title: 'Reference Library',
+                desc: 'Downloadable CV and resume templates, university shortlisting sheets, and counselor-verified checklists.',
+                page: 'references',
+                count: `${refs.length} documents`
               },
               {
-                icon: CheckSquare,
-                title: 'Portfolio Laboratory',
-                desc: 'Review original research reports, environmental studies, design outputs, and community solutions posted by peers under mentor support.',
-                cta: 'Access Career Lab',
-                target: 'career-lab'
+                num: '03',
+                title: 'Career Laboratory',
+                desc: 'Peer-authored research papers, capstone portfolios, and mentored student explorations across disciplines.',
+                page: 'career-lab',
+                count: `${labs.length} portfolios`
               }
-            ].map((path) => {
-              const Icon = path.icon;
-              return (
-                <div
-                  key={path.title}
-                  onClick={() => setCurrentPage(path.target)}
-                  className="bg-[#FFFDFD] rounded-2xl border border-rose-100 hover:border-rose-300 p-6 sm:p-7 shadow-2xs hover:shadow-lg transition-all duration-300 group flex flex-col justify-between cursor-pointer"
-                >
-                  <div>
-                    <div className="w-12 h-12 bg-rose-50 text-[#B80F2E] group-hover:bg-[#B80F2E] group-hover:text-white rounded-xl flex items-center justify-center mb-5 border border-rose-100 transition-colors duration-300">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <h3 className="text-xl font-serif font-semibold text-[#241115] group-hover:text-[#B80F2E] transition-colors">
-                      {path.title}
-                    </h3>
-                    <p className="text-[#694D53] text-sm leading-relaxed mt-2.5">
-                      {path.desc}
-                    </p>
-                  </div>
-                  <div className="mt-6 pt-4 border-t border-rose-100/70 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9E0D28]">
-                    <span>{path.cta}</span>
-                    <span className="w-7 h-7 rounded-full bg-rose-50 group-hover:bg-[#B80F2E] group-hover:text-white flex items-center justify-center transition-colors">
-                      <ChevronRight className="w-4 h-4" />
+            ].map(pathway => (
+              <button
+                key={pathway.page}
+                type="button"
+                onClick={() => setCurrentPage(pathway.page)}
+                className="group p-6 sm:p-7 rounded-2xl border border-neutral-200 bg-white hover:border-[#C8102E] hover:shadow-md transition-all text-left flex flex-col justify-between cursor-pointer"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-serif text-2xl font-semibold text-[#C8102E]">
+                      {pathway.num}
+                    </span>
+                    <span className="text-[11px] font-semibold text-neutral-500 bg-[#FAFAFA] border border-neutral-200 px-2.5 py-0.5 rounded-full">
+                      {loading ? '—' : pathway.count}
                     </span>
                   </div>
+                  <h3 className="font-serif text-xl font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors">
+                    {pathway.title}
+                  </h3>
+                  <p className="text-sm text-neutral-600 leading-relaxed mt-2">
+                    {pathway.desc}
+                  </p>
                 </div>
-              );
-            })}
+                <div className="mt-6 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#C8102E]">
+                  <span>Browse {pathway.title}</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 4. COURSES SPOTLIGHT */}
-      <section className="py-14 sm:py-16 px-4 sm:px-6 lg:px-8 bg-[#FFF9FA] border-b border-rose-100">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-            <div className="text-left">
-              <span className="text-xs text-[#B80F2E] font-bold uppercase tracking-[0.14em]">Academics</span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-semibold tracking-tight text-[#241115] mt-1">
-                Curated Focus Courses
-              </h2>
-            </div>
-            <div className="flex items-center justify-between sm:justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('courses')}
-                className="text-xs font-bold uppercase tracking-wider text-[#B80F2E] hover:text-[#7A0B1F] inline-flex items-center gap-1 cursor-pointer"
-              >
-                <span>All Courses</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-              <div className="hidden sm:flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => scrollSide(courseScrollRef, 'left')}
-                  className="w-9 h-9 bg-white border border-rose-200 hover:border-[#B80F2E] hover:bg-rose-50 text-[#8B0E24] rounded-full flex items-center justify-center cursor-pointer transition-all"
-                  aria-label="Scroll courses left"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollSide(courseScrollRef, 'right')}
-                  className="w-9 h-9 bg-white border border-rose-200 hover:border-[#B80F2E] hover:bg-rose-50 text-[#8B0E24] rounded-full flex items-center justify-center cursor-pointer transition-all"
-                  aria-label="Scroll courses right"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div
-            ref={courseScrollRef}
-            className="flex gap-5 overflow-x-auto scrollbar-none pb-4 scroll-smooth snap-x snap-mandatory text-left -mx-4 px-4 sm:mx-0 sm:px-0"
-          >
-            {courses.length ? (
-              courses.map((c) => (
-                <div
-                  key={c.ID}
-                  onClick={() => { setSelectedId(c.ID); setCurrentPage('course'); }}
-                  className={`snap-start flex-shrink-0 w-[82vw] sm:w-[340px] lg:w-[370px] bg-white rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 flex flex-col justify-between border ${
-                    c.IsPinned
-                      ? 'border-rose-300 ring-1 ring-rose-100 shadow-sm hover:shadow-lg'
-                      : 'border-rose-100 hover:border-rose-300 hover:shadow-md'
-                  }`}
-                >
+      {loading ? (
+        <div className="py-24 text-center">
+          <div className="spinner" />
+          <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500 mt-3">
+            Loading Silver Oaks Archive...
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* 4. CURATED FOCUS COURSES */}
+          {courses.length > 0 && (
+            <section className="py-14 sm:py-16 border-b border-neutral-200 bg-[#FAFAFA]">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-end justify-between gap-4 mb-8">
                   <div>
-                    <div className="relative aspect-video bg-rose-50 overflow-hidden">
-                      <img
-                        src={c.ThumbnailURL || "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80"}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#36040D]/35 via-transparent to-transparent" />
-                      <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                        {c.IsPinned && (
-                          <span className="inline-flex items-center gap-1 bg-[#B80F2E] text-white font-bold text-[10px] uppercase px-2 py-0.5 rounded-full shadow-xs">
-                            <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8102E] mb-1">
+                      Curriculum
+                    </p>
+                    <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-[#141416] tracking-tight">
+                      Curated Focus Courses
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage('courses')}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#C8102E] hover:text-[#880A1F] cursor-pointer shrink-0"
+                  >
+                    <span>All Courses</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {courses.slice(0, 6).map(course => (
+                    <article
+                      key={course.ID}
+                      onClick={() => openDetail('course', course.ID)}
+                      className={`bg-white rounded-2xl border overflow-hidden hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between group ${
+                        course.IsPinned
+                          ? 'border-[#C8102E]/45 ring-1 ring-[#C8102E]/15'
+                          : 'border-neutral-200 hover:border-neutral-300'
+                      }`}
+                    >
+                      <div>
+                        <div className="aspect-[16/10] bg-neutral-100 relative overflow-hidden border-b border-neutral-100">
+                          {course.ThumbnailURL ? (
+                            <img
+                              src={course.ThumbnailURL}
+                              alt={course.Title}
+                              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#8F0B22] to-[#C8102E] text-white/90">
+                              <BookOpen className="w-10 h-10 stroke-[1.5]" />
+                            </div>
+                          )}
+                          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                            {course.IsPinned && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#C8102E] text-white text-[10px] font-bold uppercase tracking-wider shadow-xs">
+                                <Pin className="w-2.5 h-2.5 fill-current" />
+                                Important
+                              </span>
+                            )}
+                            {course.Grade && (
+                              <span className="px-2.5 py-1 rounded-full bg-white/95 text-[#141416] text-[10px] font-bold uppercase tracking-wider shadow-xs">
+                                {course.Grade}
+                              </span>
+                            )}
+                          </div>
+                          {course.YouTubeURL && (
+                            <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded-md bg-black/75 text-white text-[10px] font-semibold">
+                              <PlayCircle className="w-3 h-3" />
+                              Video
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="p-5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-[#C8102E]">
+                            {course.Category || 'General'}
+                          </span>
+                          <h3 className="font-serif text-lg font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors mt-1.5 leading-snug line-clamp-2">
+                            {course.Title}
+                          </h3>
+                          {course.Description && (
+                            <p className="text-xs text-neutral-600 mt-2 line-clamp-2 leading-relaxed">
+                              {course.Description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="px-5 py-3.5 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
+                        <span className="truncate font-medium">{course.Instructor || 'Council Faculty'}</span>
+                        {course.PDFLink && (
+                          <span className="inline-flex items-center gap-1 text-[#C8102E] font-semibold shrink-0">
+                            <FileDown className="w-3.5 h-3.5" />
+                            PDF
                           </span>
                         )}
-                        <span className="bg-white/95 text-[#8B0E24] font-bold text-[10px] uppercase px-2.5 py-0.5 rounded-md tracking-wider shadow-xs">
-                          {c.Category}
-                        </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => handleTogglePin(e, 'courses', c.ID, c.Title, c.IsPinned)}
-                        title={c.IsPinned ? 'Unpin course' : 'Pin course'}
-                        className={`absolute top-3 right-3 w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-xs ${
-                          c.IsPinned ? 'bg-[#B80F2E] text-white' : 'bg-white/95 text-[#694D53] hover:bg-[#B80F2E] hover:text-white'
-                        }`}
-                      >
-                        <Pin className={`w-3.5 h-3.5 ${c.IsPinned ? 'fill-current' : ''}`} />
-                      </button>
-                      {c.YouTubeURL && (
-                        <div className="absolute bottom-3 left-3 inline-flex items-center gap-1 bg-[#8B0E24]/90 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md backdrop-blur-xs">
-                          <PlayCircle className="w-3 h-3" /> Video Lecture
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-5">
-                      <span className="text-[11px] font-bold uppercase text-[#B80F2E] tracking-wider">
-                        {c.Grade || 'Class Level'}
-                      </span>
-                      <h3 className="font-serif font-semibold text-lg text-[#241115] line-clamp-2 mt-1 mb-2 group-hover:text-[#B80F2E] transition-colors leading-snug">
-                        {c.Title}
-                      </h3>
-                      <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">
-                        {c.Description}
-                      </p>
-                    </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* 5. COUNSELOR GUIDANCE EDITORIAL (Magazine Split Layout) */}
+          {blogs.length > 0 && (
+            <section className="py-14 sm:py-16 border-b border-neutral-200 bg-white">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-end justify-between gap-4 mb-8">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8102E] mb-1">
+                      Publications
+                    </p>
+                    <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-[#141416] tracking-tight">
+                      Counselor Guidance Editorial
+                    </h2>
                   </div>
-                  <div className="px-5 pb-5 pt-0">
-                    <div className="flex items-center justify-between border-t border-rose-100/80 pt-3.5 text-xs text-[#694D53]">
-                      <span className="inline-flex items-center gap-1.5 truncate max-w-[175px]">
-                        <User className="w-3.5 h-3.5 text-[#B80F2E]/70 shrink-0" />
-                        <span className="truncate">{c.Instructor || 'Council Staff'}</span>
-                      </span>
-                      <span className="text-[#B80F2E] font-semibold inline-flex items-center gap-1 shrink-0">
-                        Start <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage('blog')}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#C8102E] hover:text-[#880A1F] cursor-pointer shrink-0"
+                  >
+                    <span>All Articles</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  {/* Lead Featured Article */}
+                  {leadBlog && (
+                    <article
+                      onClick={() => openDetail('blog-item', leadBlog.ID)}
+                      className={`lg:col-span-7 rounded-2xl border overflow-hidden bg-white hover:shadow-lg transition-all cursor-pointer group ${
+                        leadBlog.IsPinned
+                          ? 'border-[#C8102E]/45 ring-1 ring-[#C8102E]/15'
+                          : 'border-neutral-200'
+                      }`}
+                    >
+                      <div className="aspect-[16/9] bg-neutral-100 relative overflow-hidden border-b border-neutral-100">
+                        {leadBlog.FeaturedImageURL ? (
+                          <img
+                            src={leadBlog.FeaturedImageURL}
+                            alt={leadBlog.Title}
+                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-[#7A0A1D] to-[#C8102E] flex items-center justify-center text-white/90">
+                            <Newspaper className="w-12 h-12 stroke-[1.25]" />
+                          </div>
+                        )}
+                        {leadBlog.IsPinned && (
+                          <span className="absolute top-4 left-4 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#C8102E] text-white text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                            <Pin className="w-3 h-3 fill-current" />
+                            Pinned · Important
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-6 sm:p-7">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-neutral-500 mb-3">
+                          {(leadBlog.Tags || '').split(',').filter(Boolean).slice(0, 3).map((tag, i) => (
+                            <span key={i} className="text-[#C8102E] uppercase tracking-wider font-bold">
+                              #{tag.trim()}
+                            </span>
+                          ))}
+                          <span>· {formatShortDate(leadBlog.CreatedDate)}</span>
+                        </div>
+                        <h3 className="font-serif text-2xl sm:text-3xl font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors leading-tight">
+                          {leadBlog.Title}
+                        </h3>
+                        <p className="text-sm text-neutral-600 mt-3 leading-relaxed line-clamp-3">
+                          {stripHtml(leadBlog.Content)}
+                        </p>
+                        <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs">
+                          <span className="text-neutral-500 font-medium">
+                            By {leadBlog.AuthorEmail ? leadBlog.AuthorEmail.split('@')[0] : 'Counselor Team'}
+                          </span>
+                          <span className="font-bold uppercase tracking-wider text-[#C8102E] inline-flex items-center gap-1">
+                            Read Article
+                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                          </span>
+                        </div>
+                      </div>
+                    </article>
+                  )}
+
+                  {/* Secondary Editorial Stack */}
+                  <div className="lg:col-span-5 divide-y divide-neutral-200 border-t lg:border-t-0 border-neutral-200">
+                    {secondaryBlogs.length === 0 ? (
+                      <div className="p-6 rounded-2xl bg-[#FAFAFA] border border-neutral-200 text-xs text-neutral-500">
+                        More counselor guidance articles will appear here as they are published.
+                      </div>
+                    ) : (
+                      secondaryBlogs.map(post => (
+                        <article
+                          key={post.ID}
+                          onClick={() => openDetail('blog-item', post.ID)}
+                          className="py-5 first:pt-0 last:pb-0 group cursor-pointer flex gap-4 items-start"
+                        >
+                          {post.FeaturedImageURL && (
+                            <div className="w-20 h-20 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
+                              <img
+                                src={post.FeaturedImageURL}
+                                alt=""
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center flex-wrap gap-2 mb-1">
+                              {post.IsPinned && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#C8102E] text-white text-[9px] font-bold uppercase tracking-wider">
+                                  <Pin className="w-2.5 h-2.5 fill-current" />
+                                  Important
+                                </span>
+                              )}
+                              <span className="text-[11px] text-neutral-400 font-medium">
+                                {formatShortDate(post.CreatedDate)}
+                              </span>
+                            </div>
+                            <h4 className="font-serif text-base sm:text-lg font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors leading-snug line-clamp-2">
+                              {post.Title}
+                            </h4>
+                            <p className="text-xs text-neutral-500 mt-1 line-clamp-2">
+                              {stripHtml(post.Content)}
+                            </p>
+                          </div>
+                        </article>
+                      ))
+                    )}
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="py-16 text-center w-full text-[#8A6970] font-medium text-xs uppercase tracking-wider border border-dashed border-rose-200 rounded-2xl bg-white">
-                Gathering counseling courses...
               </div>
-            )}
-          </div>
-        </div>
-      </section>
+            </section>
+          )}
 
-      {/* 5. BLOG PUBLICATIONS SPOTLIGHT */}
-      <section className="py-14 sm:py-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-rose-100">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-            <div className="text-left">
-              <span className="text-xs text-[#B80F2E] font-bold uppercase tracking-[0.14em]">Insight Publications</span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-semibold tracking-tight text-[#241115] mt-1">
-                Counselor Guidance Blog
-              </h2>
-            </div>
-            <div className="flex items-center justify-between sm:justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('blog')}
-                className="text-xs font-bold uppercase tracking-wider text-[#B80F2E] hover:text-[#7A0B1F] inline-flex items-center gap-1 cursor-pointer"
-              >
-                <span>All Posts</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-              <div className="hidden sm:flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => scrollSide(blogScrollRef, 'left')}
-                  className="w-9 h-9 bg-white border border-rose-200 hover:border-[#B80F2E] hover:bg-rose-50 text-[#8B0E24] rounded-full flex items-center justify-center cursor-pointer transition-all"
-                  aria-label="Scroll blog left"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollSide(blogScrollRef, 'right')}
-                  className="w-9 h-9 bg-white border border-rose-200 hover:border-[#B80F2E] hover:bg-rose-50 text-[#8B0E24] rounded-full flex items-center justify-center cursor-pointer transition-all"
-                  aria-label="Scroll blog right"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div
-            ref={blogScrollRef}
-            className="flex gap-5 overflow-x-auto scrollbar-none pb-4 scroll-smooth snap-x snap-mandatory text-left -mx-4 px-4 sm:mx-0 sm:px-0"
-          >
-            {blogs.length ? (
-              blogs.map((p) => {
-                const excerpt = p.Content ? p.Content.replace(/<[^>]*>/g, '').slice(0, 115) + '...' : 'Interactive reflections...';
-                return (
-                  <div
-                    key={p.ID}
-                    onClick={() => { setSelectedId(p.ID); setCurrentPage('blog-item'); }}
-                    className={`snap-start flex-shrink-0 w-[82vw] sm:w-[340px] lg:w-[370px] bg-white rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 flex flex-col justify-between border ${
-                      p.IsPinned
-                        ? 'border-rose-300 ring-1 ring-rose-100 shadow-sm hover:shadow-lg'
-                        : 'border-rose-100 hover:border-rose-300 hover:shadow-md'
-                    }`}
+          {/* 6. REFERENCE MATERIAL LIBRARY (Structured Academic Document Grid) */}
+          {refs.length > 0 && (
+            <section className="py-14 sm:py-16 border-b border-neutral-200 bg-[#FAFAFA]">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-end justify-between gap-4 mb-8">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8102E] mb-1">
+                      Templates &amp; Handbooks
+                    </p>
+                    <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-[#141416] tracking-tight">
+                      Reference Material
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage('references')}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#C8102E] hover:text-[#880A1F] cursor-pointer shrink-0"
                   >
-                    <div>
-                      <div className="relative aspect-video bg-rose-50 overflow-hidden">
-                        <img
-                          src={p.FeaturedImageURL || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80"}
-                          alt=""
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#36040D]/30 via-transparent to-transparent" />
-                        {p.IsPinned && (
-                          <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-[#B80F2E] text-white font-bold text-[10px] uppercase px-2.5 py-0.5 rounded-full shadow-xs">
-                            <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
+                    <span>Full Library</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                  {refs.slice(0, 6).map(refItem => (
+                    <article
+                      key={refItem.ID}
+                      onClick={() => openDetail('reference-item', refItem.ID)}
+                      className={`bg-white rounded-xl border p-5 hover:shadow-md transition-all cursor-pointer flex items-start gap-4 group ${
+                        refItem.IsPinned
+                          ? 'border-neutral-200 border-l-4 border-l-[#C8102E]'
+                          : 'border-neutral-200 hover:border-neutral-300'
+                      }`}
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-red-50 text-[#C8102E] border border-red-100 flex items-center justify-center shrink-0">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center flex-wrap gap-2 mb-1">
+                          {refItem.IsPinned && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#C8102E] text-white text-[9px] font-bold uppercase tracking-wider">
+                              <Pin className="w-2.5 h-2.5 fill-current" />
+                              Important
+                            </span>
+                          )}
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#C8102E]">
+                            {refItem.Category || 'Reference'}
                           </span>
+                        </div>
+                        <h3 className="font-serif text-lg font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors leading-snug line-clamp-1">
+                          {refItem.Title}
+                        </h3>
+                        {refItem.Description && (
+                          <p className="text-xs text-neutral-600 mt-1 line-clamp-2 leading-relaxed">
+                            {refItem.Description}
+                          </p>
                         )}
-                        <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                          {p.PDFLink && (
-                            <span className="text-[10px] bg-white/95 text-[#9E0D28] font-bold uppercase px-2 py-1 rounded-lg shadow-xs inline-flex items-center gap-1">
+                        <div className="flex items-center gap-3 mt-3 text-[11px] text-neutral-500">
+                          <span>By {refItem.Author || 'Counselor Team'}</span>
+                          {refItem.PDFLink && (
+                            <span className="text-[#C8102E] font-semibold inline-flex items-center gap-1">
                               <FileDown className="w-3 h-3" /> PDF
                             </span>
                           )}
-                          <button
-                            type="button"
-                            onClick={(e) => handleTogglePin(e, 'blogs', p.ID, p.Title, p.IsPinned)}
-                            title={p.IsPinned ? 'Unpin post' : 'Pin post'}
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-xs ${
-                              p.IsPinned ? 'bg-[#B80F2E] text-white' : 'bg-white/95 text-[#694D53] hover:bg-[#B80F2E] hover:text-white'
-                            }`}
-                          >
-                            <Pin className={`w-3.5 h-3.5 ${p.IsPinned ? 'fill-current' : ''}`} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="p-5">
-                        <div className="flex gap-1.5 flex-wrap mb-2">
-                          {(p.Tags || "").split(',').filter(Boolean).slice(0, 2).map((t, i) => (
-                            <span key={i} className="text-[10px] font-bold uppercase text-[#B80F2E] bg-rose-50 px-2 py-0.5 rounded-md tracking-wide">
-                              #{t.trim()}
+                          {refItem.YouTubeURL && (
+                            <span className="text-neutral-700 font-semibold inline-flex items-center gap-1">
+                              <PlayCircle className="w-3 h-3" /> Video
                             </span>
-                          ))}
+                          )}
                         </div>
-                        <h3 className="font-serif font-semibold text-lg text-[#241115] line-clamp-2 mb-2 group-hover:text-[#B80F2E] transition-colors leading-snug">
-                          {p.Title}
-                        </h3>
-                        <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">
-                          {excerpt}
-                        </p>
                       </div>
-                    </div>
-                    <div className="px-5 pb-5 pt-0">
-                      <div className="flex items-center justify-between border-t border-rose-100/80 pt-3.5 text-xs text-[#694D53]">
-                        <span className="inline-flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-[#B80F2E]/70" />
-                          {new Date(p.CreatedDate).toLocaleDateString()}
-                        </span>
-                        <span className="text-[#B80F2E] font-semibold inline-flex items-center gap-1">
-                          Read <ArrowRight className="w-3.5 h-3.5" />
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="py-16 text-center w-full text-[#8A6970] font-medium text-xs uppercase tracking-wider border border-dashed border-rose-200 rounded-2xl bg-[#FFF9FA]">
-                Gathering insightful publications...
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* 6. REFERENCE CAROUSEL */}
-      <section className="py-14 sm:py-16 px-4 sm:px-6 lg:px-8 bg-[#FFF9FA] border-b border-rose-100">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-            <div className="text-left">
-              <span className="text-xs text-[#B80F2E] font-bold uppercase tracking-[0.14em]">Templates & Guides</span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-semibold tracking-tight text-[#241115] mt-1">
-                Reference Material
-              </h2>
-            </div>
-            <div className="flex items-center justify-between sm:justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('references')}
-                className="text-xs font-bold uppercase tracking-wider text-[#B80F2E] hover:text-[#7A0B1F] inline-flex items-center gap-1 cursor-pointer"
-              >
-                <span>All References</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-              <div className="hidden sm:flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => scrollSide(refScrollRef, 'left')}
-                  className="w-9 h-9 bg-white border border-rose-200 hover:border-[#B80F2E] hover:bg-rose-50 text-[#8B0E24] rounded-full flex items-center justify-center cursor-pointer transition-all"
-                  aria-label="Scroll references left"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollSide(refScrollRef, 'right')}
-                  className="w-9 h-9 bg-white border border-rose-200 hover:border-[#B80F2E] hover:bg-rose-50 text-[#8B0E24] rounded-full flex items-center justify-center cursor-pointer transition-all"
-                  aria-label="Scroll references right"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div
-            ref={refScrollRef}
-            className="flex gap-5 overflow-x-auto scrollbar-none pb-4 scroll-smooth snap-x snap-mandatory text-left -mx-4 px-4 sm:mx-0 sm:px-0"
-          >
-            {refs.length ? (
-              refs.map((r) => (
-                <div
-                  key={r.ID}
-                  onClick={() => { setSelectedId(r.ID); setCurrentPage('reference-item'); }}
-                  className={`snap-start flex-shrink-0 w-[82vw] sm:w-[340px] lg:w-[370px] bg-white rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 flex flex-col justify-between border ${
-                    r.IsPinned
-                      ? 'border-rose-300 ring-1 ring-rose-100 shadow-sm hover:shadow-lg'
-                      : 'border-rose-100 hover:border-rose-300 hover:shadow-md'
-                  }`}
-                >
-                  <div>
-                    <div className="relative aspect-video bg-rose-50 overflow-hidden">
-                      <img
-                        src={r.ThumbnailURL || "https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=800&q=80"}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#36040D]/30 via-transparent to-transparent" />
-                      <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                        {r.IsPinned && (
-                          <span className="inline-flex items-center gap-1 bg-[#B80F2E] text-white font-bold text-[10px] uppercase px-2 py-0.5 rounded-full shadow-xs">
-                            <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
-                          </span>
-                        )}
-                        <span className="bg-white/95 text-[#8B0E24] font-bold text-[10px] uppercase px-2.5 py-0.5 rounded-md tracking-wider shadow-xs">
-                          {r.Category}
-                        </span>
-                      </div>
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                        {r.PDFLink && (
-                          <span className="bg-white/95 text-[#9E0D28] font-bold text-[10px] uppercase px-2 py-1 rounded-lg shadow-xs inline-flex items-center gap-1">
-                            <FileDown className="w-3 h-3" /> PDF
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(e) => handleTogglePin(e, 'reference_materials', r.ID, r.Title, r.IsPinned)}
-                          title={r.IsPinned ? 'Unpin reference' : 'Pin reference'}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-xs ${
-                            r.IsPinned ? 'bg-[#B80F2E] text-white' : 'bg-white/95 text-[#694D53] hover:bg-[#B80F2E] hover:text-white'
-                          }`}
-                        >
-                          <Pin className={`w-3.5 h-3.5 ${r.IsPinned ? 'fill-current' : ''}`} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-5">
-                      <span className="text-[11px] font-semibold uppercase text-[#8A6970] tracking-wider">
-                        By {r.Author || 'Mentors'}
-                      </span>
-                      <h3 className="font-serif font-semibold text-lg text-[#241115] line-clamp-2 mt-1 mb-2 group-hover:text-[#B80F2E] transition-colors leading-snug">
-                        {r.Title}
-                      </h3>
-                      <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">
-                        {r.Description}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="px-5 pb-5 pt-0">
-                    <div className="flex items-center justify-between border-t border-rose-100/80 pt-3.5 text-xs text-[#694D53]">
-                      <span className="inline-flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-[#B80F2E]/70" />
-                        Resource Brief
-                      </span>
-                      <span className="text-[#B80F2E] font-semibold inline-flex items-center gap-1">
-                        View <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
-                  </div>
+                      <ArrowRight className="w-4 h-4 text-neutral-300 group-hover:text-[#C8102E] group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+                    </article>
+                  ))}
                 </div>
-              ))
-            ) : (
-              <div className="py-16 text-center w-full text-[#8A6970] font-medium text-xs uppercase tracking-wider border border-dashed border-rose-200 rounded-2xl bg-white">
-                Preparing resource documents...
               </div>
-            )}
-          </div>
-        </div>
-      </section>
+            </section>
+          )}
 
-      {/* 7. CAREER LAB SPOTLIGHT */}
-      <section className="py-14 sm:py-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-rose-100">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-            <div className="text-left">
-              <span className="text-xs text-[#B80F2E] font-bold uppercase tracking-[0.14em]">Student Submittals</span>
-              <h2 className="text-2xl sm:text-3xl font-serif font-semibold tracking-tight text-[#241115] mt-1">
-                Career Laboratory Archive
-              </h2>
-            </div>
-            <div className="flex items-center justify-between sm:justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setCurrentPage('career-lab')}
-                className="text-xs font-bold uppercase tracking-wider text-[#B80F2E] hover:text-[#7A0B1F] inline-flex items-center gap-1 cursor-pointer"
-              >
-                <span>All Submissions</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-              <div className="hidden sm:flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => scrollSide(labScrollRef, 'left')}
-                  className="w-9 h-9 bg-white border border-rose-200 hover:border-[#B80F2E] hover:bg-rose-50 text-[#8B0E24] rounded-full flex items-center justify-center cursor-pointer transition-all"
-                  aria-label="Scroll career labs left"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollSide(labScrollRef, 'right')}
-                  className="w-9 h-9 bg-white border border-rose-200 hover:border-[#B80F2E] hover:bg-rose-50 text-[#8B0E24] rounded-full flex items-center justify-center cursor-pointer transition-all"
-                  aria-label="Scroll career labs right"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div
-            ref={labScrollRef}
-            className="flex gap-5 overflow-x-auto scrollbar-none pb-4 scroll-smooth snap-x snap-mandatory text-left -mx-4 px-4 sm:mx-0 sm:px-0"
-          >
-            {labs.length ? (
-              labs.map((l) => (
-                <div
-                  key={l.ID}
-                  onClick={() => { setSelectedId(l.ID); setCurrentPage('lab-item'); }}
-                  className={`snap-start flex-shrink-0 w-[82vw] sm:w-[340px] lg:w-[370px] bg-white rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 flex flex-col justify-between border ${
-                    l.IsPinned
-                      ? 'border-rose-300 ring-1 ring-rose-100 shadow-sm hover:shadow-lg'
-                      : 'border-rose-100 hover:border-rose-300 hover:shadow-md'
-                  }`}
-                >
+          {/* 7. CAREER LABORATORY ARCHIVE */}
+          {labs.length > 0 && (
+            <section className="py-14 sm:py-16 border-b border-neutral-200 bg-white">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-end justify-between gap-4 mb-8">
                   <div>
-                    <div className="relative aspect-video bg-rose-50 overflow-hidden">
-                      <img
-                        src={l.ThumbnailURL || "https://images.unsplash.com/photo-1614741118887-7a4ee193a5fa?auto=format&fit=crop&w=800&q=80"}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#36040D]/30 via-transparent to-transparent" />
-                      <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                        {l.IsPinned && (
-                          <span className="inline-flex items-center gap-1 bg-[#B80F2E] text-white font-bold text-[10px] uppercase px-2 py-0.5 rounded-full shadow-xs">
-                            <Pin className="w-2.5 h-2.5 fill-current" /> Pinned
-                          </span>
-                        )}
-                        <span className="bg-[#6B081B] text-white font-bold text-[10px] uppercase px-2.5 py-0.5 rounded-md tracking-wider shadow-xs">
-                          {l.Category}
-                        </span>
-                      </div>
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                        {l.PDFLink && (
-                          <span className="bg-white/95 text-[#9E0D28] font-bold text-[10px] uppercase px-2 py-1 rounded-lg shadow-xs inline-flex items-center gap-1">
-                            <FileDown className="w-3 h-3" /> PDF
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(e) => handleTogglePin(e, 'career_labs', l.ID, l.Title, l.IsPinned)}
-                          title={l.IsPinned ? 'Unpin project' : 'Pin project'}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-xs ${
-                            l.IsPinned ? 'bg-[#B80F2E] text-white' : 'bg-white/95 text-[#694D53] hover:bg-[#B80F2E] hover:text-white'
-                          }`}
-                        >
-                          <Pin className={`w-3.5 h-3.5 ${l.IsPinned ? 'fill-current' : ''}`} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-5">
-                      <span className="text-[11px] font-bold uppercase text-[#B80F2E] tracking-wider">
-                        Author: {l.Student}
-                      </span>
-                      <h3 className="font-serif font-semibold text-lg text-[#241115] line-clamp-2 mt-1 mb-2 group-hover:text-[#B80F2E] transition-colors leading-snug">
-                        {l.Title}
-                      </h3>
-                      <p className="text-[#694D53] text-xs line-clamp-2 leading-relaxed">
-                        {l.Description}
-                      </p>
-                    </div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8102E] mb-1">
+                      Student Research
+                    </p>
+                    <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-[#141416] tracking-tight">
+                      Career Laboratory Archive
+                    </h2>
                   </div>
-                  <div className="px-5 pb-5 pt-0">
-                    <div className="flex items-center justify-between border-t border-rose-100/80 pt-3.5 text-xs text-[#694D53]">
-                      <span className="inline-flex items-center gap-1.5 truncate max-w-[175px]">
-                        <User className="w-3.5 h-3.5 text-[#B80F2E]/70 shrink-0" />
-                        <span className="truncate">Mentor: {l.Mentor || 'Faculty Panel'}</span>
-                      </span>
-                      <span className="text-[#B80F2E] font-semibold inline-flex items-center gap-1 shrink-0">
-                        Explore <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage('career-lab')}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#C8102E] hover:text-[#880A1F] cursor-pointer shrink-0"
+                  >
+                    <span>Explore Lab</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-              ))
-            ) : (
-              <div className="py-16 text-center w-full text-[#8A6970] font-medium text-xs uppercase tracking-wider border border-dashed border-rose-200 rounded-2xl bg-[#FFF9FA]">
-                Gathering student career laboratory researches...
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {labs.slice(0, 6).map(lab => (
+                    <article
+                      key={lab.ID}
+                      onClick={() => openDetail('lab-item', lab.ID)}
+                      className={`bg-white rounded-2xl border overflow-hidden hover:shadow-lg transition-all cursor-pointer flex flex-col justify-between group ${
+                        lab.IsPinned
+                          ? 'border-[#C8102E]/45 ring-1 ring-[#C8102E]/15'
+                          : 'border-neutral-200 hover:border-neutral-300'
+                      }`}
+                    >
+                      <div>
+                        <div className="aspect-[16/10] bg-neutral-100 relative overflow-hidden border-b border-neutral-100">
+                          {lab.ThumbnailURL ? (
+                            <img
+                              src={lab.ThumbnailURL}
+                              alt={lab.Title}
+                              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-[#6E091A] to-[#A80D27] flex items-center justify-center text-white/90">
+                              <FlaskConical className="w-10 h-10 stroke-[1.5]" />
+                            </div>
+                          )}
+                          {lab.IsPinned && (
+                            <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#C8102E] text-white text-[10px] font-bold uppercase tracking-wider shadow-xs">
+                              <Pin className="w-2.5 h-2.5 fill-current" />
+                              Important
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-[#C8102E]">
+                            {lab.Category || 'Research'}
+                          </span>
+                          <h3 className="font-serif text-lg font-semibold text-[#141416] group-hover:text-[#C8102E] transition-colors mt-1.5 leading-snug line-clamp-2">
+                            {lab.Title}
+                          </h3>
+                          {lab.Description && (
+                            <p className="text-xs text-neutral-600 mt-2 line-clamp-2 leading-relaxed">
+                              {lab.Description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="px-5 py-3.5 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500 gap-2">
+                        <span className="truncate font-semibold text-[#141416]">{lab.Student}</span>
+                        {lab.Mentor && <span className="truncate text-[11px]">Mentor: {lab.Mentor}</span>}
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-      </section>
+            </section>
+          )}
 
-      {/* 8. Meet Your Career Counsellors Section */}
-      <section className="bg-gradient-to-b from-[#FFF5F6] to-white py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-10 sm:mb-12">
-            <div className="text-left max-w-2xl">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-rose-200 text-[#B80F2E] font-bold text-[10px] uppercase tracking-wider mb-3 shadow-2xs">
-                <GraduationCap className="w-3.5 h-3.5" />
-                <span>Student Advisory Desk</span>
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-serif font-semibold tracking-tight text-[#241115]">
-                Meet Your Career Counsellors
-              </h2>
-              <p className="text-[#694D53] text-sm sm:text-base leading-relaxed mt-2.5">
-                Our qualified advisory team is ready to guide you in portfolio creation, college admission personal statements, stream selection analysis, and academic development.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setCurrentPage('counselors')}
-              className="px-5 py-3 bg-gradient-to-r from-[#8B0E24] to-[#B80F2E] hover:brightness-110 text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-sm transition-all self-start md:self-auto"
-            >
-              <span>View Roster</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {counselors.length ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
-              {counselors.map((c) => (
-                <div
-                  key={c.ID}
-                  onClick={() => setCurrentPage('counselors')}
-                  className="bg-white rounded-2xl border border-rose-100 shadow-2xs hover:shadow-lg hover:border-rose-200 transition-all duration-300 overflow-hidden cursor-pointer flex flex-col justify-between group"
-                >
+          {/* 8. MEET YOUR CAREER COUNSELLORS */}
+          {counselors.length > 0 && (
+            <section className="py-14 sm:py-16 bg-[#FAFAFA]">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-end justify-between gap-4 mb-8">
                   <div>
-                    <div className="aspect-[4/3] bg-gradient-to-br from-[#FFF2F4] to-[#FFE4E8] relative overflow-hidden shrink-0 border-b border-rose-100">
-                      {c.ImageURL ? (
-                        <img
-                          src={c.ImageURL}
-                          alt={c.Name}
-                          referrerPolicy="no-referrer"
-                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-[#C85A6D]">
-                          <User className="w-12 h-12 stroke-[1.25]" />
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#C8102E] mb-1">
+                      Advisory Department
+                    </p>
+                    <h2 className="font-serif text-2xl sm:text-3xl font-semibold text-[#141416] tracking-tight">
+                      Meet Your Career Counsellors
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage('counselors')}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#C8102E] hover:text-[#880A1F] cursor-pointer shrink-0"
+                  >
+                    <span>Full Directory</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {counselors.slice(0, 4).map(c => (
+                    <div
+                      key={c.ID}
+                      className="bg-white rounded-2xl border border-neutral-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition-all"
+                    >
+                      <div>
+                        <div className="aspect-[4/3] bg-neutral-100 overflow-hidden border-b border-neutral-100">
+                          {c.ImageURL ? (
+                            <img
+                              src={c.ImageURL}
+                              alt={c.Name}
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover object-top"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-red-50 text-[#C8102E]">
+                              <User className="w-10 h-10 stroke-[1.3]" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-5">
+                          <h3 className="font-serif text-lg font-semibold text-[#141416] leading-snug">
+                            {c.Name}
+                          </h3>
+                          {c.Qualifications && (
+                            <p className="text-[11px] font-semibold text-[#C8102E] mt-1 inline-flex items-center gap-1">
+                              <Award className="w-3 h-3 shrink-0" />
+                              <span className="line-clamp-1">{c.Qualifications}</span>
+                            </p>
+                          )}
+                          {c.Intro && (
+                            <p className="text-xs text-neutral-600 mt-2.5 line-clamp-3 leading-relaxed">
+                              {c.Intro}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {c.Contact && (
+                        <div className="px-5 pb-5">
+                          <a
+                            href={`mailto:${c.Contact}`}
+                            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#C8102E] hover:bg-[#9E0B24] text-white text-xs font-semibold transition-colors"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            <span>Email Counsellor</span>
+                          </a>
                         </div>
                       )}
                     </div>
-
-                    <div className="p-5">
-                      <h3 className="font-serif font-semibold text-lg text-[#241115] truncate group-hover:text-[#B80F2E] transition-colors">
-                        {c.Name}
-                      </h3>
-                      <p className="text-[11px] text-[#B80F2E] font-bold uppercase tracking-wide mt-0.5 truncate">
-                        {c.Qualifications || "Student Counsellor"}
-                      </p>
-                      <p className="text-[#694D53] text-xs line-clamp-3 mt-2.5 leading-relaxed">
-                        {c.Intro}
-                      </p>
-                    </div>
-                  </div>
-
-                  {c.Contact && (
-                    <div className="px-5 pb-5 pt-0">
-                      <div className="flex items-center gap-2 text-xs text-[#694D53] font-medium border-t border-rose-100/80 pt-3.5">
-                        <Mail className="w-3.5 h-3.5 text-[#B80F2E] shrink-0" />
-                        <span className="truncate select-all">{c.Contact}</span>
-                      </div>
-                    </div>
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl border border-dashed border-rose-200 p-12 text-center max-w-md mx-auto">
-              <p className="text-xs text-[#8A6970] font-semibold uppercase tracking-widest leading-relaxed">
-                Connect with counselors in the staff portal to register new active profiles.
-              </p>
-            </div>
+              </div>
+            </section>
           )}
-
-          <div className="mt-10 text-center">
-            <button
-              type="button"
-              onClick={() => setCurrentPage('counselors')}
-              className="inline-flex items-center gap-2 px-6 py-3 border border-rose-200 hover:border-[#B80F2E] rounded-xl text-xs font-bold uppercase tracking-wider text-[#8B0E24] hover:bg-rose-50 bg-white transition-all shadow-2xs cursor-pointer"
-            >
-              <span>Explore Dedicated Counseling Board</span>
-              <ArrowRight className="w-4 h-4 text-[#B80F2E]" />
-            </button>
-          </div>
-        </div>
-      </section>
+        </>
+      )}
     </div>
   );
 }

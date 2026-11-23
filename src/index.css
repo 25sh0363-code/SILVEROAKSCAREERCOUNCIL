@@ -5,34 +5,33 @@
   --font-serif: "Newsreader", Georgia, Cambria, "Times New Roman", Times, serif;
 }
 
-/* Base editorial crimson & ivory document aesthetics */
+/* Crisp Swiss-editorial Red & White base */
 html {
   scroll-behavior: smooth;
 }
 
 body {
   font-family: var(--font-sans);
-  color: #241115;
-  background-color: #FFFBFB;
+  color: #141416;
+  background-color: #FFFFFF;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Crisp crimson selection highlight */
 ::selection {
-  background-color: #FFE4E8;
-  color: #8B0E24;
+  background-color: #FEE2E2;
+  color: #991B1B;
 }
 
-/* Spinner anim styles */
+/* Minimal crisp crimson spinner */
 .spinner {
-  width: 34px;
-  height: 34px;
-  border: 2.5px solid rgba(184, 15, 46, 0.14);
-  border-top-color: #B80F2E;
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid #F3F4F6;
+  border-top-color: #C8102E;
   border-radius: 50%;
-  animation: spin 0.75s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
-  margin: 28px auto;
+  animation: spin 0.7s linear infinite;
+  margin: 24px auto;
 }
 
 @keyframes spin {
@@ -42,16 +41,16 @@ body {
 @keyframes slideInUp {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
 .animate-slide-in {
-  animation: slideInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideInUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Scrollbar hiding helper */
@@ -63,17 +62,17 @@ body {
   scrollbar-width: none;
 }
 
-/* Safe area bottom padding for mobile bottom nav */
+/* Safe area padding for mobile bottom nav */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Curatorial rich HTML content formatting styles (Crimson & White) */
+/* Editorial rich HTML content formatting (Pure White & Crimson Ink) */
 .rich-content {
-  color: #361C21;
+  color: #27272A;
   font-family: var(--font-sans) !important;
   line-height: 1.85;
-  font-size: 0.975rem;
+  font-size: 1rem;
   word-break: break-word;
 }
 .rich-content * {
@@ -83,36 +82,36 @@ body {
 .rich-content h1, .rich-content h2 {
   font-family: var(--font-serif) !important;
   font-weight: 600 !important;
-  color: #241115 !important;
+  color: #141416 !important;
   margin-top: 2.25rem !important;
-  margin-bottom: 0.8rem !important;
-  font-size: 1.5rem !important;
-  letter-spacing: -0.015em !important;
-  border-bottom: 1px solid #FDE2E6;
+  margin-bottom: 0.75rem !important;
+  font-size: 1.6rem !important;
+  letter-spacing: -0.02em !important;
+  border-bottom: 1px solid #F1F1F3;
   padding-bottom: 0.5rem;
 }
 .rich-content h3 {
   font-family: var(--font-serif) !important;
   font-weight: 600 !important;
-  color: #241115 !important;
+  color: #141416 !important;
   margin-top: 1.75rem !important;
-  margin-bottom: 0.55rem !important;
-  font-size: 1.25rem !important;
-  letter-spacing: -0.01em !important;
+  margin-bottom: 0.5rem !important;
+  font-size: 1.3rem !important;
+  letter-spacing: -0.015em !important;
 }
 .rich-content h4, .rich-content h5, .rich-content h6 {
   font-family: var(--font-sans) !important;
   font-weight: 700 !important;
-  color: #8B0E24 !important;
-  margin-top: 1.25rem !important;
+  color: #9E0B24 !important;
+  margin-top: 1.35rem !important;
   margin-bottom: 0.4rem !important;
-  font-size: 0.9rem !important;
+  font-size: 0.875rem !important;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 .rich-content p {
   font-family: var(--font-sans) !important;
-  color: #4A2C32 !important;
+  color: #3F3F46 !important;
   margin-bottom: 1.25rem !important;
   line-height: 1.85 !important;
 }
@@ -121,28 +120,25 @@ body {
   padding-left: 1.5rem !important;
   margin-bottom: 1.25rem !important;
 }
-.rich-content ul li {
+.rich-content ul li,
+.rich-content ol li {
   margin-bottom: 0.45rem !important;
-  color: #4A2C32 !important;
+  color: #3F3F46 !important;
 }
 .rich-content ul li::marker,
 .rich-content ol li::marker {
-  color: #B80F2E;
+  color: #C8102E;
 }
 .rich-content ol {
   list-style-type: decimal !important;
   padding-left: 1.5rem !important;
   margin-bottom: 1.25rem !important;
 }
-.rich-content ol li {
-  margin-bottom: 0.45rem !important;
-  color: #4A2C32 !important;
-}
 .rich-content blockquote {
-  border-left: 3px solid #B80F2E !important;
-  padding: 0.9rem 1.35rem !important;
-  background-color: #FFF5F6 !important;
-  color: #5C1A26 !important;
+  border-left: 3px solid #C8102E !important;
+  padding: 1rem 1.35rem !important;
+  background-color: #FEF2F2 !important;
+  color: #7F1D1D !important;
   font-family: var(--font-serif) !important;
   font-style: italic !important;
   font-size: 1.075rem !important;
@@ -150,56 +146,56 @@ body {
   margin: 1.75rem 0 !important;
 }
 .rich-content a {
-  color: #B80F2E !important;
+  color: #C8102E !important;
   font-weight: 600 !important;
   text-decoration: underline !important;
   text-underline-offset: 3px;
 }
 .rich-content a:hover {
-  color: #7A0B1F !important;
+  color: #880A1F !important;
 }
 .rich-content strong, .rich-content b {
   font-weight: 700 !important;
-  color: #241115 !important;
+  color: #141416 !important;
 }
 .rich-content table {
   width: 100% !important;
   border-collapse: collapse !important;
   margin: 1.75rem 0 !important;
   font-size: 0.875rem !important;
-  border-top: 1px solid #FBCED6;
-  border-bottom: 1px solid #FBCED6;
+  border-top: 1px solid #E5E7EB;
+  border-bottom: 1px solid #E5E7EB;
 }
 .rich-content th, .rich-content td {
-  border-bottom: 1px solid #FEECEF !important;
+  border-bottom: 1px solid #F3F4F6 !important;
   padding: 0.75rem 1rem !important;
   text-align: left !important;
 }
 .rich-content th {
-  background-color: #FFF5F6 !important;
+  background-color: #FEF2F2 !important;
   font-weight: 700 !important;
-  color: #8B0E24 !important;
+  color: #9E0B24 !important;
   font-size: 0.75rem !important;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .rich-content hr {
   border: 0 !important;
-  border-top: 1px solid #FDE2E6 !important;
+  border-top: 1px solid #EAEAEA !important;
   margin: 2rem 0 !important;
 }
 .rich-content img {
   border-radius: 0.75rem;
   margin: 1.5rem 0;
-  border: 1px solid #FDE2E6;
+  border: 1px solid #EAEAEA;
 }
 .rich-content pre, .rich-content code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
-  background-color: #FFF2F4 !important;
+  background-color: #FEF2F2 !important;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
   font-size: 0.85em;
-  color: #7A0B1F;
+  color: #9E0B24;
 }
 .rich-content pre code {
   padding: 0;
